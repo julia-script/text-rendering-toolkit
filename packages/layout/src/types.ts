@@ -39,6 +39,8 @@ export interface ResolvedShapedRun extends Utf16Range {
   readonly styleKey: string
   readonly fontKey: string
   readonly fontSize: number
+  /** Multiplier from this run's font-unit outlines to effective layout units. */
+  readonly fontUnitScale: number
   readonly metrics: ResolvedRunMetrics
   readonly variations: VariationCoordinates
   readonly glyphs: readonly ResolvedGlyph[]
@@ -82,6 +84,8 @@ export interface PositionedGlyph extends Utf16Range {
   readonly styleKey: string
   readonly glyphId: number
   readonly variations: VariationCoordinates
+  /** Multiplier from this glyph's font-unit outline to effective layout units. */
+  readonly fontUnitScale: number
   readonly lineIndex: number
   readonly x: number
   readonly y: number

@@ -6,14 +6,19 @@ Validated: 2026-07-21
 
 Change: `implement-three-webgpu-text-core`
 
+Renderer-neutral handoff revalidated by:
+`establish-renderer-neutral-text-handoff`
+
 ## Result
 
-The production `@webgpu-text/three` public API renders resolved real-font Latin
-and Arabic text through Three.js 0.185.1 on an actual Apple Metal-backed WebGPU
-adapter. The fixture exercised 12 initial and 13 updated glyph instances,
+The production `@webgpu-text/three` public API renders completed
+renderer-neutral `LayoutResult` data for real-font Latin and Arabic text through
+Three.js 0.185.1 on an actual Apple Metal-backed WebGPU adapter. Text shaping and
+layout execute before the Three adapter receives the result. The fixture
+exercised 12 initial and 13 updated glyph instances,
 multiple RGBA atlas cells, lazy font outlines, CPU SDF generation, style colors,
-opacity, clipping, stable unaffected pixels after atlas growth, committed
-selection data, and repeated disposal.
+opacity, clipping, stable unaffected pixels after atlas growth, direct
+layout-package selection data, and repeated disposal.
 
 ![Updated production renderer fixture](../../experiments/webgpu-rendering-seam/artifacts/three-webgpu-text-core.png)
 
@@ -49,7 +54,10 @@ passing evidence.
 
 ## Limits
 
-This proves the resolved-input, per-object-atlas, flat unlit renderer. It does
+This proves the layout-result, per-object-atlas, flat unlit renderer. The Three
+package receives positioned glyphs and per-glyph font-unit scales, resolves
+outlines lazily, and performs no shaping, line layout, caret, or selection
+policy. It does
 not prove automatic itemization/fallback, workers, shared atlas residency,
 eviction, partial texture upload, curvature, lighting, shadows, batching,
 WebGPU compute SDF generation, or WebGL support.

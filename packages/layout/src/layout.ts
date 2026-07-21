@@ -163,6 +163,10 @@ function validateInput(input: ResolvedLayoutInput): void {
     }
     finite(run.fontSize, `runs[${runIndex}].fontSize`)
     if (run.fontSize <= 0) invalid(`runs[${runIndex}].fontSize must be positive`)
+    finite(run.fontUnitScale, `runs[${runIndex}].fontUnitScale`)
+    if (run.fontUnitScale <= 0) {
+      invalid(`runs[${runIndex}].fontUnitScale must be positive`)
+    }
     finite(run.metrics.ascender, `runs[${runIndex}].metrics.ascender`)
     finite(run.metrics.descender, `runs[${runIndex}].metrics.descender`)
     finite(run.metrics.lineGap, `runs[${runIndex}].metrics.lineGap`)
@@ -520,6 +524,7 @@ function positionedGlyph(source: PlacedSourceGlyph): PositionedGlyph {
     styleKey: source.cluster.run.styleKey,
     glyphId: glyph.glyphId,
     variations: { ...source.cluster.run.variations },
+    fontUnitScale: source.cluster.run.fontUnitScale,
     lineIndex: source.lineIndex,
     x: source.x,
     y: source.y,

@@ -34,6 +34,7 @@
             "styleKey": "default",
             "fontKey": "noto-sans-variable-ttf",
             "fontSize": 1000,
+            "fontUnitScale": 1,
             "metrics": {
               "ascender": 1069,
               "descender": -293,
@@ -170,6 +171,7 @@
             "styleKey": "default",
             "fontKey": "noto-sans-variable-ttf",
             "fontSize": 1000,
+            "fontUnitScale": 1,
             "metrics": {
               "ascender": 1069,
               "descender": -293,
@@ -218,6 +220,7 @@
             "styleKey": "default",
             "fontKey": "noto-sans-arabic-variable",
             "fontSize": 1000,
+            "fontUnitScale": 1,
             "metrics": {
               "ascender": 1374,
               "descender": -738,
@@ -497,6 +500,7 @@
             "styleKey": "default",
             "fontKey": "noto-sans-devanagari-variable",
             "fontSize": 1000,
+            "fontUnitScale": 1,
             "metrics": {
               "ascender": 896,
               "descender": -408,
@@ -655,6 +659,7 @@
             "styleKey": "default",
             "fontKey": "noto-sans-khmer-variable",
             "fontSize": 1000,
+            "fontUnitScale": 1,
             "metrics": {
               "ascender": 1069,
               "descender": -293,
@@ -835,6 +840,7 @@
             "styleKey": "default",
             "fontKey": "noto-sans-symbols2",
             "fontSize": 1000,
+            "fontUnitScale": 1,
             "metrics": {
               "ascender": 1069,
               "descender": -630,
@@ -883,6 +889,7 @@
             "styleKey": "default",
             "fontKey": "noto-sans-variable-ttf",
             "fontSize": 1000,
+            "fontUnitScale": 1,
             "metrics": {
               "ascender": 1069,
               "descender": -293,
@@ -925,6 +932,7 @@
             "styleKey": "default",
             "fontKey": "noto-sans-symbols2",
             "fontSize": 1000,
+            "fontUnitScale": 1,
             "metrics": {
               "ascender": 1069,
               "descender": -630,
@@ -977,6 +985,7 @@
             "styleKey": "default",
             "fontKey": "noto-sans-variable-ttf",
             "fontSize": 1000,
+            "fontUnitScale": 1,
             "metrics": {
               "ascender": 1069,
               "descender": -293,
@@ -1061,6 +1070,7 @@
             "styleKey": "default",
             "fontKey": "noto-sans-variable-ttf",
             "fontSize": 1000,
+            "fontUnitScale": 1,
             "metrics": {
               "ascender": 1069,
               "descender": -293,
@@ -1169,6 +1179,7 @@
             "styleKey": "default",
             "fontKey": "noto-sans-arabic-variable",
             "fontSize": 1000,
+            "fontUnitScale": 1,
             "metrics": {
               "ascender": 1374,
               "descender": -738,

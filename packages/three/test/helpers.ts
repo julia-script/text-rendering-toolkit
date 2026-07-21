@@ -1,4 +1,9 @@
-import type { ResolvedLayoutInput, ResolvedShapedRun } from '@webgpu-text/layout'
+import {
+  type LayoutResult,
+  layoutResolvedText,
+  type ResolvedLayoutInput,
+  type ResolvedShapedRun,
+} from '@webgpu-text/layout'
 import type { TextFont, TextGlyphOutline } from '../src/index.js'
 
 export const rectangleOutline: TextGlyphOutline = {
@@ -16,12 +21,10 @@ export const emptyOutline: TextGlyphOutline = {
 export function font(
   options: {
     readonly outline?: TextGlyphOutline
-    readonly unitsPerEm?: number
     readonly onOutline?: (glyphId: number) => void
   } = {},
 ): TextFont {
   return {
-    facts: { unitsPerEm: options.unitsPerEm ?? 1_000 },
     getOutline(glyphId) {
       options.onOutline?.(glyphId)
       return options.outline ?? rectangleOutline
@@ -55,6 +58,7 @@ export function resolvedInput(
             styleKey,
             fontKey,
             fontSize: 1,
+            fontUnitScale: 0.001,
             metrics: { ascender: 0.8, descender: -0.2, lineGap: 0.1 },
             variations: options.variations ?? {},
             glyphs: [...text].map((character, index) => ({
@@ -85,4 +89,11 @@ export function resolvedInput(
     anchorY: 0,
     runs,
   }
+}
+
+export function resolvedLayout(
+  text: string,
+  options: Parameters<typeof resolvedInput>[1] = {},
+): LayoutResult {
+  return layoutResolvedText(resolvedInput(text, options))
 }

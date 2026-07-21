@@ -60,6 +60,7 @@ function translate(run: IntegrationRun, facts: FontFacts, shaped: ShapedRun): Re
     styleKey: 'default',
     fontKey: run.fontKey,
     fontSize: facts.unitsPerEm,
+    fontUnitScale: 1,
     metrics: {
       ascender: facts.ascender,
       descender: facts.descender,
@@ -154,6 +155,10 @@ describe('public font integration evidence', () => {
       expect(result.glyphs.length, plan.id).toBeGreaterThan(0)
       expect(result.visibleBounds, plan.id).toBeNull()
       expect(result.fontKeys, plan.id).toEqual([...new Set(runs.map((run) => run.fontKey))])
+      expect(
+        result.glyphs.every((glyph) => glyph.fontUnitScale === 1),
+        plan.id,
+      ).toBe(true)
     }
   })
 

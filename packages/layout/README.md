@@ -35,6 +35,7 @@ const input: ResolvedLayoutInput = {
       styleKey: 'body',
       fontKey: 'inter',
       fontSize: 10,
+      fontUnitScale: 10 / 1000,
       metrics: { ascender: 8, descender: -2, lineGap: 2 },
       variations: {},
       glyphs: [
@@ -89,10 +90,19 @@ const glyphs = shaped.glyphs.map((glyph) => ({
 Every measurement supplied to the layout package—advances, offsets, metrics,
 optional glyph bounds, width, indentation, spacing, and explicit line
 height—must already use the same effective layout-unit coordinate system.
-`fontSize` is stable metadata; the layout function does not use it to perform
-hidden scaling. Keeping `bounds` as `null` avoids outline work and produces a
-`null` `visibleBounds`; consumers can obtain and scale outlines lazily when a
-renderer actually needs them.
+Set each run's `fontUnitScale` to the same `fontSize / unitsPerEm` conversion.
+The layout function does not apply that scale to measurements; it preserves the
+value on every positioned glyph so any renderer can transform a lazily obtained
+font-unit outline without recovering the source run or inspecting font facts.
+Keeping `bounds` as `null` avoids outline work and produces a `null`
+`visibleBounds`; consumers can obtain outlines lazily when a renderer actually
+needs them.
+
+`LayoutResult` is the complete renderer-neutral handoff. It contains positioned
+glyph references, `fontUnitScale`, lines, bounds, carets, and stable font/style
+keys, but no outlines, SDF pixels, atlas slots, GPU resources, or renderer
+objects. Canvas, SVG, Three.js, or another renderer can consume the same result
+and resolve only the outlines it needs from the caller-owned font registry.
 
 ## Supported policy
 

@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { loadFont } from '@webgpu-text/font'
-import type { ResolvedLayoutInput } from '@webgpu-text/layout'
+import { layoutResolvedText, type ResolvedLayoutInput } from '@webgpu-text/layout'
 import { expect, test, vi } from 'vitest'
 import { Text, type TextFont } from '../src/index.js'
 
@@ -18,12 +18,7 @@ test('renders repeated public-font glyphs through one lazy outline/SDF insertion
     const shaped = handle.shape({ text: 'SSS', direction: 'ltr', script: 'Latn', language: 'en' })
     const scale = 1 / handle.facts.unitsPerEm
     const getOutline = vi.fn(handle.getOutline.bind(handle))
-    const font: TextFont = {
-      get facts() {
-        return handle.facts
-      },
-      getOutline,
-    }
+    const font: TextFont = { getOutline }
     const input: ResolvedLayoutInput = {
       text: 'SSS',
       paragraphLevel: 0,
@@ -52,6 +47,7 @@ test('renders repeated public-font glyphs through one lazy outline/SDF insertion
           styleKey: 'default',
           fontKey: 'noto',
           fontSize: 1,
+          fontUnitScale: scale,
           metrics: {
             ascender: handle.facts.ascender * scale,
             descender: handle.facts.descender * scale,
@@ -81,7 +77,11 @@ test('renders repeated public-font glyphs through one lazy outline/SDF insertion
       ],
     }
     getOutline.mockClear()
-    const text = new Text({ input, fonts: new Map([['noto', font]]), sdfSize: 16 })
+    const text = new Text({
+      layout: layoutResolvedText(input),
+      fonts: new Map([['noto', font]]),
+      sdfSize: 16,
+    })
     await text.sync()
     expect(text.geometry.instanceCount).toBe(3)
     expect(getOutline).toHaveBeenCalledTimes(1)
@@ -121,6 +121,7 @@ test('rejects a disposed public FontHandle without taking ownership', async () =
         styleKey: 'default',
         fontKey: 'noto',
         fontSize: 1,
+        fontUnitScale: 0.001,
         metrics: { ascender: 0.8, descender: -0.2, lineGap: 0 },
         variations: {},
         glyphs: [
@@ -139,8 +140,9 @@ test('rejects a disposed public FontHandle without taking ownership', async () =
       },
     ],
   }
+  const layout = layoutResolvedText(input)
   handle.dispose()
-  const text = new Text({ input, fonts: new Map([['noto', handle]]), sdfSize: 16 })
-  await expect(text.sync()).rejects.toThrow('unavailable')
+  const text = new Text({ layout, fonts: new Map([['noto', handle]]), sdfSize: 16 })
+  await expect(text.sync()).rejects.toThrow('Unable to resolve outline')
   text.dispose()
 })

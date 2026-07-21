@@ -110,6 +110,12 @@ function validateResult(value: unknown, text: string, fontKeys: Set<string>, cas
     if (!fontKeys.has(String(glyph.fontKey))) fail(caseId, `glyph ${index} uses an unknown font`)
     const lineIndex = integer(glyph.lineIndex, caseId, `expected.glyphs[${index}].lineIndex`)
     if (lineIndex < 0 || lineIndex >= lines.length) fail(caseId, `glyph ${index} has no line`)
+    const fontUnitScale = finite(
+      glyph.fontUnitScale,
+      caseId,
+      `expected.glyphs[${index}].fontUnitScale`,
+    )
+    if (fontUnitScale <= 0) fail(caseId, `glyph ${index} has an invalid fontUnitScale`)
     for (const key of [
       'glyphId',
       'x',
@@ -209,6 +215,8 @@ function validateFixture(value: unknown, ids: Set<string>): void {
       fail(id, `input.runs[${runIndex}].bidiLevel parity does not match direction`)
     }
     finite(run.fontSize, id, `input.runs[${runIndex}].fontSize`)
+    const fontUnitScale = finite(run.fontUnitScale, id, `input.runs[${runIndex}].fontUnitScale`)
+    if (fontUnitScale <= 0) fail(id, `input.runs[${runIndex}].fontUnitScale must be positive`)
     const metrics = record(run.metrics, id, `input.runs[${runIndex}].metrics`)
     for (const key of ['ascender', 'descender', 'lineGap'] as const) {
       finite(metrics[key], id, `input.runs[${runIndex}].metrics.${key}`)

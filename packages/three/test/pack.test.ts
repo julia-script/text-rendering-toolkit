@@ -68,7 +68,6 @@ test('ships public ESM runtime and declarations to a clean consumer', () => {
         import { Text, InvalidTextInputError } from '@webgpu-text/three'
         import type { TextFont, TextOptions } from '@webgpu-text/three'
         const font: TextFont = {
-          facts: { unitsPerEm: 1000 },
           getOutline: () => ({
             commands: new Uint8Array(), coordinates: new Float32Array(),
             bounds: { xMin: 0, yMin: 0, xMax: 0, yMax: 0 },

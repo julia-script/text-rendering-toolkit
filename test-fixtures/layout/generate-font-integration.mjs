@@ -108,6 +108,7 @@ try {
         styleKey: 'default',
         fontKey: fixture.key,
         fontSize: handle.facts.unitsPerEm,
+        fontUnitScale: 1,
         metrics: {
           ascender: handle.facts.ascender,
           descender: handle.facts.descender,

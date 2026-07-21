@@ -55,6 +55,8 @@ it('ships ESM runtime and type exports usable with the public font package', () 
       }
       const result = layoutResolvedText(input)
       getSelectionRects(result, { start: 0, end: 0 })
+      const scales: number[] = result.glyphs.map((glyph) => glyph.fontUnitScale)
+      void scales
       if (result.sourceLengthUtf16 !== 0) throw new Error('Unexpected source length')
     `
     writeFileSync(resolve(consumer, 'main.ts'), source)

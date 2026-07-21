@@ -11,7 +11,7 @@ Build a small, production-quality family of text-processing packages culminating
 
 The result is deliberately greenfield: strict TypeScript source, native ESM packages, explicit data contracts between layers, promise-based synchronization, TSL node materials, and no compatibility commitment to `troika-three-text`, `WebGLRenderer`, CommonJS, or UMD.
 
-**Current objective achieved:** representative multilingual text now renders through `WebGPURenderer` using a WebGL-free runtime, backed by deterministic layout/SDF tests, a real-font actual-WebGPU fixture, strict TypeScript checks, and a public-only consumer example. A separate actual-WebGPU proof has also validated the narrow planar standard-material and glyph-shadow seam without changing the shipped unlit API.
+**Current objective achieved:** representative multilingual text now renders through `WebGPURenderer` using a WebGL-free runtime, backed by deterministic layout/SDF tests, a real-font actual-WebGPU fixture, strict TypeScript checks, and a public-only consumer example. `LayoutResult` is now the completed renderer-neutral handoff, so Three performs no shaping, line layout, caret, or selection policy. A separate actual-WebGPU proof has also validated the narrow planar standard-material and glyph-shadow seam without changing the shipped unlit API.
 
 ## Where we are starting
 
@@ -111,7 +111,7 @@ flowchart LR
     Three["three/webgpu"]
 
     Layout --> Font
-    Renderer --> Layout
+    Renderer -->|LayoutResult type| Layout
     Renderer --> Sdf
     Renderer --> Three
     Font -. "structural outline contract" .-> Sdf
@@ -128,17 +128,15 @@ The dependency direction is a project rule: lower layers never import renderer l
 
 ```mermaid
 flowchart LR
-    User[Text constructor, caller-owned font handles and mutable properties] --> Sync[await text.sync]
-    Sync --> Renderer[three-webgpu-text orchestration]
-    Renderer --> LayoutWorker[text-layout ESM worker adapter]
-    LayoutWorker --> Resolver[Caller-supplied font registry and fallback resolution]
+    User[Raw text and caller-owned font handles] --> LayoutWorker[text-layout preparation and optional worker]
+    LayoutWorker --> Resolver[Itemization and fallback over supplied fonts]
     Resolver --> Font[HarfBuzz-backed font engine]
     Font --> Layout[Wrapping, bidi, placement and carets]
-    Layout --> Result[Typed LayoutResult with glyph references]
+    Layout --> Result[LayoutResult with positioned glyphs and fontUnitScale]
 
+    Result --> Renderer[three-webgpu-text adapter]
     Result --> Misses[Renderer finds atlas misses]
-    Misses --> LayoutWorker
-    LayoutWorker --> Font
+    Misses --> Font
     Font --> Outlines[Lazy glyph outlines]
     Outlines --> SdfWorker[sdf ESM worker adapter]
     SdfWorker --> CpuSdf[Pure CPU outline-to-pixels encoder]
@@ -150,13 +148,12 @@ flowchart LR
     DataTexture --> TSL
     TSL --> WebGPU[Three WebGPURenderer]
 
-    Dispose[dispose owned resources] --> LayoutWorker
-    Dispose --> SdfWorker
+    Dispose[dispose renderer-owned resources] --> SdfWorker
     Dispose --> DataTexture
 
     classDef cpu fill:#dfe9d2,stroke:#4f6b3c,color:#304326
     classDef gpu fill:#dbe6ee,stroke:#5f83a3,color:#2f4d66
-    class LayoutWorker,Resolver,Font,Layout,Misses,Outlines,SdfWorker,CpuSdf,Atlas cpu
+    class LayoutWorker,Resolver,Font,Layout,Result,Misses,Outlines,SdfWorker,CpuSdf,Atlas cpu
     class Geometry,DataTexture,TSL,WebGPU gpu
 ```
 
@@ -185,25 +182,23 @@ Atlas growth allocates a larger typed array and copies existing rows. The first 
 ```mermaid
 sequenceDiagram
     participant App
+    participant Layout as text-layout
+    participant Font as font
     participant Text
     participant Renderer as three-webgpu-text
-    participant Layout as text-layout worker
-    participant Font as font
     participant SDF as sdf worker
     participant Atlas
     participant Three as WebGPURenderer
 
-    App->>Text: set text/font/layout properties
-    App->>Text: await sync()
-    Text->>Renderer: request current render state
-    Renderer->>Layout: layout text and resolve fonts
+    App->>Layout: prepare or supply resolved runs
     Layout->>Font: parse and shape resolved runs
     Font-->>Layout: shaped glyph references
-    Layout-->>Renderer: renderer-neutral LayoutResult
-    Renderer->>Layout: request outlines for atlas misses
-    Layout->>Font: resolve outlines lazily
-    Font-->>Layout: unique GlyphOutlines
-    Layout-->>Renderer: unique GlyphOutlines
+    Layout-->>App: renderer-neutral LayoutResult
+    App->>Text: set LayoutResult, fonts and appearance
+    App->>Text: await sync()
+    Text->>Renderer: request current render state
+    Renderer->>Font: resolve outlines lazily for atlas misses
+    Font-->>Renderer: unique GlyphOutlines
     Renderer->>SDF: generate missing outline SDFs
     SDF-->>Renderer: one-channel SdfBitmaps
     Renderer->>Atlas: allocate and pack RGBA slots
@@ -224,7 +219,7 @@ Each package must expose a useful direct API. Representative lower-level usage i
 import { Text } from '@scope/three-webgpu-text'
 
 const text = new Text({
-  input: resolvedLayoutInput,
+  layout: layoutResolvedText(resolvedLayoutInput),
   fonts: new Map([['body', font]]),
   color: 0xffffff
 })
@@ -232,13 +227,17 @@ const text = new Text({
 await text.sync()
 scene.add(text)
 
-text.input = nextResolvedLayoutInput
+text.layout = layoutResolvedText(nextResolvedLayoutInput)
 await text.sync()
 
 text.dispose()
 ```
 
-`Text` extends Three’s `Mesh` from `three/webgpu`. Its default material is an unlit node material. The first public boundary accepts fully resolved layout input and caller-owned font handles; raw-text itemization and fallback remain layout work. Layout results and selection policy belong to `@scope/text-layout`, while per-object GPU atlas state remains private.
+`Text` extends Three’s `Mesh` from `three/webgpu`. Its default material is an
+unlit node material. Its public boundary accepts a completed `LayoutResult` and
+caller-owned lazy-outline handles; raw-text itemization, fallback, shaping,
+layout, carets, and selection remain layout work. Per-object GPU atlas state
+remains private to the renderer.
 
 ## Column rules
 
@@ -292,10 +291,17 @@ text.dispose()
 
 ### Deliver the first ordinary-text package
 - **Problem:** The renderer spike and ported layout engine are only useful when integrated behind a small lifecycle-safe public API.
-- **Outcome & done-when:** Consumers can construct, synchronize, update, render, select within, and dispose ordinary multilingual text; browser visual fixtures cover the supported appearance features; a minimal example uses only public exports.
-- **Status:** complete — `@webgpu-text/three` now provides a resolved-input `Text` mesh with latest-state promise synchronization, lazy outline/SDF caching, a private growing RGBA atlas, instanced TSL rendering, style colors, opacity, clipping, selection access, failure recovery, and lifecycle-safe disposal. A real Noto Sans/Noto Sans Arabic fixture passes on Chrome for Testing 149 through Apple Metal WebGPU with 12 initial and 13 updated instances across multiple atlas cells. Raw-text itemization/fallback, shared atlases, workers, batching, and lit materials remain separate work.
+- **Outcome & done-when:** Consumers can prepare renderer-neutral layout, construct, synchronize, update, render, select through layout helpers, and dispose ordinary multilingual text; browser visual fixtures cover the supported appearance features; a minimal example uses only public exports.
+- **Status:** complete — `@webgpu-text/three` provides a layout-result `Text` mesh with latest-state promise synchronization, lazy outline/SDF caching, a private growing RGBA atlas, instanced TSL rendering, style colors, opacity, clipping, committed layout identity, failure recovery, and lifecycle-safe disposal. A real Noto Sans/Noto Sans Arabic fixture passes on Chrome for Testing 149 through Apple Metal WebGPU with 12 initial and 13 updated instances across multiple atlas cells. Raw-text itemization/fallback, shared atlases, workers, batching, and lit materials remain separate work.
 - **Appetite:** worth about 1 focused week, flexing optional visual features to preserve the box.
 - **Links:** OpenSpec change `implement-three-webgpu-text-core` · [package README](packages/three/README.md) · [validation report](docs/validation/three-webgpu-text-core.md) · [basic example](examples/three-webgpu-basic/)
+
+### Establish the renderer-neutral text handoff
+- **Problem:** Three still executed layout and selection policy and recovered outline scale from source runs, making pre-layout input—not reusable layout output—the effective renderer boundary.
+- **Outcome & done-when:** `LayoutResult` carries the font-unit scale required by any renderer; Three accepts completed layout plus lazy-outline handles and contains no shaping, line-layout, caret, or selection execution.
+- **Status:** complete — resolved runs now supply finite positive `fontUnitScale`, positioned glyphs preserve it, and `Text` consumes completed layout directly. The public example, clean package consumers, and unchanged 12-to-13-glyph actual-WebGPU evidence validate the breaking handoff without a compatibility overload or new abstraction.
+- **Appetite:** worth about 1 focused day.
+- **Links:** OpenSpec change `establish-renderer-neutral-text-handoff` · [architecture](ARCHITECTURE.md) · [layout package](packages/layout/README.md) · [Three package](packages/three/README.md)
 
 ### Prove the planar lit-text and shadow seam
 - **Problem:** Source-level node hooks did not establish that transparent instanced SDF quads could participate correctly in Three's actual WebGPU lighting and shadow passes.
@@ -311,7 +317,7 @@ text.dispose()
 - **Hypothesis:** one dedicated standard node material variant can promote the validated planar normal, visible SDF opacity, binary shadow mask, and visible-side shadow policy without recreating arbitrary material derivation.
 - **Confidence:** high for the planar material/shadow kernel; medium for its production API and lifecycle integration.
 - **Assumes:** the proven synthetic fixture composes with the real-font atlas, atomic updates, appearance controls, and disposal already shipped by `Text` — not yet validated together.
-- **Open questions:** Should callers select an explicit material mode, construct a separate lit text class, or receive a narrow material factory? Which lighting controls belong in the first surface? Curved, double-sided, physical, and normal-mapped text remain outside this follow-up.
+- **Open questions:** The material kind is fixed at construction rather than swapped at runtime; the proposal still needs to choose the smallest option spelling and which standard lighting controls belong in the first surface. Curved, double-sided, physical, and normal-mapped text remain outside this follow-up.
 
 ### Efficient rendering of many independent text objects
 - **Problem:** One mesh and material state per label may become CPU- or draw-call-bound in dense interfaces and scenes.
@@ -358,13 +364,14 @@ text.dispose()
 - **Renderer kernel:** promote one instanced unit quad, typed bounds/flat-slot/color attributes, renderer-owned RGBA `DataTexture`, and an unlit TSL material for cell/channel addressing, SDF coverage, opacity, clipping, orientation, and curvature. Do not port shader rewriting.
 - **Renderer validation:** pin Three.js 0.185.1 for the first implementation and rerun the private actual-WebGPU experiment before widening or changing the revision. WebGL fallback is never passing evidence.
 - **Renderer ownership:** production text objects own their geometry/material and atlas references; the atlas owner owns texture/cache disposal; the application owns the shared Three renderer and canvas.
-- **First renderer surface:** accept fully resolved layout input plus structural caller-owned font handles; do not hide partial itemization or fallback inside the Three package.
+- **Renderer-neutral handoff:** `LayoutResult` is the complete input to any renderer and carries `fontUnitScale` on each positioned glyph. Three accepts that result plus structural caller-owned lazy-outline handles and performs no layout or interaction policy.
 - **First atlas lifetime:** each `Text` owns one private growing RGBA atlas with full dirty texture uploads and no eviction; introduce sharing only when many-label measurements justify the extra ownership policy.
 - **First appearance surface:** ship flat unlit TSL fill, per-style color, opacity, and rectangular clipping on Three.js 0.185.1; defer curvature, lighting, shadows, strokes, and arbitrary material derivation.
 - **Planar lit/shadow seam:** a standard node material can reuse instanced `positionNode`, RGBA `colorNode`, and antialiased `opacityNode`; add planar normals, a midpoint SDF `maskShadowNode`, and set `shadowSide` to the visible side for zero-thickness glyph quads. Do not add `castShadowNode`, transmitted shadows, duplicate shadow geometry, or private renderer hooks for the ordinary planar case.
 
 ## Changelog
 
+- 2026-07-21: Established `LayoutResult` as the reusable renderer-neutral handoff. Added per-glyph `fontUnitScale`, changed Three to accept completed layout, removed layout/selection execution and font-facts coupling from the renderer, and revalidated unchanged real-font multi-cell output on actual Apple Metal WebGPU.
 - 2026-07-21: Validated front-facing planar standard-material text and glyph-shaped cast/receive shadows on actual Apple Metal WebGPU. The public seam uses ordinary normals plus shared position/color/opacity nodes, a binary SDF shadow mask, and an explicit visible shadow side; production API and real-font integration remain the next bounded change.
 - 2026-07-21: Implemented resolved-input `@webgpu-text/three` with atomic promise synchronization, caller-owned structural font handles, lazy outline/SDF caching, per-object multi-cell RGBA atlas growth, instanced unlit TSL rendering, style colors, opacity, clipping, selections, disposal, clean package installation, a public-only example, and actual-WebGPU Latin/Arabic visual evidence on Three.js 0.185.1.
 - 2026-07-21: Implemented dependency-free `@webgpu-text/sdf` with typed numeric outlines, deterministic CPU distance generation, exact synthetic golden conformance, public-font interoperability, independent package validation, and attributed `webgl-sdf-generator@1.1.1` provenance. Workers, caching, atlases, GPU generation, and renderer orchestration remain separate work.

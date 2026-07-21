@@ -1,18 +1,9 @@
-import {
-  getSelectionRects as deriveSelectionRects,
-  type LayoutBounds,
-  type LayoutResult,
-  layoutResolvedText,
-  type PositionedGlyph,
-  type ResolvedLayoutInput,
-  type ResolvedShapedRun,
-  type SelectionRect,
-} from '@webgpu-text/layout'
+import type { LayoutBounds, LayoutResult, PositionedGlyph } from '@webgpu-text/layout'
 import { generateSdf, type SdfBitmap, type SdfViewBox } from '@webgpu-text/sdf'
 import { Color, type ColorRepresentation, Mesh, type MeshBasicNodeMaterial } from 'three/webgpu'
 
 import { type AtlasAddition, type AtlasPlan, type CachedGlyph, RgbaGlyphAtlas } from './atlas.js'
-import { DisposedTextError, InvalidTextInputError, TextNotSynchronizedError } from './errors.js'
+import { DisposedTextError, InvalidTextInputError } from './errors.js'
 import {
   createGlyphGeometry,
   createGlyphMaterial,
@@ -29,7 +20,7 @@ const SDF_EXPONENT = 9
 
 interface SyncSnapshot {
   readonly revision: number
-  readonly input: ResolvedLayoutInput
+  readonly layout: LayoutResult
   readonly fonts: ReadonlyMap<string, TextFont>
   readonly color: ColorRepresentation
   readonly styleColors: Readonly<Record<string, ColorRepresentation>>
@@ -47,9 +38,7 @@ interface BuiltState {
 
 interface ResolvedRenderableGlyph {
   readonly glyph: PositionedGlyph
-  readonly run: ResolvedShapedRun
   readonly key: string
-  readonly scale: number
 }
 
 function invalid(message: string, cause?: unknown): InvalidTextInputError {
@@ -73,6 +62,50 @@ function validateClipRect(bounds: LayoutBounds | null): void {
   const values = [bounds.left, bounds.bottom, bounds.right, bounds.top]
   if (!values.every(Number.isFinite) || bounds.left > bounds.right || bounds.bottom > bounds.top) {
     throw invalid('clipRect must contain finite non-inverted bounds')
+  }
+}
+
+function validateLayout(layout: LayoutResult): void {
+  if (!layout || typeof layout !== 'object' || !Array.isArray(layout.glyphs)) {
+    throw invalid('layout must be a completed LayoutResult')
+  }
+  const bounds = layout.blockBounds
+  if (!bounds || typeof bounds !== 'object') {
+    throw invalid('layout.blockBounds must contain finite non-inverted bounds')
+  }
+  const boundValues = [bounds.left, bounds.bottom, bounds.right, bounds.top]
+  if (
+    !boundValues.every(Number.isFinite) ||
+    bounds.left > bounds.right ||
+    bounds.bottom > bounds.top
+  ) {
+    throw invalid('layout.blockBounds must contain finite non-inverted bounds')
+  }
+  for (const [index, glyph] of layout.glyphs.entries()) {
+    if (!glyph || typeof glyph !== 'object') {
+      throw invalid(`layout.glyphs[${index}] must be a positioned glyph`)
+    }
+    if (
+      !glyph.fontKey ||
+      !glyph.styleKey ||
+      !Number.isSafeInteger(glyph.glyphId) ||
+      glyph.glyphId < 0
+    ) {
+      throw invalid(`layout.glyphs[${index}] has invalid identity data`)
+    }
+    if (!Number.isFinite(glyph.fontUnitScale) || glyph.fontUnitScale <= 0) {
+      throw invalid(`layout.glyphs[${index}].fontUnitScale must be finite and positive`)
+    }
+    for (const key of ['x', 'y', 'xOffset', 'yOffset'] as const) {
+      if (!Number.isFinite(glyph[key])) {
+        throw invalid(`layout.glyphs[${index}].${key} must be finite`)
+      }
+    }
+    for (const [axis, value] of Object.entries(glyph.variations)) {
+      if (!axis || !Number.isFinite(value)) {
+        throw invalid(`layout.glyphs[${index}].variations is invalid`)
+      }
+    }
   }
 }
 
@@ -153,22 +186,8 @@ function quadBounds(
   ]
 }
 
-function runForGlyph(input: ResolvedLayoutInput, glyph: PositionedGlyph): ResolvedShapedRun {
-  // ponytail: O(glyphs × runs); replace with a source-offset index if real profiles require it.
-  const run = input.runs.find(
-    (candidate) =>
-      glyph.start >= candidate.start &&
-      glyph.end <= candidate.end &&
-      glyph.fontKey === candidate.fontKey &&
-      glyph.styleKey === candidate.styleKey &&
-      variationKey(glyph.variations) === variationKey(candidate.variations),
-  )
-  if (!run) throw invalid(`Positioned glyph ${glyph.glyphId} has no matching resolved source run`)
-  return run
-}
-
 export class Text extends Mesh<ReturnType<typeof createGlyphGeometry>, MeshBasicNodeMaterial> {
-  input: ResolvedLayoutInput
+  layout: LayoutResult
   fonts: ReadonlyMap<string, TextFont>
   color: ColorRepresentation
   styleColors: Readonly<Record<string, ColorRepresentation>>
@@ -193,7 +212,7 @@ export class Text extends Mesh<ReturnType<typeof createGlyphGeometry>, MeshBasic
     const geometry = createGlyphGeometry()
     const rendered = createGlyphMaterial(atlas.texture, sdfSize)
     super(geometry, rendered.material)
-    this.input = options.input
+    this.layout = options.layout
     this.fonts = options.fonts
     this.color = options.color ?? DEFAULT_COLOR
     this.styleColors = options.styleColors ?? {}
@@ -223,7 +242,7 @@ export class Text extends Mesh<ReturnType<typeof createGlyphGeometry>, MeshBasic
     const revision = ++this.#revision
     this.#latest = {
       revision,
-      input: this.input,
+      layout: this.layout,
       fonts: new Map(this.fonts),
       color: this.color,
       styleColors: { ...this.styleColors },
@@ -232,12 +251,6 @@ export class Text extends Mesh<ReturnType<typeof createGlyphGeometry>, MeshBasic
     }
     this.#pending ??= Promise.resolve().then(() => this.#flush())
     return this.#pending
-  }
-
-  getSelectionRects(start: number, end: number): readonly SelectionRect[] {
-    if (this.#disposed) throw new DisposedTextError()
-    if (!this.#layoutResult) throw new TextNotSynchronizedError()
-    return deriveSelectionRects(this.#layoutResult, { start, end })
   }
 
   dispose(): void {
@@ -282,22 +295,9 @@ export class Text extends Mesh<ReturnType<typeof createGlyphGeometry>, MeshBasic
     additions: AtlasAddition[],
     local: Map<string, CachedGlyph>,
   ): ResolvedRenderableGlyph | null {
-    const run = runForGlyph(snapshot.input, glyph)
     const font = snapshot.fonts.get(glyph.fontKey)
     if (!font || (typeof font !== 'object' && typeof font !== 'function')) {
       throw invalid(`Font registry has no usable entry for ${glyph.fontKey}`)
-    }
-    let unitsPerEm: number
-    try {
-      unitsPerEm = font.facts.unitsPerEm
-    } catch (error) {
-      throw invalid(`Font ${glyph.fontKey} is unavailable`, error)
-    }
-    if (!Number.isFinite(unitsPerEm) || unitsPerEm <= 0) {
-      throw invalid(`Font ${glyph.fontKey} has invalid unitsPerEm`)
-    }
-    if (!Number.isFinite(run.fontSize) || run.fontSize <= 0) {
-      throw invalid(`Resolved run for ${glyph.fontKey} has invalid fontSize`)
     }
     const key = `${this.#fontId(font)}:${glyph.glyphId}:${variationKey(glyph.variations)}:${this.sdfSize}`
     let cached = this.#atlas.lookup(key) ?? local.get(key)
@@ -308,7 +308,7 @@ export class Text extends Mesh<ReturnType<typeof createGlyphGeometry>, MeshBasic
       local.set(key, cached)
     }
     if (cached.slot === null) return null
-    return { glyph, run, key, scale: run.fontSize / unitsPerEm }
+    return { glyph, key }
   }
 
   #build(snapshot: SyncSnapshot): BuiltState {
@@ -319,17 +319,8 @@ export class Text extends Mesh<ReturnType<typeof createGlyphGeometry>, MeshBasic
     for (const [key, value] of Object.entries(snapshot.styleColors)) {
       styleColors.set(key, normalizedColor(value, `styleColors.${key}`))
     }
-    const layout = layoutResolvedText(snapshot.input)
-    for (const fontKey of layout.fontKeys) {
-      const font = snapshot.fonts.get(fontKey)
-      if (!font) throw invalid(`Font registry is missing ${fontKey}`)
-      try {
-        const unitsPerEm = font.facts.unitsPerEm
-        if (!Number.isFinite(unitsPerEm) || unitsPerEm <= 0) throw new Error('invalid unitsPerEm')
-      } catch (error) {
-        throw invalid(`Font ${fontKey} is unavailable or invalid`, error)
-      }
-    }
+    const layout = snapshot.layout
+    validateLayout(layout)
     const additions: AtlasAddition[] = []
     const local = new Map<string, CachedGlyph>()
     const renderable: ResolvedRenderableGlyph[] = []
@@ -346,7 +337,7 @@ export class Text extends Mesh<ReturnType<typeof createGlyphGeometry>, MeshBasic
       if (!cached || cached.slot === null || !cached.viewBox) {
         throw invalid(`Atlas plan is missing glyph ${item.glyph.glyphId}`)
       }
-      bounds.set(quadBounds(item.glyph, cached.viewBox, item.scale), index * 4)
+      bounds.set(quadBounds(item.glyph, cached.viewBox, item.glyph.fontUnitScale), index * 4)
       slots[index] = cached.slot
       const color = styleColors.get(item.glyph.styleKey) ?? defaultColor
       colors.set(

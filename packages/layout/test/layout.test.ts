@@ -39,6 +39,9 @@ describe('resolved layout input', () => {
         ;(value.runs[0] as { bidiLevel: number }).bidiLevel = 1
       },
       (value) => {
+        ;(value.runs[0] as { fontUnitScale: number }).fontUnitScale = 0
+      },
+      (value) => {
         ;(value.runs[0]?.glyphs[0] as { xAdvance: number }).xAdvance = Number.NaN
       },
       (value) => {
@@ -91,6 +94,7 @@ test('reorders nested bidi fragments without reversing shaped glyph order twice'
     styleKey: 'default',
     fontKey: 'test',
     fontSize: 1,
+    fontUnitScale: 0.001,
     metrics,
     variations: {},
     glyphs,

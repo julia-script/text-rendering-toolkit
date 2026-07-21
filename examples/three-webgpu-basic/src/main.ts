@@ -1,5 +1,5 @@
 import { type FontHandle, loadFont } from '@webgpu-text/font'
-import type { ResolvedLayoutInput } from '@webgpu-text/layout'
+import { layoutResolvedText, type ResolvedLayoutInput } from '@webgpu-text/layout'
 import { Text } from '@webgpu-text/three'
 import { Color, OrthographicCamera, Scene, WebGPURenderer } from 'three/webgpu'
 
@@ -35,6 +35,7 @@ function resolveSingleRun(font: FontHandle, text: string, fontSize: number): Res
         styleKey: 'default',
         fontKey: 'body',
         fontSize,
+        fontUnitScale: scale,
         metrics,
         variations: shaped.variations,
         glyphs: shaped.glyphs.map((glyph) => ({
@@ -67,7 +68,7 @@ async function start(canvas: HTMLCanvasElement) {
   const camera = new OrthographicCamera(-2, 2, 0.75, -0.75, 0.1, 10)
   camera.position.z = 3
   const text = new Text({
-    input: resolveSingleRun(font, 'WebGPU Text', 0.45),
+    layout: layoutResolvedText(resolveSingleRun(font, 'WebGPU Text', 0.45)),
     fonts: new Map([['body', font]]),
     color: 0x55d8ff,
   })

@@ -23,8 +23,9 @@ The most important deliberate departure is font shaping. Troika’s custom Typr-
 
 The greenfield pnpm/Turborepo/Biome/Vitest baseline and all four first
 production cores are implemented and validated: `@webgpu-text/font`, resolved
-`@webgpu-text/layout`, CPU `@webgpu-text/sdf`, and resolved-input
-`@webgpu-text/three`. The renderer composes caller-owned structural font handles,
+`@webgpu-text/layout`, CPU `@webgpu-text/sdf`, and layout-result
+`@webgpu-text/three`. The renderer consumes completed renderer-neutral layout,
+caller-owned structural font handles,
 lazy numeric outlines, deterministic SDFs, a private growing RGBA atlas,
 instanced geometry, and an unlit TSL material through an atomic `Text.sync()`
 lifecycle.
@@ -36,8 +37,9 @@ and batching remain separate follow-ups. A private actual-WebGPU proof has
 validated the public Three.js seam for one front-facing planar standard material
 with glyph-shaped cast and received shadows; that evidence has not changed the
 shipped unlit API. Font-byte acquisition is caller-owned: no core package
-accepts URLs or performs network fetching. The first renderer accepts fully
-resolved runs rather than implementing a partial raw-text policy.
+accepts URLs or performs network fetching. The layout package turns fully
+resolved runs into `LayoutResult`; the first renderer accepts only that completed
+handoff rather than implementing a partial raw-text policy.
 
 ## Current responsibility map
 
@@ -105,7 +107,7 @@ flowchart LR
     Font -->|internal attributed runtime| HarfBuzz
     Layout -->|runtime dependency| Font
     Layout -->|runtime dependency| Bidi
-    Renderer -->|runtime dependency| Layout
+    Renderer -->|public LayoutResult type| Layout
     Renderer -->|runtime dependency| Sdf
     Renderer -->|peer dependency| Three
 
@@ -174,7 +176,7 @@ The important correction from the old naming is that “font loading,” “font
 
 **Inputs today:** text policy plus `ResolvedShapedRun` values using one effective layout-unit coordinate system.
 
-**Outputs:** a renderer-neutral `LayoutResult` containing glyph references, font identities, positions, sizes, bounds, and carets. Outlines are not embedded in the result.
+**Outputs:** a renderer-neutral `LayoutResult` containing glyph references, font identities, positions, font-unit-to-layout-unit scales, bounds, and carets. Outlines are not embedded in the result.
 
 **Does not own:** font-byte acquisition or URL fetching, SDF resolution, atlas indices, textures, materials, scene objects, or renderer synchronization.
 
@@ -209,12 +211,12 @@ The preserved `SDFGenerator.js` is mostly scheduling and WebGL/canvas integratio
 
 ### `@scope/three-webgpu-text`
 
-**Purpose:** compose layout and SDF data into a convenient Three.js `WebGPURenderer` text object.
+**Purpose:** render completed layout data as a convenient Three.js `WebGPURenderer` scene object.
 
 **Owns:**
 
-- The implemented resolved-input `Text` mesh and latest-state promise synchronization lifecycle.
-- Pure layout/SDF orchestration, failure atomicity, and committed selection access.
+- The implemented layout-result `Text` mesh and latest-state promise synchronization lifecycle.
+- Lazy outline/SDF orchestration, failure atomicity, and committed layout identity.
 - One private atlas per text: flat-slot allocation, RGBA channel packing, byte storage, square growth, full dirty uploads, glyph cache, and lifecycle. V1 has no eviction.
 - RGBA atlas upload into a Three `DataTexture`.
 - Capacity-aware instanced glyph geometry and explicit bounds.
@@ -222,11 +224,11 @@ The preserved `SDFGenerator.js` is mostly scheduling and WebGL/canvas integratio
 - Lifecycle-safe disposal that leaves caller fonts, renderer, and canvas alone.
 - Future batching, if profiling demonstrates a need.
 
-**Inputs today:** a public `ResolvedLayoutInput`, a structural map of caller-owned font handles, and baseline appearance values.
+**Inputs today:** a completed public `LayoutResult`, a structural map of caller-owned lazy-outline handles, and baseline appearance values.
 
 **Outputs:** Three scene objects and GPU resources.
 
-**Does not own:** font bytes or fetching, caller font lifetime, itemization/fallback, font table parsing algorithms, line layout algorithms, the CPU SDF encoder, workers, a shared renderer/canvas, or WebGL support.
+**Does not own:** font bytes or fetching, caller font lifetime, itemization/fallback, font table parsing algorithms, line layout or interaction algorithms, the CPU SDF encoder, workers, a shared renderer/canvas, or WebGL support.
 
 ## Boundary contracts
 
@@ -236,7 +238,7 @@ The exact TypeScript names are provisional; the separation is not.
 |---|---|---|---|---|
 | `FontHandle` | `font` | `text-layout`, direct users | normalized metrics, coverage, shaping and lazy outline access | HarfBuzz pointers, network state, layout settings, atlas state |
 | `ShapedRun` | `font` | `text-layout`, direct users | glyph IDs, cluster/source indices, advances, offsets | line breaks, final x/y placement |
-| `LayoutResult` | `text-layout` | renderer, editors, direct users | positioned glyph references, font keys, bounds, line data, carets | outlines, SDF pixels, atlas indices, Three objects |
+| `LayoutResult` | `text-layout` | renderers, editors, direct users | positioned glyph references, font keys, font-unit scales, bounds, line data, carets | outlines, font handles, SDF pixels, atlas indices, Three objects |
 | `GlyphOutline` | `font` | `sdf`, renderer orchestration, direct users | path commands and view box for one glyph reference | placement, SDF pixels, atlas state |
 | `Outline` | any producer | `sdf` | path commands and view box | font tables, text, placement |
 | `SdfBitmap` | `sdf` | renderer, direct users | one-channel pixels and encoding metadata | canvas and GPU handles |
@@ -262,16 +264,18 @@ sequenceDiagram
     App->>App: scale and assemble ResolvedLayoutInput
     App->>Layout: layoutResolvedText(input)
     Layout-->>App: LayoutResult
-    App->>Font: getOutline(glyphId) on demand
-    Font-->>App: GlyphOutline
-    App->>SDF: generate(outline, options)
-    SDF-->>App: SdfBitmap
-    App->>Three: create/update from layout and bitmap data
+    App->>Three: create/update with LayoutResult and font registry
+    Three->>Font: getOutline(glyphId) on atlas miss
+    Font-->>Three: GlyphOutline
+    Three->>SDF: generate(outline, options)
+    SDF-->>Three: SdfBitmap
     Three->>Three: allocate and pack renderer-owned atlas
     Three->>GPU: upload atlas and render TSL material
 ```
 
-The high-level `Text` class performs those calls internally. Lower-level consumers can stop after any arrow.
+Text preparation ends at `LayoutResult`; the Three adapter performs only the
+lazy outline, SDF, atlas, and GPU calls after that handoff. Another renderer can
+consume the same result and choose a different outline or raster strategy.
 
 ## Consumption examples
 
@@ -322,7 +326,7 @@ const bitmap = generateSdf({
 import { Text } from '@scope/three-webgpu-text'
 
 const text = new Text({
-  input: resolvedLayoutInput,
+  layout: layoutResolvedText(resolvedLayoutInput),
   fonts: new Map([['body', font]]),
   color: 0xffffff
 })

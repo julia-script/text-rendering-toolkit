@@ -2,48 +2,55 @@
 
 ## Purpose
 
-Define the production resolved-input Three.js WebGPU text mesh, including
-synchronization, lazy glyph rasterization, renderer-owned atlas resources,
-instanced TSL rendering, interaction access, validation evidence, and disposal.
+Define the production renderer-neutral-layout Three.js WebGPU text mesh,
+including synchronization, lazy glyph rasterization, renderer-owned atlas
+resources, instanced TSL rendering, validation evidence, and disposal.
 
 ## Requirements
 
-### Requirement: Expose a resolved-input Three text mesh
-`@webgpu-text/three` SHALL expose a `Text` scene object that accepts a valid
-`ResolvedLayoutInput`, a caller-owned font registry keyed by the input's font
-identities, and baseline unlit appearance options without fetching font bytes or
-performing automatic itemization or fallback selection.
+### Requirement: Expose a layout-result Three text mesh
+`@webgpu-text/three` SHALL expose a `Text` scene object that accepts a completed
+renderer-neutral `LayoutResult`, a caller-owned font registry keyed by the
+result's font identities, and baseline appearance options without fetching font
+bytes, executing text layout, deriving interaction geometry, or performing
+automatic itemization or fallback selection.
 
-#### Scenario: Construct resolved text
-- **WHEN** a caller constructs `Text` with resolved multilingual runs and
+#### Scenario: Construct prepared text
+- **WHEN** a caller constructs `Text` with a valid multilingual `LayoutResult` and
   structurally compatible public font handles
 - **THEN** the object is a Three mesh that can be added to a scene before its
   first synchronization and neither fetches nor disposes those font handles
 
 #### Scenario: Reject an unavailable font
-- **WHEN** a synchronization references a font key that is absent, disposed, or
-  exposes invalid font-scale facts
+- **WHEN** synchronization needs a drawable glyph whose font key is absent or
+  whose lazy outline lookup fails
 - **THEN** synchronization rejects with a public renderer error before committing
   partial geometry or atlas state
 
+#### Scenario: Keep text policy outside Three
+- **WHEN** the Three package constructs, synchronizes, updates, or disposes a text
+  mesh
+- **THEN** it does not invoke layout, shaping, selection, caret, bidi, fallback,
+  or line-breaking operations
+
 ### Requirement: Synchronize and update atomically
 `Text.sync()` MUST return a promise, coalesce requests pending in the same work
-window behind the latest captured state, and commit layout, atlas, geometry, and
-material state atomically only when that request is still current.
+window behind the latest captured state, and commit the supplied layout, atlas,
+geometry, and material state atomically only when that request is still current.
 
 #### Scenario: Synchronize an initial state
-- **WHEN** a caller awaits `sync()` for a valid non-empty or empty resolved input
-- **THEN** the promise resolves with layout result, instance count, render bounds,
+- **WHEN** a caller awaits `sync()` for a valid non-empty or empty `LayoutResult`
+- **THEN** the promise resolves with committed layout identity, instance count, render bounds,
   atlas contents, and appearance controls representing that captured state
 
 #### Scenario: Coalesce rapid updates
-- **WHEN** properties change and `sync()` is called repeatedly before pending work
-  commits
+- **WHEN** the layout or appearance properties change and `sync()` is called
+  repeatedly before pending work commits
 - **THEN** the calls settle behind the newest request and no older state
-  overwrites its layout, pixels, attributes, or material values
+  overwrites its layout reference, pixels, attributes, or material values
 
 #### Scenario: Preserve a committed state after failure
-- **WHEN** an update fails during validation, outline lookup, layout, or SDF
+- **WHEN** an update fails during renderer validation, outline lookup, or SDF
   generation
 - **THEN** its promise rejects, the last successfully committed render state
   remains intact, and a later valid synchronization can succeed
@@ -51,14 +58,14 @@ material state atomically only when that request is still current.
 ### Requirement: Resolve and rasterize glyphs lazily
 The renderer SHALL request an outline and generate an SDF only for a drawable
 font/glyph/variation identity missing from that text object's cache, using the
-resolved run's font scale to map one deterministic padded SDF view box to its
-layout-space quad.
+positioned glyph's `fontUnitScale` to map one deterministic padded SDF view box
+to its layout-space quad.
 
 #### Scenario: Rasterize an atlas miss
 - **WHEN** a positioned glyph has a drawable outline that is not cached
 - **THEN** the renderer obtains the outline on demand, passes its numeric commands
-  directly to `generateSdf()`, and creates an instance whose padded bounds sample
-  the corresponding bitmap without an SVG or canvas conversion
+  directly to `generateSdf()`, and scales the padded view box by the glyph's
+  `fontUnitScale` without consulting resolved runs or font facts
 
 #### Scenario: Reuse a repeated glyph
 - **WHEN** the same font object, glyph ID, variation coordinates, and SDF settings
@@ -68,8 +75,8 @@ layout-space quad.
 
 #### Scenario: Ignore a non-drawing glyph
 - **WHEN** a laid-out glyph has no drawable outline
-- **THEN** it contributes to layout and interaction results but creates no atlas
-  slot or render instance
+- **THEN** it remains represented in the caller-owned layout result but creates
+  no atlas slot or render instance
 
 ### Requirement: Own an RGBA glyph atlas
 Each `Text` object SHALL privately own deterministic flat-slot allocation, RGBA
@@ -103,9 +110,9 @@ coverage, opacity, and optional local rectangular clipping.
 #### Scenario: Render positioned real-font glyphs
 - **WHEN** a synchronized text mesh is rendered by the pinned Three.js
   `WebGPURenderer`
-- **THEN** glyph instances occupy the positions and padded bounds derived from the
-  committed layout and font scale with transparent exterior and antialiased
-  interior coverage
+- **THEN** glyph instances occupy the positions and padded bounds derived solely
+  from the supplied layout and positioned font-unit scale with transparent
+  exterior and antialiased interior coverage
 
 #### Scenario: Apply baseline appearance
 - **WHEN** glyph style keys select different colors and the text uses opacity or
@@ -114,27 +121,10 @@ coverage, opacity, and optional local rectangular clipping.
   and clipping without shader-string rewriting or a WebGL-specific API
 
 #### Scenario: Update an existing mesh
-- **WHEN** a later synchronization changes text, placement, style colors,
-  opacity, or clipping
+- **WHEN** a later synchronization supplies another completed layout or changes
+  style colors, opacity, or clipping
 - **THEN** the same public `Text` object renders the new state and does not recreate
   the application-owned renderer or canvas
-
-### Requirement: Preserve renderer-neutral interaction results
-After successful synchronization, `Text` SHALL expose the exact committed
-`LayoutResult` and SHALL derive selection rectangles through the public layout
-policy without copying outlines, SDF bytes, atlas slots, or Three objects into
-that result.
-
-#### Scenario: Read committed layout and selection
-- **WHEN** a caller inspects the layout result and requests a valid forward,
-  reversed, empty, or multiline selection after synchronization
-- **THEN** the returned glyph, line, caret, bounds, and selection values match the
-  public layout package for the committed input
-
-#### Scenario: Query before synchronization
-- **WHEN** a caller requests selection geometry before any successful sync
-- **THEN** the operation fails predictably rather than returning provisional or
-  empty renderer-derived geometry
 
 ### Requirement: Dispose only renderer-owned resources
 `Text.dispose()` MUST be idempotent, invalidate pending synchronization, dispose
@@ -159,10 +149,11 @@ the shared Three renderer, canvas, scene, and lower-package global state alone.
   resources owned by the first
 
 ### Requirement: Provide independent package and actual-WebGPU evidence
-The production renderer MUST remain strict-TypeScript and ESM-only, import only
-public lower-package and Three.js surfaces, and provide deterministic unit,
-package, public-example, and semantic browser evidence without a dependency on
-`old/`, experiment internals, WebGL, or private font/layout/SDF modules.
+The production renderer MUST remain strict-TypeScript and ESM-only, consume
+completed layout through public types, import only public lower-package and
+Three.js surfaces, and provide deterministic unit, package, public-example, and
+semantic browser evidence without a dependency on `old/`, experiment internals,
+WebGL, or private font/layout/SDF modules.
 
 #### Scenario: Install the renderer package
 - **WHEN** its packed artifact is installed in a clean ESM and TypeScript consumer
@@ -173,13 +164,14 @@ package, public-example, and semantic browser evidence without a dependency on
 #### Scenario: Run deterministic non-GPU checks
 - **WHEN** ordinary workspace tests execute without a browser or GPU
 - **THEN** atlas packing, growth, cache reuse, synchronization, failure atomicity,
-  interaction delegation, and disposal checks pass deterministically
+  completed-layout consumption, and disposal checks pass deterministically
 
 #### Scenario: Run the public WebGPU fixture
-- **WHEN** the documented browser fixture runs with a usable WebGPU adapter
-- **THEN** a public real-font pipeline renders multiple atlas cells, validates a
-  post-render update and semantic visual regions, and repeats disposal on the
-  pinned backend
+- **WHEN** the documented browser fixture prepares layout through the public
+  layout API and renders it with a usable WebGPU adapter
+- **THEN** the real-font pipeline renders multiple atlas cells, validates a
+  post-render layout update and semantic visual regions, and repeats disposal on
+  the pinned backend
 
 #### Scenario: Reject WebGL as evidence
 - **WHEN** WebGPU is unavailable or Three selects its WebGL fallback

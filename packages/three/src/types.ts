@@ -1,4 +1,4 @@
-import type { LayoutBounds, LayoutResult, ResolvedLayoutInput } from '@webgpu-text/layout'
+import type { LayoutBounds, LayoutResult } from '@webgpu-text/layout'
 import type { ColorRepresentation } from 'three/webgpu'
 
 export interface TextGlyphBounds {
@@ -16,12 +16,11 @@ export interface TextGlyphOutline {
 
 /** The structural subset of `@webgpu-text/font` used by the renderer. */
 export interface TextFont {
-  readonly facts: { readonly unitsPerEm: number }
   getOutline(glyphId: number, variations?: Readonly<Record<string, number>>): TextGlyphOutline
 }
 
 export interface TextOptions {
-  readonly input: ResolvedLayoutInput
+  readonly layout: LayoutResult
   readonly fonts: ReadonlyMap<string, TextFont>
   readonly color?: ColorRepresentation
   readonly styleColors?: Readonly<Record<string, ColorRepresentation>>

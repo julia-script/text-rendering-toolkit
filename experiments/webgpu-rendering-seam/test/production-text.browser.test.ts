@@ -1,5 +1,10 @@
 import { type FontHandle, loadFont } from '@webgpu-text/font'
-import type { ResolvedLayoutInput, ResolvedShapedRun } from '@webgpu-text/layout'
+import {
+  getSelectionRects,
+  layoutResolvedText,
+  type ResolvedLayoutInput,
+  type ResolvedShapedRun,
+} from '@webgpu-text/layout'
 import { Text } from '@webgpu-text/three'
 import {
   Color,
@@ -53,6 +58,7 @@ function resolvedRun(
     styleKey,
     fontKey,
     fontSize,
+    fontUnitScale: scale,
     metrics: {
       ascender: font.facts.ascender * scale,
       descender: font.facts.descender * scale,
@@ -116,6 +122,10 @@ function input(fonts: { latin: FontHandle; arabic: FontHandle }, withNewGlyph: b
     anchorY: 0,
     runs: [latinRun, arabicRun],
   } satisfies ResolvedLayoutInput
+}
+
+function layout(fonts: { latin: FontHandle; arabic: FontHandle }, withNewGlyph: boolean) {
+  return layoutResolvedText(input(fonts, withNewGlyph))
 }
 
 function pixelAt(image: ImageData, x: number, y: number) {
@@ -209,7 +219,7 @@ async function createHarness() {
   const camera = new OrthographicCamera(-2, 2, 1, -1, 0.1, 10)
   camera.position.z = 3
   const text = new Text({
-    input: input(fonts, false),
+    layout: layout(fonts, false),
     fonts: new Map([
       ['latin', fonts.latin],
       ['arabic', fonts.arabic],
@@ -250,7 +260,7 @@ afterEach(() => {
 })
 
 describe('production @webgpu-text/three actual-WebGPU evidence', () => {
-  test('renders, updates, selects, and disposes public real-font text', async () => {
+  test('renders, updates, reuses prepared layout, and disposes public real-font text', async () => {
     await page.viewport(WIDTH + 24, HEIGHT + 24)
     const harness = await createHarness()
     await harness.render()
@@ -262,11 +272,13 @@ describe('production @webgpu-text/three actual-WebGPU evidence', () => {
     expect(baselineObservation.occupied).toBeGreaterThan(800)
     expect(baselineObservation.cyan).toBeGreaterThan(100)
     expect(baselineObservation.yellow).toBeGreaterThan(100)
+    const committed = harness.text.layoutResult
+    if (!committed) throw new Error('Expected a committed renderer-neutral layout')
     expect(
-      harness.text.getSelectionRects(0, harness.text.input.text.length).length,
+      getSelectionRects(committed, { start: 0, end: committed.sourceLengthUtf16 }).length,
     ).toBeGreaterThan(0)
 
-    harness.text.input = input(harness.fonts, true)
+    harness.text.layout = layout(harness.fonts, true)
     harness.text.clipRect = { left: -1.7, bottom: -0.5, right: 0.7, top: 0.8 }
     await harness.text.sync()
     await harness.render()
