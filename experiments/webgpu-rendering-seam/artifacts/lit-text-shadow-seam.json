@@ -1,0 +1,37 @@
+{
+  "kind": "lit-text-shadow-seam",
+  "three": "0.185.1",
+  "adapter": {
+    "architecture": "metal-3",
+    "description": "",
+    "device": "",
+    "vendor": "apple"
+  },
+  "platform": "MacIntel",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/149.0.0.0 Safari/537.36",
+  "viewport": {
+    "width": 512,
+    "height": 256,
+    "dpr": 1
+  },
+  "fixture": {
+    "atlasSha256": "75958a3cea4f6dc6df4d15ebfcb822c5b2b113523ad65469dd9704aa4430c15a",
+    "instances": 4,
+    "normal": [0, 0, 1],
+    "shadowSide": "visible-front-side"
+  },
+  "material": {
+    "metalness": 0,
+    "roughness": 0.9,
+    "publicNodes": ["positionNode", "colorNode", "opacityNode", "maskShadowNode"]
+  },
+  "observations": {
+    "lightGain": 104.407,
+    "rectangleShadow": 82.37020000000001,
+    "circleShadow": 35.008712,
+    "circleShadowCutout": 0,
+    "receivedShadow": 117.2802,
+    "unshadowedGlyph": 0
+  },
+  "frameSha256": "bfd15d4050dda73bbbc542ed80dde05ba88ef7dc7a79bae426168823e708e6d2"
+}

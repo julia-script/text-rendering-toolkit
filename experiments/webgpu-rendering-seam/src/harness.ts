@@ -38,7 +38,7 @@ export interface AppearanceOptions {
   rotation?: number
 }
 
-export async function createRenderHarness(container: HTMLElement) {
+export async function createWebGPUHarnessContext(container: HTMLElement) {
   if (!navigator.gpu) {
     throw new UnsupportedWebGPUError('navigator.gpu is unavailable; WebGL fallback is not evidence')
   }
@@ -50,7 +50,6 @@ export async function createRenderHarness(container: HTMLElement) {
     )
   }
 
-  const fixture = createRenderFixture()
   const renderer = new WebGPURenderer({
     alpha: false,
     antialias: false,
@@ -67,6 +66,49 @@ export async function createRenderHarness(container: HTMLElement) {
     throw error
   }
 
+  container.append(renderer.domElement)
+  const adapterInfo = {
+    architecture: adapter.info.architecture,
+    description: adapter.info.description,
+    device: adapter.info.device,
+    vendor: adapter.info.vendor,
+  }
+  let disposed = false
+
+  return {
+    renderer,
+    adapterInfo,
+    async capturePixels(): Promise<ImageData> {
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        renderer.domElement.toBlob((value) => {
+          if (value) resolve(value)
+          else reject(new Error('the WebGPU canvas could not be captured'))
+        })
+      })
+      const bitmap = await createImageBitmap(blob)
+      const copy = document.createElement('canvas')
+      copy.width = VIEWPORT.width
+      copy.height = VIEWPORT.height
+      const context = copy.getContext('2d', { willReadFrequently: true })
+      if (!context) throw new Error('2D capture context is unavailable')
+      context.drawImage(bitmap, 0, 0)
+      bitmap.close()
+      return context.getImageData(0, 0, copy.width, copy.height)
+    },
+    dispose() {
+      if (disposed) return
+      disposed = true
+      renderer.dispose()
+      renderer.domElement.remove()
+    },
+  }
+}
+
+export async function createRenderHarness(container: HTMLElement) {
+  const context = await createWebGPUHarnessContext(container)
+  const { renderer } = context
+  const fixture = createRenderFixture()
+
   const scene = new Scene()
   scene.background = CLEAR_COLOR
   const camera = new OrthographicCamera(-2, 2, 1, -1, 0.1, 10)
@@ -74,19 +116,11 @@ export async function createRenderHarness(container: HTMLElement) {
 
   const resources = createGlyphMesh(fixture)
   scene.add(resources.mesh)
-  container.append(renderer.domElement)
-
-  const adapterInfo = {
-    architecture: adapter.info.architecture,
-    description: adapter.info.description,
-    device: adapter.info.device,
-    vendor: adapter.info.vendor,
-  }
 
   return {
     renderer,
     resources,
-    adapterInfo,
+    adapterInfo: context.adapterInfo,
     async render() {
       renderer.render(scene, camera)
       await Promise.resolve()
@@ -130,30 +164,13 @@ export async function createRenderHarness(container: HTMLElement) {
       boundsAttribute.needsUpdate = true
       colorAttribute.needsUpdate = true
     },
-    async capturePixels(): Promise<ImageData> {
-      const blob = await new Promise<Blob>((resolve, reject) => {
-        renderer.domElement.toBlob((value) => {
-          if (value) resolve(value)
-          else reject(new Error('the WebGPU canvas could not be captured'))
-        })
-      })
-      const bitmap = await createImageBitmap(blob)
-      const copy = document.createElement('canvas')
-      copy.width = VIEWPORT.width
-      copy.height = VIEWPORT.height
-      const context = copy.getContext('2d', { willReadFrequently: true })
-      if (!context) throw new Error('2D capture context is unavailable')
-      context.drawImage(bitmap, 0, 0)
-      bitmap.close()
-      return context.getImageData(0, 0, copy.width, copy.height)
-    },
+    capturePixels: context.capturePixels,
     dispose() {
       scene.remove(resources.mesh)
       resources.geometry.dispose()
       resources.material.dispose()
       resources.atlas.dispose()
-      renderer.dispose()
-      renderer.domElement.remove()
+      context.dispose()
     },
   }
 }

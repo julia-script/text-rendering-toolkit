@@ -9,6 +9,7 @@ import {
   Matrix3,
   Mesh,
   MeshBasicNodeMaterial,
+  MeshStandardNodeMaterial,
   NoColorSpace,
   type Node,
   RGBAFormat,
@@ -26,6 +27,9 @@ interface FloatNode {
 }
 interface UintNode {
   readonly [uintNodeBrand]: true
+}
+interface BoolNode {
+  readonly [floatNodeBrand]: true
 }
 interface Vec2Node {
   x: FloatNode
@@ -58,6 +62,7 @@ interface TslFacade {
   float(value: unknown): FloatNode
   floor(value: unknown): FloatNode
   fwidth(value: unknown): FloatNode
+  greaterThanEqual(left: unknown, right: unknown): BoolNode
   max(left: unknown, right: unknown): FloatNode
   mix(left: unknown, right: unknown, factor: unknown): Vec2Node
   mod(left: unknown, right: unknown): FloatNode
@@ -78,6 +83,7 @@ interface TslFacade {
   varying(value: Vec2Node): Vec2Node
   vec2(x: unknown, y: unknown): Vec2Node
   vec3(x: unknown, y: unknown, z: unknown): Vec3Node
+  vec4(value: unknown, alpha: unknown): Vec4Node
 }
 
 // The published TSL declarations are intentionally hidden behind this small typed facade. The
@@ -120,7 +126,7 @@ export function createAtlasTexture(fixture: RenderFixture): DataTexture {
   return atlas
 }
 
-export function createGlyphMaterial(atlas: DataTexture, cellSize: number) {
+function createGlyphNodeAssembly(atlas: DataTexture, cellSize: number) {
   const opacity = tsl.uniform(0.82)
   const clipRect = tsl.uniform(new Vector4(-10, -10, 10, 10))
   const orientation = tsl.uniform(new Matrix3())
@@ -175,22 +181,66 @@ export function createGlyphMaterial(atlas: DataTexture, cellSize: number) {
     ),
   )
 
+  const position = tsl.mul(orientation, curvedPosition) as unknown as Node<'vec3'>
+  const visibleOpacity = tsl.mul(
+    tsl.mul(sdfCoverage, clipCoverage),
+    opacity,
+  ) as unknown as Node<'float'>
+  const shadowMask = tsl.greaterThanEqual(
+    tsl.mul(encodedDistance, clipCoverage),
+    0.5,
+  ) as unknown as Node<'bool'>
+
+  return {
+    controls: { opacity, clipRect, orientation, curveRadius },
+    glyphColor: glyphColor as unknown as Node<'vec3'>,
+    position,
+    shadowMask,
+    visibleOpacity,
+  }
+}
+
+export function createGlyphMaterial(atlas: DataTexture, cellSize: number) {
+  const nodes = createGlyphNodeAssembly(atlas, cellSize)
+
   const material = new MeshBasicNodeMaterial({
     depthWrite: false,
     side: DoubleSide,
     transparent: true,
   })
-  material.positionNode = tsl.mul(orientation, curvedPosition) as unknown as Node<'vec3'>
-  material.colorNode = glyphColor as unknown as Node<'vec3'>
-  material.opacityNode = tsl.mul(
-    tsl.mul(sdfCoverage, clipCoverage),
-    opacity,
-  ) as unknown as Node<'float'>
+  material.positionNode = nodes.position
+  material.colorNode = nodes.glyphColor
+  material.opacityNode = nodes.visibleOpacity
 
   return {
     material,
-    controls: { opacity, clipRect, orientation, curveRadius },
+    controls: nodes.controls,
   }
+}
+
+export function createLitGlyphGeometry(fixture: RenderFixture): InstancedBufferGeometry {
+  const geometry = createGlyphGeometry(fixture)
+  geometry.setAttribute(
+    'normal',
+    new BufferAttribute(new Float32Array([0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1]), 3),
+  )
+  return geometry
+}
+
+export function createLitGlyphMaterial(atlas: DataTexture, cellSize: number) {
+  const nodes = createGlyphNodeAssembly(atlas, cellSize)
+  const material = new MeshStandardNodeMaterial({
+    depthWrite: false,
+    metalness: 0,
+    roughness: 0.9,
+    transparent: true,
+  })
+  material.positionNode = nodes.position
+  material.colorNode = tsl.vec4(nodes.glyphColor, 1) as unknown as Node<'vec4'>
+  material.opacityNode = nodes.visibleOpacity
+  material.maskShadowNode = nodes.shadowMask
+  material.shadowSide = material.side
+  return { material, controls: nodes.controls }
 }
 
 export function createGlyphMesh(fixture: RenderFixture) {
@@ -200,4 +250,29 @@ export function createGlyphMesh(fixture: RenderFixture) {
   const mesh = new Mesh(geometry, material)
   mesh.frustumCulled = false
   return { mesh, geometry, atlas, material, controls }
+}
+
+export function createLitGlyphMesh(fixture: RenderFixture) {
+  const geometry = createLitGlyphGeometry(fixture)
+  const atlas = createAtlasTexture(fixture)
+  const { material, controls } = createLitGlyphMaterial(atlas, fixture.atlas.cellSize)
+  const mesh = new Mesh(geometry, material)
+  mesh.castShadow = true
+  mesh.receiveShadow = true
+  mesh.frustumCulled = false
+  let disposed = false
+  return {
+    mesh,
+    geometry,
+    atlas,
+    material,
+    controls,
+    dispose() {
+      if (disposed) return
+      disposed = true
+      geometry.dispose()
+      material.dispose()
+      atlas.dispose()
+    },
+  }
 }

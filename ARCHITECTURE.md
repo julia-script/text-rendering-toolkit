@@ -31,10 +31,13 @@ lifecycle.
 
 Automatic script/direction itemization, font selection and fallback, complete
 Unicode line breaking, reshaping around line boundaries, bidi caret affinity,
-workers, shared atlas residency/eviction, curved or lit materials, and batching
-remain separate follow-ups. Font-byte acquisition is caller-owned: no core
-package accepts URLs or performs network fetching. The first renderer accepts
-fully resolved runs rather than implementing a partial raw-text policy.
+workers, shared atlas residency/eviction, curved or production lit materials,
+and batching remain separate follow-ups. A private actual-WebGPU proof has
+validated the public Three.js seam for one front-facing planar standard material
+with glyph-shaped cast and received shadows; that evidence has not changed the
+shipped unlit API. Font-byte acquisition is caller-owned: no core package
+accepts URLs or performs network fetching. The first renderer accepts fully
+resolved runs rather than implementing a partial raw-text policy.
 
 ## Current responsibility map
 
@@ -491,11 +494,58 @@ The flat atlas slot is the renderer-neutral geometry value: `cell = floor(slot /
 
 Production ownership differs from the self-contained experiment harness. A text object owns its instanced geometry and node material and releases its atlas references. The renderer atlas owner owns packing, cache state, texture updates, and texture disposal. The application owns the shared `WebGPURenderer` and DOM canvas; creating a renderer per text object is prohibited.
 
-The experiment proved one-cell/four-channel rendering, semantic SDF coverage, opacity, clipping, orientation, cylindrical placement, in-place texture/attribute updates, and create-render-update-dispose reuse. It did not prove multi-cell atlas contents, growth, eviction, partial texture upload, real font SDFs, lighting, or batching. A multi-cell fixture is the bounded first follow-up before atlas allocation/growth is promoted.
+The original experiment proved one-cell/four-channel rendering, semantic SDF
+coverage, opacity, clipping, orientation, cylindrical placement, in-place
+texture/attribute updates, and create-render-update-dispose reuse. The shipped
+renderer follow-up then proved real-font SDFs and multi-cell atlas growth. Atlas
+eviction, partial texture upload, production lighting, and batching remain
+separate work.
 
 Three's renderer-backend identity and TSL surface remain revision-specific boundaries. The private validation may inspect `renderer.backend.isWebGPUBackend` for pinned actual-WebGPU evidence, but that diagnostic must not spread through the public API. The TSL implementation should remain behind a narrow local adapter: Three's complete fluent TSL declarations caused pathological TypeScript 7.0.2 memory growth during the spike. Every Three revision change must rerun the browser validation before the supported range changes.
 
 See [the complete validation report](docs/validation/webgpu-rendering-seam.md) for the recorded environment, evidence, limitations, and promotion contract.
+
+### Use the validated planar lighting and shadow seam
+
+The private `prove-lit-text-shadow-seam` experiment validates one deliberately
+narrow path on the same Three.js 0.185.1 and Apple Metal WebGPU environment:
+
+```mermaid
+flowchart LR
+    Geometry["Instanced planar glyph quad<br/>normal 0,0,1"] --> Position["Shared positionNode"]
+    Atlas["RGBA SDF atlas"] --> Sample["Shared channel sample"]
+    Color["Per-instance RGBA colorNode"] --> Standard["MeshStandardNodeMaterial"]
+    Sample --> Visible["Derivative opacityNode"]
+    Sample --> ShadowMask["Binary maskShadowNode"]
+    Position --> Standard
+    Visible --> Standard
+    ShadowMask --> ShadowPass["Visible-side shadow pass"]
+    Standard --> LitPass["Scene lighting and received shadows"]
+    ShadowPass --> Receiver["Glyph-shaped cast shadows"]
+```
+
+The visible and shadow passes reuse the same instanced `positionNode`; no
+`castShadowPositionNode` is required. Visible edges retain derivative
+antialiasing through `opacityNode`, while the shadow pass uses a binary
+`maskShadowNode` at the encoded SDF midpoint so transparent quad margins and
+shape cutouts do not cast. The per-instance color is supplied as opaque RGBA for
+the shadow override path. A front-facing planar normal is ordinary geometry
+data, not a custom lighting node.
+
+One revision-specific behavior is essential: Three normally flips a material's
+side in its shadow override. A zero-thickness front-facing text plane therefore
+casts nothing unless its public `shadowSide` is explicitly set to the visible
+side. With that setting, the experiment measured distinct rectangle and circle
+silhouettes, transparent cutouts, and an external shadow darkening only visible
+glyph coverage. `castShadowNode`, transmitted shadows, duplicate shadow meshes,
+private renderer APIs, and shader strings were not needed.
+
+This evidence supports a future dedicated planar standard-material variant; it
+does not choose its public constructor/option shape or validate curved,
+double-sided, extruded, physical, or normal-mapped text. The shipped `Text`
+material remains unlit until that bounded integration is specified and tested
+with the real-font production lifecycle. See the
+[lit/shadow validation report](docs/validation/lit-text-shadow-seam.md).
 
 ### Reuse MIT sources with explicit provenance
 

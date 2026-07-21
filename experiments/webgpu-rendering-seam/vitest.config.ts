@@ -10,6 +10,12 @@ const productionFrame = fileURLToPath(
 const productionObservation = fileURLToPath(
   new URL('./artifacts/three-webgpu-text-core.json', import.meta.url),
 )
+const litShadowFrame = fileURLToPath(
+  new URL('./artifacts/lit-text-shadow-seam.png', import.meta.url),
+)
+const litShadowObservation = fileURLToPath(
+  new URL('./artifacts/lit-text-shadow-seam.json', import.meta.url),
+)
 
 export default defineConfig({
   test: {
@@ -42,6 +48,26 @@ export default defineConfig({
                         ...observation,
                         frameSha256: createHash('sha256')
                           .update(readFileSync(productionFrame))
+                          .digest('hex'),
+                      },
+                      null,
+                      2,
+                    )}\n`,
+                  )
+                }
+                if (
+                  observation &&
+                  typeof observation === 'object' &&
+                  'kind' in observation &&
+                  observation.kind === 'lit-text-shadow-seam'
+                ) {
+                  writeFileSync(
+                    litShadowObservation,
+                    `${JSON.stringify(
+                      {
+                        ...observation,
+                        frameSha256: createHash('sha256')
+                          .update(readFileSync(litShadowFrame))
                           .digest('hex'),
                       },
                       null,
