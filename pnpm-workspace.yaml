@@ -2,3 +2,4 @@ packages:
   - packages/*
   - examples/*
   - experiments/webgpu-rendering-seam
+  - experiments/text-preparation

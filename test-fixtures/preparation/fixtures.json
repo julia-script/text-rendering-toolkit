@@ -1,0 +1,1115 @@
+{
+  "schemaVersion": 1,
+  "unicodeVersion": "17.0.0",
+  "bidiRevision": "bidi-js@1.0.3 / Unicode 13.0.0",
+  "fontManifest": {
+    "file": "test-fixtures/fonts/harfbuzz-validation/fixtures.json",
+    "sha256": "0e1d1e368fdd0454ef4af85ae34a61edda25ba1982b0a35472b77f315d83dddc"
+  },
+  "fixtures": [
+    {
+      "id": "empty-input",
+      "intent": "Keep empty text deterministic while deriving line metrics from the caller's default font.",
+      "tags": [
+        "empty",
+        "layout"
+      ],
+      "classification": "preserve",
+      "rationale": "An empty editor value is ordinary input, not an error.",
+      "evidence": {
+        "layer": "synthetic",
+        "source": "project preparation policy",
+        "integrity": "committed canonical fixture"
+      },
+      "input": {
+        "text": "",
+        "style": {
+          "key": "default",
+          "fontKeys": [
+            "latin"
+          ],
+          "fontSize": 24,
+          "language": "en"
+        }
+      },
+      "expected": {
+        "preparedSegments": [],
+        "resolved": {
+          "fontKeys": [],
+          "runRanges": []
+        },
+        "layout": {
+          "sourceLengthUtf16": 0,
+          "lineCount": 1,
+          "minimumGlyphCount": 0,
+          "fontKeys": []
+        }
+      }
+    },
+    {
+      "id": "latin-ligature",
+      "intent": "Prepare and shape ordinary Latin text with a ligature feature.",
+      "tags": [
+        "latin",
+        "feature",
+        "font-integration"
+      ],
+      "classification": "preserve",
+      "rationale": "This reuses the pinned public-font shaping seam.",
+      "evidence": {
+        "layer": "font-integration",
+        "source": "NotoSans-wdth-wght.ttf at the committed font manifest revision",
+        "integrity": "sha256:bfb7bb691513f12e734dc346c03a03f784912432d7e3fa8e56efcf906fe86b3d"
+      },
+      "input": {
+        "text": "office café",
+        "style": {
+          "key": "default",
+          "fontKeys": [
+            "latin"
+          ],
+          "fontSize": 24,
+          "language": "en",
+          "features": [
+            "liga=1"
+          ]
+        }
+      },
+      "expected": {
+        "preparedSegments": [
+          {
+            "start": 0,
+            "end": 11,
+            "paragraphLevel": 0,
+            "bidiLevel": 0,
+            "direction": "ltr",
+            "script": "Latn",
+            "styleKey": "default",
+            "fontKeys": [
+              "latin"
+            ],
+            "fontSize": 24,
+            "language": "en",
+            "features": [
+              "liga=1"
+            ],
+            "variations": {}
+          }
+        ],
+        "resolved": {
+          "fontKeys": [
+            "latin"
+          ],
+          "runRanges": [
+            {
+              "start": 0,
+              "end": 11,
+              "fontKey": "latin",
+              "styleKey": "default"
+            }
+          ]
+        },
+        "layout": {
+          "sourceLengthUtf16": 11,
+          "lineCount": 1,
+          "minimumGlyphCount": 8,
+          "fontKeys": [
+            "latin"
+          ]
+        }
+      }
+    },
+    {
+      "id": "arabic-rtl",
+      "intent": "Derive RTL Arabic shaping input without caller-authored runs.",
+      "tags": [
+        "arabic",
+        "rtl",
+        "combining"
+      ],
+      "classification": "preserve",
+      "rationale": "Arabic joining and marks remain HarfBuzz responsibilities.",
+      "evidence": {
+        "layer": "font-integration",
+        "source": "NotoSansArabic-wdth-wght.ttf at the committed font manifest revision",
+        "integrity": "sha256:63111b5b2e074dd48cc67692e0a2726d86ee94c1c37fe8598257b7b4e87e869e"
+      },
+      "input": {
+        "text": "السَّلَامُ عَلَيْكُمْ",
+        "style": {
+          "key": "default",
+          "fontKeys": [
+            "arabic"
+          ],
+          "fontSize": 24,
+          "language": "ar"
+        }
+      },
+      "expected": {
+        "preparedSegments": [
+          {
+            "start": 0,
+            "end": 21,
+            "paragraphLevel": 1,
+            "bidiLevel": 1,
+            "direction": "rtl",
+            "script": "Arab",
+            "styleKey": "default",
+            "fontKeys": [
+              "arabic"
+            ],
+            "fontSize": 24,
+            "language": "ar",
+            "features": [],
+            "variations": {}
+          }
+        ],
+        "resolved": {
+          "fontKeys": [
+            "arabic"
+          ],
+          "runRanges": [
+            {
+              "start": 0,
+              "end": 21,
+              "fontKey": "arabic",
+              "styleKey": "default"
+            }
+          ]
+        },
+        "layout": {
+          "sourceLengthUtf16": 21,
+          "lineCount": 1,
+          "minimumGlyphCount": 21,
+          "fontKeys": [
+            "arabic"
+          ]
+        }
+      }
+    },
+    {
+      "id": "devanagari",
+      "intent": "Keep a Devanagari conjunct in a script-correct shaping run.",
+      "tags": [
+        "devanagari",
+        "indic",
+        "grapheme"
+      ],
+      "classification": "preserve",
+      "rationale": "The itemizer supplies Deva while HarfBuzz owns Indic shaping.",
+      "evidence": {
+        "layer": "font-integration",
+        "source": "NotoSansDevanagari-wdth-wght.ttf at the committed font manifest revision",
+        "integrity": "sha256:9ce7b04f60e363d8870e5997744cf85cf69d38a4d7d129d364d92a3b14b461d7"
+      },
+      "input": {
+        "text": "नमस्ते दुनिया",
+        "style": {
+          "key": "default",
+          "fontKeys": [
+            "devanagari"
+          ],
+          "fontSize": 24,
+          "language": "hi"
+        }
+      },
+      "expected": {
+        "preparedSegments": [
+          {
+            "start": 0,
+            "end": 13,
+            "paragraphLevel": 0,
+            "bidiLevel": 0,
+            "direction": "ltr",
+            "script": "Deva",
+            "styleKey": "default",
+            "fontKeys": [
+              "devanagari"
+            ],
+            "fontSize": 24,
+            "language": "hi",
+            "features": [],
+            "variations": {}
+          }
+        ],
+        "resolved": {
+          "fontKeys": [
+            "devanagari"
+          ],
+          "runRanges": [
+            {
+              "start": 0,
+              "end": 13,
+              "fontKey": "devanagari",
+              "styleKey": "default"
+            }
+          ]
+        },
+        "layout": {
+          "sourceLengthUtf16": 13,
+          "lineCount": 1,
+          "minimumGlyphCount": 10,
+          "fontKeys": [
+            "devanagari"
+          ]
+        }
+      }
+    },
+    {
+      "id": "khmer",
+      "intent": "Keep Khmer combining sequences intact for shaping.",
+      "tags": [
+        "khmer",
+        "grapheme",
+        "font-integration"
+      ],
+      "classification": "preserve",
+      "rationale": "The preparation layer must not imitate Khmer shaping.",
+      "evidence": {
+        "layer": "font-integration",
+        "source": "NotoSansKhmer-wdth-wght.ttf at the committed font manifest revision",
+        "integrity": "sha256:f37a8431a0c5d5ed2f81a767417546aca576a81fb7eff9c924d46aecf828f2ca"
+      },
+      "input": {
+        "text": "សួស្តី ពិភពលោក",
+        "style": {
+          "key": "default",
+          "fontKeys": [
+            "khmer"
+          ],
+          "fontSize": 24,
+          "language": "km"
+        }
+      },
+      "expected": {
+        "preparedSegments": [
+          {
+            "start": 0,
+            "end": 14,
+            "paragraphLevel": 0,
+            "bidiLevel": 0,
+            "direction": "ltr",
+            "script": "Khmr",
+            "styleKey": "default",
+            "fontKeys": [
+              "khmer"
+            ],
+            "fontSize": 24,
+            "language": "km",
+            "features": [],
+            "variations": {}
+          }
+        ],
+        "resolved": {
+          "fontKeys": [
+            "khmer"
+          ],
+          "runRanges": [
+            {
+              "start": 0,
+              "end": 14,
+              "fontKey": "khmer",
+              "styleKey": "default"
+            }
+          ]
+        },
+        "layout": {
+          "sourceLengthUtf16": 14,
+          "lineCount": 1,
+          "minimumGlyphCount": 12,
+          "fontKeys": [
+            "khmer"
+          ]
+        }
+      }
+    },
+    {
+      "id": "mixed-bidi-fallback",
+      "intent": "Itemize Latin and Arabic and select fonts from one explicit ordered registry.",
+      "tags": [
+        "mixed-bidi",
+        "fallback",
+        "common"
+      ],
+      "classification": "intentional-change",
+      "rationale": "Fallback is caller-owned and local rather than Troika's network resolver.",
+      "evidence": {
+        "layer": "synthetic",
+        "source": "project preparation policy informed by normalized Troika mixed-direction observations",
+        "integrity": "committed canonical fixture"
+      },
+      "input": {
+        "text": "Hello مرحبا",
+        "style": {
+          "key": "default",
+          "fontKeys": [
+            "latin",
+            "arabic"
+          ],
+          "fontSize": 24,
+          "language": "und"
+        }
+      },
+      "expected": {
+        "preparedSegments": [
+          {
+            "start": 0,
+            "end": 6,
+            "paragraphLevel": 0,
+            "bidiLevel": 0,
+            "direction": "ltr",
+            "script": "Latn",
+            "styleKey": "default",
+            "fontKeys": [
+              "latin",
+              "arabic"
+            ],
+            "fontSize": 24,
+            "language": "und",
+            "features": [],
+            "variations": {}
+          },
+          {
+            "start": 6,
+            "end": 11,
+            "paragraphLevel": 0,
+            "bidiLevel": 1,
+            "direction": "rtl",
+            "script": "Arab",
+            "styleKey": "default",
+            "fontKeys": [
+              "latin",
+              "arabic"
+            ],
+            "fontSize": 24,
+            "language": "und",
+            "features": [],
+            "variations": {}
+          }
+        ],
+        "resolved": {
+          "fontKeys": [
+            "latin",
+            "arabic"
+          ],
+          "runRanges": [
+            {
+              "start": 0,
+              "end": 6,
+              "fontKey": "latin",
+              "styleKey": "default"
+            },
+            {
+              "start": 6,
+              "end": 11,
+              "fontKey": "arabic",
+              "styleKey": "default"
+            }
+          ]
+        },
+        "layout": {
+          "sourceLengthUtf16": 11,
+          "lineCount": 1,
+          "minimumGlyphCount": 11,
+          "fontKeys": [
+            "latin",
+            "arabic"
+          ]
+        }
+      }
+    },
+    {
+      "id": "common-inherited-combining",
+      "intent": "Adopt combining marks, punctuation, and spaces into adjacent strong scripts.",
+      "tags": [
+        "common",
+        "inherited",
+        "combining",
+        "fallback"
+      ],
+      "classification": "intentional-change",
+      "rationale": "Grapheme and adjacent-script adoption prevent standalone punctuation or mark runs.",
+      "evidence": {
+        "layer": "synthetic",
+        "source": "Unicode Script and Script_Extensions policy",
+        "integrity": "unicode-script@1.2.0 Unicode 17.0.0"
+      },
+      "input": {
+        "text": "Á. مرحبا",
+        "style": {
+          "key": "default",
+          "fontKeys": [
+            "latin",
+            "arabic"
+          ],
+          "fontSize": 24,
+          "language": "und"
+        }
+      },
+      "expected": {
+        "preparedSegments": [
+          {
+            "start": 0,
+            "end": 4,
+            "paragraphLevel": 0,
+            "bidiLevel": 0,
+            "direction": "ltr",
+            "script": "Latn",
+            "styleKey": "default",
+            "fontKeys": [
+              "latin",
+              "arabic"
+            ],
+            "fontSize": 24,
+            "language": "und",
+            "features": [],
+            "variations": {}
+          },
+          {
+            "start": 4,
+            "end": 9,
+            "paragraphLevel": 0,
+            "bidiLevel": 1,
+            "direction": "rtl",
+            "script": "Arab",
+            "styleKey": "default",
+            "fontKeys": [
+              "latin",
+              "arabic"
+            ],
+            "fontSize": 24,
+            "language": "und",
+            "features": [],
+            "variations": {}
+          }
+        ],
+        "resolved": {
+          "fontKeys": [
+            "latin",
+            "arabic"
+          ],
+          "runRanges": [
+            {
+              "start": 0,
+              "end": 4,
+              "fontKey": "latin",
+              "styleKey": "default"
+            },
+            {
+              "start": 4,
+              "end": 9,
+              "fontKey": "arabic",
+              "styleKey": "default"
+            }
+          ]
+        },
+        "layout": {
+          "sourceLengthUtf16": 9,
+          "lineCount": 1,
+          "minimumGlyphCount": 8,
+          "fontKeys": [
+            "latin",
+            "arabic"
+          ]
+        }
+      }
+    },
+    {
+      "id": "supplementary-fallback",
+      "intent": "Select a fallback without splitting a supplementary-plane scalar.",
+      "tags": [
+        "supplementary",
+        "fallback",
+        "utf16"
+      ],
+      "classification": "intentional-change",
+      "rationale": "Selection occurs at grapheme boundaries, never per UTF-16 code unit.",
+      "evidence": {
+        "layer": "font-integration",
+        "source": "NotoSansSymbols2-Regular.ttf at the committed font manifest revision",
+        "integrity": "sha256:7d5fb73b7ca67a6798101741f5d280a3d016a56a197afcd4199dbb57b4b82a21"
+      },
+      "input": {
+        "text": "A𐅀",
+        "style": {
+          "key": "default",
+          "fontKeys": [
+            "latin",
+            "symbols"
+          ],
+          "fontSize": 24,
+          "language": "und"
+        }
+      },
+      "expected": {
+        "preparedSegments": [
+          {
+            "start": 0,
+            "end": 1,
+            "paragraphLevel": 0,
+            "bidiLevel": 0,
+            "direction": "ltr",
+            "script": "Latn",
+            "styleKey": "default",
+            "fontKeys": [
+              "latin",
+              "symbols"
+            ],
+            "fontSize": 24,
+            "language": "und",
+            "features": [],
+            "variations": {}
+          },
+          {
+            "start": 1,
+            "end": 3,
+            "paragraphLevel": 0,
+            "bidiLevel": 0,
+            "direction": "ltr",
+            "script": "Grek",
+            "styleKey": "default",
+            "fontKeys": [
+              "latin",
+              "symbols"
+            ],
+            "fontSize": 24,
+            "language": "und",
+            "features": [],
+            "variations": {}
+          }
+        ],
+        "resolved": {
+          "fontKeys": [
+            "latin",
+            "symbols"
+          ],
+          "runRanges": [
+            {
+              "start": 0,
+              "end": 1,
+              "fontKey": "latin",
+              "styleKey": "default"
+            },
+            {
+              "start": 1,
+              "end": 3,
+              "fontKey": "symbols",
+              "styleKey": "default"
+            }
+          ]
+        },
+        "layout": {
+          "sourceLengthUtf16": 3,
+          "lineCount": 1,
+          "minimumGlyphCount": 2,
+          "fontKeys": [
+            "latin",
+            "symbols"
+          ]
+        }
+      }
+    },
+    {
+      "id": "style-transition",
+      "intent": "Intersect a valid style transition with itemization boundaries.",
+      "tags": [
+        "style",
+        "feature",
+        "variation"
+      ],
+      "classification": "intentional-change",
+      "rationale": "Effective shaping properties are explicit and serializable.",
+      "evidence": {
+        "layer": "synthetic",
+        "source": "project preparation policy",
+        "integrity": "committed canonical fixture"
+      },
+      "input": {
+        "text": "Hello",
+        "style": {
+          "key": "body",
+          "fontKeys": [
+            "latin"
+          ],
+          "fontSize": 24,
+          "language": "en"
+        },
+        "styleRanges": [
+          {
+            "start": 2,
+            "end": 5,
+            "style": {
+              "key": "emphasis",
+              "fontKeys": [
+                "latin"
+              ],
+              "fontSize": 32,
+              "language": "en",
+              "features": [
+                "liga=0"
+              ],
+              "variations": {
+                "wght": 700
+              }
+            }
+          }
+        ]
+      },
+      "expected": {
+        "preparedSegments": [
+          {
+            "start": 0,
+            "end": 2,
+            "paragraphLevel": 0,
+            "bidiLevel": 0,
+            "direction": "ltr",
+            "script": "Latn",
+            "styleKey": "body",
+            "fontKeys": [
+              "latin"
+            ],
+            "fontSize": 24,
+            "language": "en",
+            "features": [],
+            "variations": {}
+          },
+          {
+            "start": 2,
+            "end": 5,
+            "paragraphLevel": 0,
+            "bidiLevel": 0,
+            "direction": "ltr",
+            "script": "Latn",
+            "styleKey": "emphasis",
+            "fontKeys": [
+              "latin"
+            ],
+            "fontSize": 32,
+            "language": "en",
+            "features": [
+              "liga=0"
+            ],
+            "variations": {
+              "wght": 700
+            }
+          }
+        ],
+        "resolved": {
+          "fontKeys": [
+            "latin"
+          ],
+          "runRanges": [
+            {
+              "start": 0,
+              "end": 2,
+              "fontKey": "latin",
+              "styleKey": "body"
+            },
+            {
+              "start": 2,
+              "end": 5,
+              "fontKey": "latin",
+              "styleKey": "emphasis"
+            }
+          ]
+        },
+        "layout": {
+          "sourceLengthUtf16": 5,
+          "lineCount": 1,
+          "minimumGlyphCount": 5,
+          "fontKeys": [
+            "latin"
+          ]
+        }
+      }
+    },
+    {
+      "id": "hard-break-paragraphs",
+      "intent": "Derive paragraph levels independently while leaving hard breaks unshaped.",
+      "tags": [
+        "hard-break",
+        "paragraph",
+        "mixed-bidi"
+      ],
+      "classification": "intentional-change",
+      "rationale": "Bidi analysis runs over the whole text; the resolved core owns hard-line construction.",
+      "evidence": {
+        "layer": "synthetic",
+        "source": "project preparation policy and bidi-js paragraph output",
+        "integrity": "bidi-js@1.0.3"
+      },
+      "input": {
+        "text": "Hello\nمرحبا",
+        "style": {
+          "key": "default",
+          "fontKeys": [
+            "latin",
+            "arabic"
+          ],
+          "fontSize": 24,
+          "language": "und"
+        }
+      },
+      "expected": {
+        "preparedSegments": [
+          {
+            "start": 0,
+            "end": 5,
+            "paragraphLevel": 0,
+            "bidiLevel": 0,
+            "direction": "ltr",
+            "script": "Latn",
+            "styleKey": "default",
+            "fontKeys": [
+              "latin",
+              "arabic"
+            ],
+            "fontSize": 24,
+            "language": "und",
+            "features": [],
+            "variations": {}
+          },
+          {
+            "start": 6,
+            "end": 11,
+            "paragraphLevel": 1,
+            "bidiLevel": 1,
+            "direction": "rtl",
+            "script": "Arab",
+            "styleKey": "default",
+            "fontKeys": [
+              "latin",
+              "arabic"
+            ],
+            "fontSize": 24,
+            "language": "und",
+            "features": [],
+            "variations": {}
+          }
+        ],
+        "resolved": {
+          "fontKeys": [
+            "latin",
+            "arabic"
+          ],
+          "runRanges": [
+            {
+              "start": 0,
+              "end": 5,
+              "fontKey": "latin",
+              "styleKey": "default"
+            },
+            {
+              "start": 6,
+              "end": 11,
+              "fontKey": "arabic",
+              "styleKey": "default"
+            }
+          ]
+        },
+        "layout": {
+          "sourceLengthUtf16": 11,
+          "lineCount": 2,
+          "minimumGlyphCount": 11,
+          "fontKeys": [
+            "latin",
+            "arabic"
+          ]
+        }
+      }
+    },
+    {
+      "id": "bidi-controls",
+      "intent": "Preserve explicit bidi controls in source ranges without requiring font coverage for them.",
+      "tags": [
+        "bidi",
+        "control",
+        "utf16"
+      ],
+      "classification": "intentional-change",
+      "rationale": "Controls influence UAX 9 but are not independent visible glyphs.",
+      "evidence": {
+        "layer": "synthetic",
+        "source": "bidi-js embedding-level output",
+        "integrity": "bidi-js@1.0.3"
+      },
+      "input": {
+        "text": "A‫مرحبا‬B",
+        "style": {
+          "key": "default",
+          "fontKeys": [
+            "latin",
+            "arabic"
+          ],
+          "fontSize": 24,
+          "language": "und"
+        }
+      },
+      "expected": {
+        "preparedSegments": [
+          {
+            "start": 0,
+            "end": 2,
+            "paragraphLevel": 0,
+            "bidiLevel": 0,
+            "direction": "ltr",
+            "script": "Latn",
+            "styleKey": "default",
+            "fontKeys": [
+              "latin",
+              "arabic"
+            ],
+            "fontSize": 24,
+            "language": "und",
+            "features": [],
+            "variations": {}
+          },
+          {
+            "start": 2,
+            "end": 8,
+            "paragraphLevel": 0,
+            "bidiLevel": 1,
+            "direction": "rtl",
+            "script": "Arab",
+            "styleKey": "default",
+            "fontKeys": [
+              "latin",
+              "arabic"
+            ],
+            "fontSize": 24,
+            "language": "und",
+            "features": [],
+            "variations": {}
+          },
+          {
+            "start": 8,
+            "end": 9,
+            "paragraphLevel": 0,
+            "bidiLevel": 0,
+            "direction": "ltr",
+            "script": "Latn",
+            "styleKey": "default",
+            "fontKeys": [
+              "latin",
+              "arabic"
+            ],
+            "fontSize": 24,
+            "language": "und",
+            "features": [],
+            "variations": {}
+          }
+        ],
+        "resolved": {
+          "fontKeys": [
+            "latin",
+            "arabic"
+          ],
+          "runRanges": [
+            {
+              "start": 0,
+              "end": 2,
+              "fontKey": "latin",
+              "styleKey": "default"
+            },
+            {
+              "start": 2,
+              "end": 7,
+              "fontKey": "arabic",
+              "styleKey": "default"
+            },
+            {
+              "start": 7,
+              "end": 8,
+              "fontKey": "latin",
+              "styleKey": "default"
+            },
+            {
+              "start": 8,
+              "end": 9,
+              "fontKey": "latin",
+              "styleKey": "default"
+            }
+          ]
+        },
+        "layout": {
+          "sourceLengthUtf16": 9,
+          "lineCount": 1,
+          "minimumGlyphCount": 10,
+          "fontKeys": [
+            "latin",
+            "arabic"
+          ]
+        }
+      }
+    },
+    {
+      "id": "joiner-variation-boundary",
+      "intent": "Keep joiners and variation selectors inside their editable grapheme.",
+      "tags": [
+        "joiner",
+        "variation-selector",
+        "grapheme"
+      ],
+      "classification": "defer",
+      "rationale": "Boundary policy is proven here; production emoji and color-font rendering remains deferred.",
+      "evidence": {
+        "layer": "synthetic",
+        "source": "Intl.Segmenter grapheme boundaries",
+        "integrity": "ECMAScript Intl.Segmenter in the supported runtime"
+      },
+      "input": {
+        "text": "❤️‍🔥",
+        "style": {
+          "key": "default",
+          "fontKeys": [
+            "symbols"
+          ],
+          "fontSize": 24,
+          "language": "und"
+        }
+      },
+      "expected": {
+        "preparedSegments": [
+          {
+            "start": 0,
+            "end": 5,
+            "paragraphLevel": 0,
+            "bidiLevel": 0,
+            "direction": "ltr",
+            "script": "Zyyy",
+            "styleKey": "default",
+            "fontKeys": [
+              "symbols"
+            ],
+            "fontSize": 24,
+            "language": "und",
+            "features": [],
+            "variations": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "missing-coverage",
+      "intent": "Report the exact grapheme and attempted ordered keys when coverage is unavailable.",
+      "tags": [
+        "failure",
+        "coverage",
+        "fallback"
+      ],
+      "classification": "intentional-change",
+      "rationale": "The core never fetches or discovers an unrequested font.",
+      "evidence": {
+        "layer": "synthetic",
+        "source": "project explicit-font policy",
+        "integrity": "committed canonical fixture"
+      },
+      "input": {
+        "text": "🦄",
+        "style": {
+          "key": "default",
+          "fontKeys": [
+            "latin"
+          ],
+          "fontSize": 24,
+          "language": "und"
+        }
+      },
+      "expected": {
+        "error": {
+          "code": "missing-coverage",
+          "start": 0,
+          "end": 2,
+          "attemptedFontKeys": [
+            "latin"
+          ]
+        }
+      }
+    },
+    {
+      "id": "missing-font-key",
+      "intent": "Reject an absent stable key before attempting fallback.",
+      "tags": [
+        "failure",
+        "registry"
+      ],
+      "classification": "intentional-change",
+      "rationale": "A typo in caller policy must not silently change font selection.",
+      "evidence": {
+        "layer": "synthetic",
+        "source": "project explicit-font policy",
+        "integrity": "committed canonical fixture"
+      },
+      "input": {
+        "text": "A",
+        "style": {
+          "key": "default",
+          "fontKeys": [
+            "missing"
+          ],
+          "fontSize": 24,
+          "language": "en"
+        }
+      },
+      "expected": {
+        "error": {
+          "code": "missing-font",
+          "start": 0,
+          "end": 1,
+          "attemptedFontKeys": [
+            "missing"
+          ]
+        }
+      }
+    },
+    {
+      "id": "invalid-grapheme-style-boundary",
+      "intent": "Reject a style transition inside a combining grapheme.",
+      "tags": [
+        "failure",
+        "style",
+        "combining",
+        "grapheme"
+      ],
+      "classification": "intentional-change",
+      "rationale": "A shaping style cannot split one editable grapheme.",
+      "evidence": {
+        "layer": "synthetic",
+        "source": "project preparation policy",
+        "integrity": "committed canonical fixture"
+      },
+      "input": {
+        "text": "Á",
+        "style": {
+          "key": "default",
+          "fontKeys": [
+            "latin"
+          ],
+          "fontSize": 24,
+          "language": "en"
+        },
+        "styleRanges": [
+          {
+            "start": 1,
+            "end": 2,
+            "style": {
+              "key": "invalid",
+              "fontKeys": [
+                "latin"
+              ],
+              "fontSize": 24,
+              "language": "en"
+            }
+          }
+        ]
+      },
+      "expected": {
+        "error": {
+          "code": "invalid-input",
+          "start": 1,
+          "end": 2
+        }
+      }
+    }
+  ]
+}

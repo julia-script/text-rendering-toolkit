@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "runtime": "v24.2.0",
+  "platform": "darwin-arm64",
+  "fixture": "mixed-bidi-fallback",
+  "iterations": 200,
+  "preparedJsonBytes": 799,
+  "prepareMilliseconds": 4.735,
+  "reusedPreparedMilliseconds": 19.82,
+  "oneCallMilliseconds": 18.039,
+  "avoidedMilliseconds": -1.782,
+  "conclusion": "PreparedText is real reusable analysis, but this observation establishes no end-to-end speed advantage because shaping dominates."
+}

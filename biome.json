@@ -6,6 +6,7 @@
       "!packages/font/src/internal/vendor",
       "examples/**",
       "experiments/webgpu-rendering-seam/**",
+      "experiments/text-preparation/**",
       "*.json"
     ]
   },

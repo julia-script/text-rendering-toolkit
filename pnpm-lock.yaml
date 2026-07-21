@@ -40,6 +40,31 @@ importers:
         specifier: 0.185.1
         version: 0.185.1
 
+  experiments/text-preparation:
+    dependencies:
+      '@webgpu-text/font':
+        specifier: workspace:^
+        version: link:../../packages/font
+      '@webgpu-text/layout':
+        specifier: workspace:^
+        version: link:../../packages/layout
+      bidi-js:
+        specifier: 1.0.3
+        version: 1.0.3
+      unicode-script:
+        specifier: 1.2.0
+        version: 1.2.0
+    devDependencies:
+      '@types/node':
+        specifier: 26.1.1
+        version: 26.1.1
+      rolldown:
+        specifier: 1.1.5
+        version: 1.1.5
+      vitest:
+        specifier: 4.1.10
+        version: 4.1.10(@types/node@26.1.1)(@vitest/browser-playwright@4.1.10)(vite@8.1.5(@types/node@26.1.1))
+
   experiments/webgpu-rendering-seam:
     dependencies:
       '@webgpu-text/font':
@@ -521,6 +546,9 @@ packages:
     resolution: {integrity: sha512-Izi8RQcffqCeNVgFigKli1ssklIbpHnCYc6AknXGYoB6grJqyeby7jv12JUQgmTAnIDnbck1uxksT4dzN3PWBA==}
     engines: {node: '>=12'}
 
+  bidi-js@1.0.3:
+    resolution: {integrity: sha512-RKshQI1R3YQ+n9YJz2QQ147P66ELpa1FQEg20Dk8oW9t2KgLbpDLLp9aGZ7y8WHSshDknG0bknqGw5/tyCs5tw==}
+
   chai@6.2.2:
     resolution: {integrity: sha512-NUPRluOfOiTKBKvWPtSD4PhFvWCqOi0BGStNWs57X9js7XGTprSmFoz5F0tWhR4WPjNeR9jXqdC7/UpSJTnlRg==}
     engines: {node: '>=18'}
@@ -690,6 +718,9 @@ packages:
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
 
+  require-from-string@2.0.2:
+    resolution: {integrity: sha512-Xf0nWe6RseziFMu+Ap9biiUbmplq6S9/p+7w7YXP/JBHhrUDDUhwa+vANyubuqfZWTveU//DYVGsDG7RKL/vEw==}
+
   siginfo@2.0.0:
     resolution: {integrity: sha512-ybx0WO1/8bSBLEWXZvEd7gMW3Sn3JFlW3TvX1nREbDLRNQNaeNN8WK0meBwPdAaOI7TtRRRJn/Es1zhrrCHu7g==}
 
@@ -743,6 +774,9 @@ packages:
 
   undici-types@8.3.0:
     resolution: {integrity: sha512-j375ScV60dom+YkPFIfTLcOiPxkN/buHz5GobjLhixFuANaNs3C9l4GmrWqejgXWJ7BbJcFYpTEUkS1Ge8bpZQ==}
+
+  unicode-script@1.2.0:
+    resolution: {integrity: sha512-1Dz/Fs8uWK3EEnrvCXFmR2oQz+oxTe7H8AGwRiaUZ9SWdyF37L4s+a2AZx31+YpRdrKajlUPDDVjWLP8WIQUVw==}
 
   vite@8.1.5:
     resolution: {integrity: sha512-7ULLwsCdYx/nRyrpiEwvqb5TFHrMVZyBt+rg/OAXT7rgj/z+DtTDyKFeLAdDkubDVDKD8jOsndmy7m55XcfUsw==}
@@ -1154,6 +1188,10 @@ snapshots:
 
   assertion-error@2.0.1: {}
 
+  bidi-js@1.0.3:
+    dependencies:
+      require-from-string: 2.0.2
+
   chai@6.2.2: {}
 
   convert-source-map@2.0.0: {}
@@ -1284,6 +1322,8 @@ snapshots:
       '@rolldown/binding-win32-arm64-msvc': 1.1.5
       '@rolldown/binding-win32-x64-msvc': 1.1.5
 
+  require-from-string@2.0.2: {}
+
   siginfo@2.0.0: {}
 
   sirv@3.0.2:
@@ -1349,6 +1389,8 @@ snapshots:
       '@typescript/typescript-win32-x64': 7.0.2
 
   undici-types@8.3.0: {}
+
+  unicode-script@1.2.0: {}
 
   vite@8.1.5(@types/node@26.1.1):
     dependencies:

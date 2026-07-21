@@ -11,7 +11,7 @@ Build a small, production-quality family of text-processing packages culminating
 
 The result is deliberately greenfield: strict TypeScript source, native ESM packages, explicit data contracts between layers, promise-based synchronization, TSL node materials, and no compatibility commitment to `troika-three-text`, `WebGLRenderer`, CommonJS, or UMD.
 
-**Current objective achieved:** representative multilingual text now renders through `WebGPURenderer` using a WebGL-free runtime, backed by deterministic layout/SDF tests, a real-font actual-WebGPU fixture, strict TypeScript checks, and a public-only consumer example. `LayoutResult` is the completed renderer-neutral handoff, so Three performs no shaping, line layout, caret, or selection policy. The Three package now ships both its default unlit material and an opt-in construction-fixed planar standard material with glyph-shaped cast and received shadows.
+**Current objective achieved:** representative multilingual text now renders through `WebGPURenderer` using a WebGL-free runtime, backed by deterministic layout/SDF tests, a real-font actual-WebGPU fixture, strict TypeScript checks, and a public-only consumer example. `LayoutResult` is the completed renderer-neutral handoff, so Three performs no shaping, line layout, caret, or selection policy. The Three package now ships both its default unlit material and an opt-in construction-fixed planar standard material with glyph-shaped cast and received shadows. A separate validation has also fixed the renderer-neutral raw-text preparation contract without yet adding it to a production package.
 
 ## Where we are starting
 
@@ -247,77 +247,19 @@ remains private to the renderer.
 
 ## Now
 
-### Establish a trustworthy greenfield foundation
-- **Problem:** The useful implementation is embedded in another project’s monorepo, old build system, JavaScript sources, and renderer-specific assumptions.
-- **Outcome & done-when:** The repository is an independently buildable strict-TypeScript ESM workspace with four package shells, enforced dependency direction, provenance notices, a narrow Three peer range only in the renderer, no committed dependency on `old/`, and reproducible build/typecheck/test commands.
-- **Status:** complete — commit `0b79f07` establishes the independent strict-TypeScript ESM workspace, package boundaries, checks, provenance, and production font core without a committed or runtime dependency on `old/`.
-- **Appetite:** worth about 2–3 focused days.
-- **Links:** OpenSpec change `reset-repository-and-document-roadmap` · [architecture](ARCHITECTURE.md)
-
-### Validate the font-engine boundary with HarfBuzzjs
-- **Problem:** The old font wrapper combines Typr parsing with a project-owned subset of GSUB, GPOS, Arabic joining, kerning, and outline extraction. Porting it would make this project responsible for a partial shaping engine, while adopting WASM introduces format, startup, memory, and lifecycle questions that must be measured.
-- **Outcome & done-when:** A bounded spike loads representative fonts, shapes Latin, Arabic, Indic, Khmer, and explicit mixed-direction runs, preserves JavaScript UTF-16 clusters, validates the direct numeric-outline path, and records WASM size, startup, memory, worker lifetime, and TTF/OTF/WOFF/WOFF2 behavior. Contracts are confirmed or revised from evidence, including explicit rejection of unsupported assumptions.
-- **Status:** complete — shaping, facts, clusters, TTF/OTF, and ESM workers are validated; the published 1.4.0 wrapper lacks direct numeric callbacks, WOFF/WOFF2 input, and deterministic object disposal, with bounded policies recorded for each.
-- **Appetite:** worth about 2 focused days; use the published wrapper first and optimize or fork it only when a measured requirement demands it.
-- **Links:** OpenSpec change `validate-harfbuzz-font-engine` · [validation report](docs/validation/harfbuzz-font-engine.md) · [font-engine decision](ARCHITECTURE.md#use-harfbuzzjs-as-the-font-and-shaping-engine)
-
-### Prove the WebGPU text rendering seam
-- **Problem:** The highest-risk assumption is that the existing glyph representation can be rendered faithfully through TSL without GLSL rewriting.
-- **Outcome & done-when:** A hard-coded SDF atlas and glyph instance render crisp fill text through `WebGPURenderer`, with correct transparency, clipping, curve/orientation transforms, and repeated texture updates.
-- **Status:** complete — Three.js 0.185.1 rendered the fixed RGBA SDF fixture through TSL on an actual Metal-backed WebGPU adapter; semantic pixels, clipping/transforms, in-place texture and instance updates, backend rejection, and repeated disposal all passed. Promotion is limited to the proven kernel; multi-cell atlas evidence remains a bounded first follow-up.
-- **Appetite:** worth about 1–2 focused days; stop and reshape if the material seam is not viable.
-- **Links:** OpenSpec change `prove-webgpu-rendering-seam` · [validation report](docs/validation/webgpu-rendering-seam.md) · [renderer decision](ARCHITECTURE.md#use-the-proven-tslwebgpu-rendering-kernel)
-
-### Preserve text behavior behind executable fixtures
-- **Problem:** The original layout algorithms are mature but lack a package-level regression suite, while HarfBuzz will intentionally improve some shaping results rather than reproduce Troika exactly.
-- **Outcome & done-when:** Deterministic fixtures cover Latin kerning/ligatures, Arabic, Indic, Khmer, mixed bidi, wrapping/alignment, fallback fonts, style ranges, caret positions, glyph bounds, and accepted font formats. Troika fixtures preserve layout intent; HarfBuzz results become the shaping baseline where the old partial shaper differs.
-- **Status:** complete — nineteen synthetic policy cases cover line construction, wrapping, alignment, bidi placement, run boundaries, bounds, carets, and selections; eleven public-font runs prove the HarfBuzz seam; every stable case has classified Troika provenance. This is validation evidence, not an implemented itemizer or layout engine.
-- **Appetite:** worth about 1 focused week.
-- **Links:** OpenSpec change `capture-layout-policy-fixtures` · [validation report](docs/validation/layout-policy.md) · [layout responsibility](ARCHITECTURE.md#scopetext-layout)
-
-### Implement the resolved text-layout core
-- **Problem:** Accepted layout behavior was executable only as fixture data, leaving no production operation that consumers could call independently of font selection and rendering.
-- **Outcome & done-when:** A pure ESM API validates fully resolved shaped runs and produces deterministic lines, visual glyph placement, bounds, carets, and selection rectangles with exact fixture conformance and no dependency on `old/` or higher layers.
-- **Status:** complete — `layoutResolvedText()` and `getSelectionRects()` conform to all nineteen synthetic cases and the public-font seam. This status covers only the resolved core; automatic itemization/fallback, complete Unicode line breaking, reshaping at breaks, workers, provider policy, and bidi caret affinity remain unimplemented.
-- **Appetite:** worth about 1 focused week.
-- **Links:** OpenSpec change `implement-text-layout-core` · [package README](packages/layout/README.md) · [validation report](docs/validation/layout-policy.md)
-
-### Implement the standalone CPU SDF core
-- **Problem:** Public font outlines and resolved layout results could not yet become renderer-neutral distance pixels without returning to Troika's WebGL/canvas/worker wrapper.
-- **Outcome & done-when:** A dependency-free ESM API accepts typed numeric outlines, returns deterministic self-describing one-channel pixels, conforms to attributed synthetic golden fixtures, and accepts public font outlines directly.
-- **Status:** complete — `generateSdf()` implements validated numeric commands, fixed curve flattening, non-zero winding, texel-center sampling, exponential encoding, clean package installation, and exact synthetic conformance. This does not include workers, caching, atlas packing, GPU generation, or renderer orchestration.
-- **Appetite:** worth about 3–4 focused days.
-- **Links:** OpenSpec change `implement-cpu-sdf-core` · [package README](packages/sdf/README.md) · [fixtures](test-fixtures/sdf/README.md)
-
-### Deliver the first ordinary-text package
-- **Problem:** The renderer spike and ported layout engine are only useful when integrated behind a small lifecycle-safe public API.
-- **Outcome & done-when:** Consumers can prepare renderer-neutral layout, construct, synchronize, update, render, select through layout helpers, and dispose ordinary multilingual text; browser visual fixtures cover the supported appearance features; a minimal example uses only public exports.
-- **Status:** complete — `@webgpu-text/three` provides a layout-result `Text` mesh with latest-state promise synchronization, lazy outline/SDF caching, a private growing RGBA atlas, instanced TSL rendering, style colors, opacity, clipping, committed layout identity, failure recovery, and lifecycle-safe disposal. Its default unlit and opt-in planar standard materials pass a real Noto Sans/Noto Sans Arabic fixture on Chrome for Testing 149 through Apple Metal WebGPU with 14 initial and 15 updated instances across multiple atlas cells. Raw-text itemization/fallback, shared atlases, workers, and batching remain separate work.
-- **Appetite:** worth about 1 focused week, flexing optional visual features to preserve the box.
-- **Links:** OpenSpec change `implement-three-webgpu-text-core` · [package README](packages/three/README.md) · [validation report](docs/validation/three-webgpu-text-core.md) · [basic example](examples/three-webgpu-basic/)
-
-### Establish the renderer-neutral text handoff
-- **Problem:** Three still executed layout and selection policy and recovered outline scale from source runs, making pre-layout input—not reusable layout output—the effective renderer boundary.
-- **Outcome & done-when:** `LayoutResult` carries the font-unit scale required by any renderer; Three accepts completed layout plus lazy-outline handles and contains no shaping, line-layout, caret, or selection execution.
-- **Status:** complete — resolved runs now supply finite positive `fontUnitScale`, positioned glyphs preserve it, and `Text` consumes completed layout directly. The public example, clean package consumers, and unchanged 12-to-13-glyph actual-WebGPU evidence validate the breaking handoff without a compatibility overload or new abstraction.
-- **Appetite:** worth about 1 focused day.
-- **Links:** OpenSpec change `establish-renderer-neutral-text-handoff` · [architecture](ARCHITECTURE.md) · [layout package](packages/layout/README.md) · [Three package](packages/three/README.md)
-
-### Prove the planar lit-text and shadow seam
-- **Problem:** Source-level node hooks did not establish that transparent instanced SDF quads could participate correctly in Three's actual WebGPU lighting and shadow passes.
-- **Outcome & done-when:** One controlled standard node material responds to scene light, casts glyph-shaped rather than rectangular shadows, receives an external shadow only on visible coverage, rejects fallback rendering, and records the exact public hooks and revision-specific limits.
-- **Status:** complete — `MeshStandardNodeMaterial` rendered the existing four-channel instanced SDF fixture with planar normals, shared position/color/opacity nodes, a binary SDF `maskShadowNode`, and the visible material side explicitly selected for the shadow pass. Rectangle and circle cast silhouettes, transparent cutouts, received-shadow contrast, no-shadow restoration, repeatable disposal, and WebGPU-only evidence passed on Three.js 0.185.1 and Apple Metal.
-- **Appetite:** worth about 1 focused day; production integration remains a separate bounded change.
-- **Links:** OpenSpec change `prove-lit-text-shadow-seam` · [validation report](docs/validation/lit-text-shadow-seam.md) · [architecture decision](ARCHITECTURE.md#use-the-validated-planar-lighting-and-shadow-seam)
-
-### Deliver planar lit text and shadow integration
-- **Problem:** An unlit material is insufficient for text that must participate naturally in physically lit 3D scenes.
-- **Outcome & done-when:** One construction-fixed planar standard material reuses production placement, atlas, appearance, update, and lifecycle paths; real-font actual-WebGPU evidence proves lighting plus glyph-shaped cast and received shadows.
-- **Status:** complete — `TextOptions.lit` selects the standard variant only at construction. Shared public TSL nodes drive fixed planar normals, non-metallic lighting, antialiased visible coverage, and a clipped midpoint shadow mask. The production real-font fixture passes with 14-to-15 glyph instances, multi-cell atlas reuse, an `O` shadow cutout, received-shadow contrast, atomic update, fallback rejection, and repeated disposal on Apple Metal WebGPU.
-- **Appetite:** completed in one focused change without runtime material switching or a physical-material option framework.
-- **Links:** OpenSpec change `integrate-planar-lit-text` · [package README](packages/three/README.md) · [validation report](docs/validation/three-webgpu-text-core.md) · [basic example](examples/three-webgpu-basic/)
+No delivery change is active. All previously committed “Now” work is complete and
+recorded in the changelog and archived OpenSpec changes. The leading candidate
+for the next committed slice is renderer-neutral raw-text preparation, currently
+kept in **Next** until its implementation change is proposed.
 
 ## Next
+
+### Implement renderer-neutral raw-text preparation
+- **Problem:** The validated preparation contract is still private evidence, so production consumers must manually construct resolved runs.
+- **Hypothesis:** promote the proven two-stage contract into `@webgpu-text/layout` with `prepareText()`, `layoutPreparedText()`, and a one-call `layoutText()` convenience while preserving `layoutResolvedText()` unchanged.
+- **Confidence:** high
+- **Assumes:** the validated Unicode 13 bidi limitation and Unicode 17 script dependency are acceptable for the first documented slice.
+- **Open questions:** Should the dependency declaration gap be fixed upstream before release? Should the first public result expose per-paragraph metadata beyond prepared segments?
 
 ### Efficient rendering of many independent text objects
 - **Problem:** One mesh and material state per label may become CPU- or draw-call-bound in dense interfaces and scenes.
@@ -328,6 +270,9 @@ remains private to the renderer.
 
 ## Later
 
+- Complete raw-text layout semantics — why it matters: production preparation will initially retain the validated bounded line-break policy; revisit full Unicode line breaking, break-sensitive reshaping, and bidi caret affinity when concrete multilingual editing cases require them.
+- Move shaping or SDF work to ESM workers — why it matters: the current synchronous pipeline is simpler and deterministic; revisit only when end-to-end measurements show main-thread latency that the public promise boundaries cannot absorb.
+- Extend appearance beyond flat fill and planar lighting — why it matters: strokes, outlines, curvature, and additional dedicated node-material variants may be useful, but each needs concrete demand and actual-WebGPU evidence rather than compatibility-driven surface area.
 - Move SDF generation to WebGPU compute — why it matters: complex fonts or large first-use glyph sets may expose CPU generation latency; revisit only with profiling evidence.
 - Improve atlas residency and eviction — why it matters: long-lived applications may accumulate unused glyphs; revisit when memory measurements show a practical ceiling.
 - Extend font-format and advanced-font coverage — why it matters: WOFF/WOFF2 decoding and color glyphs require additional contracts; variable TrueType axes are already validated. Revisit decoder costs after the ordinary TTF/OTF outline/SDF path is stable.
@@ -365,13 +310,16 @@ remains private to the renderer.
 - **Renderer validation:** pin Three.js 0.185.1 for the first implementation and rerun the private actual-WebGPU experiment before widening or changing the revision. WebGL fallback is never passing evidence.
 - **Renderer ownership:** production text objects own their geometry/material and atlas references; the atlas owner owns texture/cache disposal; the application owns the shared Three renderer and canvas.
 - **Renderer-neutral handoff:** `LayoutResult` is the complete input to any renderer and carries `fontUnitScale` on each positioned glyph. Three accepts that result plus structural caller-owned lazy-outline handles and performs no layout or interaction policy.
+- **Raw-text preparation:** promote the validated synchronous two-stage layout contract: immutable serializable bidi/script/style preparation first, then explicit grapheme-safe fallback and HarfBuzz shaping over caller-owned font handles. Keep `layoutResolvedText()` as the expert API and offer a one-call convenience composition; never make font fetching part of this path.
 - **First atlas lifetime:** each `Text` owns one private growing RGBA atlas with full dirty texture uploads and no eviction; introduce sharing only when many-label measurements justify the extra ownership policy.
-- **First appearance surface:** ship flat unlit TSL fill, per-style color, opacity, and rectangular clipping on Three.js 0.185.1; defer curvature, lighting, shadows, strokes, and arbitrary material derivation.
+- **First appearance surface:** the initial slice shipped flat unlit TSL fill, per-style color, opacity, and rectangular clipping on Three.js 0.185.1. Planar lighting and glyph-shaped shadows were added in a later validated change; curvature, strokes, and arbitrary material derivation remain deferred.
 - **Planar lit/shadow seam:** a standard node material can reuse instanced `positionNode`, RGBA `colorNode`, and antialiased `opacityNode`; add planar normals, a midpoint SDF `maskShadowNode`, and set `shadowSide` to the visible side for zero-thickness glyph quads. Do not add `castShadowNode`, transmitted shadows, duplicate shadow geometry, or private renderer hooks for the ordinary planar case.
 - **Production planar lighting:** `TextOptions.lit` is a construction-only boolean. The standard variant uses fixed metalness `0` and roughness `0.9`, shares all production glyph nodes and lifecycle state, and leaves `castShadow`, `receiveShadow`, lights, shadow maps, renderer, and scene ownership to ordinary Three.js callers. Runtime material switching and a physical-material option hierarchy remain deferred.
 
 ## Changelog
 
+- 2026-07-21: Reconciled the roadmap after archiving `validate-text-preparation-boundary`. All twelve OpenSpec changes are archived, no delivery change is active, and completed cards were cleared from **Now**. Production renderer-neutral raw-text preparation remains the leading **Next** candidate; no scope or priority pivot was inferred.
+- 2026-07-21: Validated renderer-neutral raw-text preparation over fifteen canonical cases. Accepted a reusable serializable `PreparedText` boundary, explicit caller-font fallback, `bidi-js@1.0.3`, Unicode 17 script data, and unchanged public HarfBuzz/layout composition; recorded that shaping dominates measured execution and deferred complete breaking/reshaping, bidi affinity, workers, fetching, emoji/color fonts, and batching.
 - 2026-07-21: Integrated construction-fixed planar standard-material text into the production Three package. Reused the existing renderer kernel, added constant normals and the proven visible-side SDF shadow mask, updated the public example and package consumer, and validated real Latin/Arabic lighting, glyph-shaped cast/receive shadows, a 14-to-15-glyph update, fallback rejection, and repeatable disposal on Apple Metal WebGPU.
 - 2026-07-21: Established `LayoutResult` as the reusable renderer-neutral handoff. Added per-glyph `fontUnitScale`, changed Three to accept completed layout, removed layout/selection execution and font-facts coupling from the renderer, and revalidated unchanged real-font multi-cell output on actual Apple Metal WebGPU.
 - 2026-07-21: Validated front-facing planar standard-material text and glyph-shaped cast/receive shadows on actual Apple Metal WebGPU. The public seam uses ordinary normals plus shared position/color/opacity nodes, a binary SDF shadow mask, and an explicit visible shadow side; production API and real-font integration remain the next bounded change.
