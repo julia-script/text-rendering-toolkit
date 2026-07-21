@@ -66,16 +66,18 @@ test('ships public ESM runtime and declarations to a clean consumer', () => {
       resolve(consumer, 'main.ts'),
       `
         import { Text, InvalidTextInputError } from '@webgpu-text/three'
-        import type { TextFont, TextOptions } from '@webgpu-text/three'
+        import type { TextFont, TextMaterial, TextOptions } from '@webgpu-text/three'
         const font: TextFont = {
           getOutline: () => ({
             commands: new Uint8Array(), coordinates: new Float32Array(),
             bounds: { xMin: 0, yMin: 0, xMax: 0, yMax: 0 },
           }),
         }
-        const options = {} as TextOptions
+        const options = { lit: true } as TextOptions
+        const material = null as TextMaterial | null
         void font
         void options
+        void material
         if (typeof Text !== 'function' || typeof InvalidTextInputError !== 'function') {
           throw new Error('Missing public renderer exports')
         }

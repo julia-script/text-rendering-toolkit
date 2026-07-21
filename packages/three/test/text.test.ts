@@ -1,4 +1,4 @@
-import { Mesh } from 'three/webgpu'
+import { Mesh, MeshBasicNodeMaterial, MeshStandardNodeMaterial } from 'three/webgpu'
 import { describe, expect, test, vi } from 'vitest'
 import { DisposedTextError, InvalidTextInputError, Text } from '../src/index.js'
 import { emptyOutline, font, rectangleOutline, resolvedLayout } from './helpers.js'
@@ -8,6 +8,8 @@ describe('public Text lifecycle', () => {
     const initial = resolvedLayout('A')
     const text = new Text({ layout: initial, fonts: new Map(), sdfSize: 16 })
     expect(text).toBeInstanceOf(Mesh)
+    expect(text.lit).toBe(false)
+    expect(text.material).toBeInstanceOf(MeshBasicNodeMaterial)
     expect(text.layoutResult).toBeNull()
     await expect(text.sync()).rejects.toThrow(InvalidTextInputError)
     expect(text.layoutResult).toBeNull()
@@ -75,6 +77,42 @@ describe('public Text lifecycle', () => {
     await text.sync()
     expect(text.layoutResult).toBe(committed)
     text.dispose()
+  })
+
+  test('keeps one lit material through updates, recovery, empty layout, and disposal', async () => {
+    const handle = font()
+    const text = new Text({
+      layout: resolvedLayout('A'),
+      fonts: new Map([['font', handle]]),
+      lit: true,
+      sdfSize: 16,
+    })
+    const material = text.material
+    const pending = text.sync()
+    text.layout = resolvedLayout('AA')
+    expect(text.sync()).toBe(pending)
+    await pending
+    expect(text.lit).toBe(true)
+    expect(text.material).toBeInstanceOf(MeshStandardNodeMaterial)
+    expect(text.material).toBe(material)
+    expect(text.geometry.instanceCount).toBe(2)
+
+    text.fonts = new Map()
+    await expect(text.sync()).rejects.toThrow(InvalidTextInputError)
+    expect(text.material).toBe(material)
+    expect(text.geometry.instanceCount).toBe(2)
+
+    text.fonts = new Map([['font', handle]])
+    text.layout = resolvedLayout('')
+    await text.sync()
+    expect(text.material).toBe(material)
+    expect(text.geometry.instanceCount).toBe(0)
+
+    const disposed = vi.fn()
+    material.addEventListener('dispose', disposed)
+    text.dispose()
+    text.dispose()
+    expect(disposed).toHaveBeenCalledOnce()
   })
 
   test('keeps non-drawing glyphs in layout without render instances', async () => {

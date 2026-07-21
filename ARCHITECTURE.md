@@ -27,16 +27,17 @@ production cores are implemented and validated: `@webgpu-text/font`, resolved
 `@webgpu-text/three`. The renderer consumes completed renderer-neutral layout,
 caller-owned structural font handles,
 lazy numeric outlines, deterministic SDFs, a private growing RGBA atlas,
-instanced geometry, and an unlit TSL material through an atomic `Text.sync()`
+instanced geometry, and shared TSL nodes bound to either the default unlit or
+construction-fixed planar standard material through an atomic `Text.sync()`
 lifecycle.
 
 Automatic script/direction itemization, font selection and fallback, complete
 Unicode line breaking, reshaping around line boundaries, bidi caret affinity,
-workers, shared atlas residency/eviction, curved or production lit materials,
-and batching remain separate follow-ups. A private actual-WebGPU proof has
-validated the public Three.js seam for one front-facing planar standard material
-with glyph-shaped cast and received shadows; that evidence has not changed the
-shipped unlit API. Font-byte acquisition is caller-owned: no core package
+workers, shared atlas residency/eviction, curved or configurable physical
+materials, and batching remain separate follow-ups. The production standard
+variant now promotes the validated front-facing planar seam with glyph-shaped
+cast and received shadows through ordinary Three.js scene flags. Font-byte
+acquisition is caller-owned: no core package
 accepts URLs or performs network fetching. The layout package turns fully
 resolved runs into `LayoutResult`; the first renderer accepts only that completed
 handoff rather than implementing a partial raw-text policy.
@@ -220,7 +221,8 @@ The preserved `SDFGenerator.js` is mostly scheduling and WebGL/canvas integratio
 - One private atlas per text: flat-slot allocation, RGBA channel packing, byte storage, square growth, full dirty uploads, glyph cache, and lifecycle. V1 has no eviction.
 - RGBA atlas upload into a Three `DataTexture`.
 - Capacity-aware instanced glyph geometry and explicit bounds.
-- The implemented flat unlit TSL material for placement, SDF decoding, derivative antialiasing, fill, per-style color, opacity, and rectangular clipping.
+- Shared TSL placement, SDF decoding, derivative antialiasing, fill, per-style color, opacity, and rectangular clipping bound to the default unlit material or an opt-in fixed planar standard material.
+- Constant planar normals plus the visible-side midpoint SDF shadow mask required for ordinary Three.js glyph-shaped cast and received shadows.
 - Lifecycle-safe disposal that leaves caller fonts, renderer, and canvas alone.
 - Future batching, if profiling demonstrates a need.
 
@@ -501,9 +503,10 @@ Production ownership differs from the self-contained experiment harness. A text 
 The original experiment proved one-cell/four-channel rendering, semantic SDF
 coverage, opacity, clipping, orientation, cylindrical placement, in-place
 texture/attribute updates, and create-render-update-dispose reuse. The shipped
-renderer follow-up then proved real-font SDFs and multi-cell atlas growth. Atlas
-eviction, partial texture upload, production lighting, and batching remain
-separate work.
+renderer follow-up then proved real-font SDFs and multi-cell atlas growth, and
+the planar integration proved production lighting and shadows with the same
+atlas and lifecycle. Atlas eviction, partial texture upload, configurable or
+curved materials, and batching remain separate work.
 
 Three's renderer-backend identity and TSL surface remain revision-specific boundaries. The private validation may inspect `renderer.backend.isWebGPUBackend` for pinned actual-WebGPU evidence, but that diagnostic must not spread through the public API. The TSL implementation should remain behind a narrow local adapter: Three's complete fluent TSL declarations caused pathological TypeScript 7.0.2 memory growth during the spike. Every Three revision change must rerun the browser validation before the supported range changes.
 
@@ -544,12 +547,13 @@ silhouettes, transparent cutouts, and an external shadow darkening only visible
 glyph coverage. `castShadowNode`, transmitted shadows, duplicate shadow meshes,
 private renderer APIs, and shader strings were not needed.
 
-This evidence supports a future dedicated planar standard-material variant; it
-does not choose its public constructor/option shape or validate curved,
-double-sided, extruded, physical, or normal-mapped text. The shipped `Text`
-material remains unlit until that bounded integration is specified and tested
-with the real-font production lifecycle. See the
-[lit/shadow validation report](docs/validation/lit-text-shadow-seam.md).
+Production now exposes that bounded variant through construction-only
+`TextOptions.lit`. It reuses the same atlas, position, color, opacity, clipping,
+update, and disposal path and has been revalidated with real Latin/Arabic glyphs
+through the production lifecycle. It does not validate curved, double-sided,
+extruded, configurable physical, or normal-mapped text. See the
+[lit/shadow seam report](docs/validation/lit-text-shadow-seam.md) and the
+[production renderer report](docs/validation/three-webgpu-text-core.md).
 
 ### Reuse MIT sources with explicit provenance
 

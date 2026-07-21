@@ -1,3 +1,4 @@
+import { MeshBasicNodeMaterial, MeshStandardNodeMaterial } from 'three/webgpu'
 import { expect, test, vi } from 'vitest'
 import { RgbaGlyphAtlas } from '../src/atlas.js'
 import {
@@ -21,6 +22,9 @@ test('updates instanced attributes with capacity growth and explicit bounds', ()
     { left: 0, bottom: 0, right: 3, top: 1 },
   )
   expect(geometry.instanceCount).toBe(3)
+  expect(geometry.getAttribute('normal').array).toEqual(
+    new Float32Array([0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1]),
+  )
   expect(geometry.getAttribute('glyphSlot')).not.toBe(originalSlots)
   expect([...geometry.getAttribute('glyphSlot').array].slice(0, 3)).toEqual([0, 1, 2])
   expect(geometry.boundingBox?.max.toArray()).toEqual([3, 1, 0])
@@ -40,10 +44,22 @@ test('updates instanced attributes with capacity growth and explicit bounds', ()
   expect(geometry.instanceCount).toBe(1)
 })
 
-test('updates material controls and disposes owned renderer resources', () => {
+test('creates unlit and planar lit materials from shared controls', () => {
   const atlas = new RgbaGlyphAtlas(16)
   const geometry = createGlyphGeometry()
-  const { material, controls } = createGlyphMaterial(atlas.texture, atlas.cellSize)
+  const { material, controls } = createGlyphMaterial(atlas.texture)
+  const lit = createGlyphMaterial(atlas.texture, true)
+  expect(material).toBeInstanceOf(MeshBasicNodeMaterial)
+  expect(lit.material).toBeInstanceOf(MeshStandardNodeMaterial)
+  expect(lit.material.metalness).toBe(0)
+  expect(lit.material.roughness).toBe(0.9)
+  expect(lit.material.positionNode).not.toBeNull()
+  expect(lit.material.colorNode).not.toBeNull()
+  expect(lit.material.opacityNode).not.toBeNull()
+  expect(lit.material.maskShadowNode).not.toBeNull()
+  expect(lit.material.castShadowNode).toBeNull()
+  expect(lit.material.castShadowPositionNode).toBeNull()
+  expect(lit.material.shadowSide).toBe(lit.material.side)
   updateGlyphMaterial(controls, 2, 0.4, { left: -1, bottom: -2, right: 3, top: 4 })
   expect(controls.atlasGrid.value.toArray()).toEqual([2, 2])
   expect(controls.opacity.value).toBe(0.4)
@@ -54,6 +70,7 @@ test('updates material controls and disposes owned renderer resources', () => {
   material.addEventListener('dispose', materialDisposed)
   geometry.dispose()
   material.dispose()
+  lit.material.dispose()
   atlas.dispose()
   expect(geometryDisposed).toHaveBeenCalledOnce()
   expect(materialDisposed).toHaveBeenCalledOnce()

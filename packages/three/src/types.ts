@@ -1,5 +1,11 @@
 import type { LayoutBounds, LayoutResult } from '@webgpu-text/layout'
-import type { ColorRepresentation } from 'three/webgpu'
+import type {
+  ColorRepresentation,
+  MeshBasicNodeMaterial,
+  MeshStandardNodeMaterial,
+} from 'three/webgpu'
+
+export type TextMaterial = MeshBasicNodeMaterial | MeshStandardNodeMaterial
 
 export interface TextGlyphBounds {
   readonly xMin: number
@@ -22,6 +28,7 @@ export interface TextFont {
 export interface TextOptions {
   readonly layout: LayoutResult
   readonly fonts: ReadonlyMap<string, TextFont>
+  readonly lit?: boolean
   readonly color?: ColorRepresentation
   readonly styleColors?: Readonly<Record<string, ColorRepresentation>>
   readonly opacity?: number

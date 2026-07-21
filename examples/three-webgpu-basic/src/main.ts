@@ -1,7 +1,17 @@
 import { type FontHandle, loadFont } from '@webgpu-text/font'
 import { layoutResolvedText, type ResolvedLayoutInput } from '@webgpu-text/layout'
 import { Text } from '@webgpu-text/three'
-import { Color, OrthographicCamera, Scene, WebGPURenderer } from 'three/webgpu'
+import {
+  AmbientLight,
+  Color,
+  DirectionalLight,
+  Mesh,
+  MeshStandardNodeMaterial,
+  OrthographicCamera,
+  PlaneGeometry,
+  Scene,
+  WebGPURenderer,
+} from 'three/webgpu'
 
 function resolveSingleRun(font: FontHandle, text: string, fontSize: number): ResolvedLayoutInput {
   const shaped = font.shape({ text, direction: 'ltr', script: 'Latn', language: 'en' })
@@ -63,6 +73,7 @@ async function start(canvas: HTMLCanvasElement) {
   renderer.setPixelRatio(devicePixelRatio)
   renderer.setSize(canvas.clientWidth || 800, canvas.clientHeight || 300, false)
   await renderer.init()
+  renderer.shadowMap.enabled = true
   const scene = new Scene()
   scene.background = new Color(0x101820)
   const camera = new OrthographicCamera(-2, 2, 0.75, -0.75, 0.1, 10)
@@ -70,14 +81,29 @@ async function start(canvas: HTMLCanvasElement) {
   const text = new Text({
     layout: layoutResolvedText(resolveSingleRun(font, 'WebGPU Text', 0.45)),
     fonts: new Map([['body', font]]),
+    lit: true,
     color: 0x55d8ff,
   })
   await text.sync()
-  scene.add(text)
+  text.castShadow = true
+  text.receiveShadow = true
+  const receiverGeometry = new PlaneGeometry(4, 1.5)
+  const receiverMaterial = new MeshStandardNodeMaterial({ color: 0x36424a, roughness: 1 })
+  const receiver = new Mesh(receiverGeometry, receiverMaterial)
+  receiver.position.z = -0.4
+  receiver.receiveShadow = true
+  const ambient = new AmbientLight(0xffffff, 0.2)
+  const directional = new DirectionalLight(0xffffff, 2)
+  directional.position.set(-2, 2, 3)
+  directional.castShadow = true
+  scene.add(receiver, text, ambient, directional)
   renderer.render(scene, camera)
   return () => {
-    scene.remove(text)
+    scene.remove(receiver, text, ambient, directional)
     text.dispose()
+    receiverGeometry.dispose()
+    receiverMaterial.dispose()
+    directional.dispose()
     font.dispose()
     renderer.dispose()
   }

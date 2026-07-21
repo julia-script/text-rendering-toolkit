@@ -1,6 +1,6 @@
 import type { LayoutBounds, LayoutResult, PositionedGlyph } from '@webgpu-text/layout'
 import { generateSdf, type SdfBitmap, type SdfViewBox } from '@webgpu-text/sdf'
-import { Color, type ColorRepresentation, Mesh, type MeshBasicNodeMaterial } from 'three/webgpu'
+import { Color, type ColorRepresentation, Mesh } from 'three/webgpu'
 
 import { type AtlasAddition, type AtlasPlan, type CachedGlyph, RgbaGlyphAtlas } from './atlas.js'
 import { DisposedTextError, InvalidTextInputError } from './errors.js'
@@ -12,7 +12,7 @@ import {
   updateGlyphGeometry,
   updateGlyphMaterial,
 } from './rendering.js'
-import type { TextFont, TextGlyphOutline, TextOptions } from './types.js'
+import type { TextFont, TextGlyphOutline, TextMaterial, TextOptions } from './types.js'
 
 const DEFAULT_COLOR = 0xffffff
 const DEFAULT_SDF_SIZE = 64
@@ -186,13 +186,14 @@ function quadBounds(
   ]
 }
 
-export class Text extends Mesh<ReturnType<typeof createGlyphGeometry>, MeshBasicNodeMaterial> {
+export class Text extends Mesh<ReturnType<typeof createGlyphGeometry>, TextMaterial> {
   layout: LayoutResult
   fonts: ReadonlyMap<string, TextFont>
   color: ColorRepresentation
   styleColors: Readonly<Record<string, ColorRepresentation>>
   opacity: number
   clipRect: LayoutBounds | null
+  readonly lit: boolean
   readonly sdfSize: number
 
   readonly #atlas: RgbaGlyphAtlas
@@ -207,10 +208,12 @@ export class Text extends Mesh<ReturnType<typeof createGlyphGeometry>, MeshBasic
 
   constructor(options: TextOptions) {
     const sdfSize = options.sdfSize ?? DEFAULT_SDF_SIZE
+    const lit = options.lit ?? false
     validateSdfSize(sdfSize)
+    if (typeof lit !== 'boolean') throw invalid('lit must be a boolean')
     const atlas = new RgbaGlyphAtlas(sdfSize)
     const geometry = createGlyphGeometry()
-    const rendered = createGlyphMaterial(atlas.texture, sdfSize)
+    const rendered = createGlyphMaterial(atlas.texture, lit)
     super(geometry, rendered.material)
     this.layout = options.layout
     this.fonts = options.fonts
@@ -218,6 +221,7 @@ export class Text extends Mesh<ReturnType<typeof createGlyphGeometry>, MeshBasic
     this.styleColors = options.styleColors ?? {}
     this.opacity = options.opacity ?? 1
     this.clipRect = options.clipRect ?? null
+    this.lit = lit
     this.sdfSize = sdfSize
     this.#atlas = atlas
     this.#controls = rendered.controls

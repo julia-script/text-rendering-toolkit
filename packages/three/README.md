@@ -22,6 +22,7 @@ const layout = layoutResolvedText(input)
 const text = new Text({
   layout,
   fonts: new Map([['body', font]]),
+  lit: true,
   color: 0xffffff,
   styleColors: { emphasis: 0xffcc33 },
   opacity: 1,
@@ -29,6 +30,8 @@ const text = new Text({
 })
 
 await text.sync()
+text.castShadow = true
+text.receiveShadow = true
 scene.add(text)
 ```
 
@@ -40,6 +43,13 @@ also be consumed by Canvas, SVG, another GPU renderer, measurement code, or
 interaction tools. See
 [`examples/three-webgpu-basic`](../../examples/three-webgpu-basic/) for a complete
 single-run implementation.
+
+Omit `lit` or set it to `false` for the default unlit material. `lit: true`
+selects one front-facing planar `MeshStandardNodeMaterial` with fixed
+non-metallic settings and glyph-shaped shadow coverage. That choice is fixed at
+construction; layout and appearance updates reuse the same material. Enable
+shadow maps and configure lights at the scene level, then use the ordinary
+Three.js `castShadow` and `receiveShadow` mesh flags as needed.
 
 ## Updates and interaction
 
@@ -65,8 +75,8 @@ interaction policy remain direct `@webgpu-text/layout` operations.
 
 ## Ownership
 
-Each `Text` owns its instanced geometry, unlit node material, glyph cache, RGBA
-atlas bytes, and `DataTexture`. Dispose those resources with:
+Each `Text` owns its instanced geometry, selected node material, glyph cache,
+RGBA atlas bytes, and `DataTexture`. Dispose those resources with:
 
 ```ts
 scene.remove(text)
@@ -82,14 +92,17 @@ does not touch those resources.
 - completed multilingual `LayoutResult` data from `@webgpu-text/layout`;
 - lazy numeric outlines from structurally compatible public font handles;
 - deterministic CPU SDF generation and per-object RGBA atlas growth;
-- flat unlit fill, per-style colors, opacity, and local rectangular clipping;
+- flat unlit fill by default or construction-fixed planar standard lighting;
+- glyph-shaped cast and received shadows through ordinary Three.js mesh flags;
+- per-style colors, opacity, and local rectangular clipping;
 - promise-based updates, committed layout identity, and disposal; and
 - Three.js `0.185.1` `WebGPURenderer` through TSL.
 
 Not included: font fetching, automatic itemization or fallback, workers, shared
-atlases, eviction, partial texture upload, curvature, strokes/outlines, lighting,
-shadows, batching, WebGPU compute SDF generation, WebGL, CommonJS, UMD, or
-Troika API compatibility.
+atlases, eviction, partial texture upload, curvature, strokes/outlines, runtime
+material switching, configurable physical-material controls, curved or
+double-sided lighting, batching, WebGPU compute SDF generation, WebGL, CommonJS,
+UMD, or Troika API compatibility.
 
 ## Validation
 

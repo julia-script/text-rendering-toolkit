@@ -5,5 +5,6 @@ export type {
   TextFont,
   TextGlyphBounds,
   TextGlyphOutline,
+  TextMaterial,
   TextOptions,
 } from './types.js'

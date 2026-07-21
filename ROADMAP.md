@@ -11,7 +11,7 @@ Build a small, production-quality family of text-processing packages culminating
 
 The result is deliberately greenfield: strict TypeScript source, native ESM packages, explicit data contracts between layers, promise-based synchronization, TSL node materials, and no compatibility commitment to `troika-three-text`, `WebGLRenderer`, CommonJS, or UMD.
 
-**Current objective achieved:** representative multilingual text now renders through `WebGPURenderer` using a WebGL-free runtime, backed by deterministic layout/SDF tests, a real-font actual-WebGPU fixture, strict TypeScript checks, and a public-only consumer example. `LayoutResult` is now the completed renderer-neutral handoff, so Three performs no shaping, line layout, caret, or selection policy. A separate actual-WebGPU proof has also validated the narrow planar standard-material and glyph-shadow seam without changing the shipped unlit API.
+**Current objective achieved:** representative multilingual text now renders through `WebGPURenderer` using a WebGL-free runtime, backed by deterministic layout/SDF tests, a real-font actual-WebGPU fixture, strict TypeScript checks, and a public-only consumer example. `LayoutResult` is the completed renderer-neutral handoff, so Three performs no shaping, line layout, caret, or selection policy. The Three package now ships both its default unlit material and an opt-in construction-fixed planar standard material with glyph-shaped cast and received shadows.
 
 ## Where we are starting
 
@@ -292,7 +292,7 @@ remains private to the renderer.
 ### Deliver the first ordinary-text package
 - **Problem:** The renderer spike and ported layout engine are only useful when integrated behind a small lifecycle-safe public API.
 - **Outcome & done-when:** Consumers can prepare renderer-neutral layout, construct, synchronize, update, render, select through layout helpers, and dispose ordinary multilingual text; browser visual fixtures cover the supported appearance features; a minimal example uses only public exports.
-- **Status:** complete — `@webgpu-text/three` provides a layout-result `Text` mesh with latest-state promise synchronization, lazy outline/SDF caching, a private growing RGBA atlas, instanced TSL rendering, style colors, opacity, clipping, committed layout identity, failure recovery, and lifecycle-safe disposal. A real Noto Sans/Noto Sans Arabic fixture passes on Chrome for Testing 149 through Apple Metal WebGPU with 12 initial and 13 updated instances across multiple atlas cells. Raw-text itemization/fallback, shared atlases, workers, batching, and lit materials remain separate work.
+- **Status:** complete — `@webgpu-text/three` provides a layout-result `Text` mesh with latest-state promise synchronization, lazy outline/SDF caching, a private growing RGBA atlas, instanced TSL rendering, style colors, opacity, clipping, committed layout identity, failure recovery, and lifecycle-safe disposal. Its default unlit and opt-in planar standard materials pass a real Noto Sans/Noto Sans Arabic fixture on Chrome for Testing 149 through Apple Metal WebGPU with 14 initial and 15 updated instances across multiple atlas cells. Raw-text itemization/fallback, shared atlases, workers, and batching remain separate work.
 - **Appetite:** worth about 1 focused week, flexing optional visual features to preserve the box.
 - **Links:** OpenSpec change `implement-three-webgpu-text-core` · [package README](packages/three/README.md) · [validation report](docs/validation/three-webgpu-text-core.md) · [basic example](examples/three-webgpu-basic/)
 
@@ -310,14 +310,14 @@ remains private to the renderer.
 - **Appetite:** worth about 1 focused day; production integration remains a separate bounded change.
 - **Links:** OpenSpec change `prove-lit-text-shadow-seam` · [validation report](docs/validation/lit-text-shadow-seam.md) · [architecture decision](ARCHITECTURE.md#use-the-validated-planar-lighting-and-shadow-seam)
 
-## Next
-
 ### Deliver planar lit text and shadow integration
 - **Problem:** An unlit material is insufficient for text that must participate naturally in physically lit 3D scenes.
-- **Hypothesis:** one dedicated standard node material variant can promote the validated planar normal, visible SDF opacity, binary shadow mask, and visible-side shadow policy without recreating arbitrary material derivation.
-- **Confidence:** high for the planar material/shadow kernel; medium for its production API and lifecycle integration.
-- **Assumes:** the proven synthetic fixture composes with the real-font atlas, atomic updates, appearance controls, and disposal already shipped by `Text` — not yet validated together.
-- **Open questions:** The material kind is fixed at construction rather than swapped at runtime; the proposal still needs to choose the smallest option spelling and which standard lighting controls belong in the first surface. Curved, double-sided, physical, and normal-mapped text remain outside this follow-up.
+- **Outcome & done-when:** One construction-fixed planar standard material reuses production placement, atlas, appearance, update, and lifecycle paths; real-font actual-WebGPU evidence proves lighting plus glyph-shaped cast and received shadows.
+- **Status:** complete — `TextOptions.lit` selects the standard variant only at construction. Shared public TSL nodes drive fixed planar normals, non-metallic lighting, antialiased visible coverage, and a clipped midpoint shadow mask. The production real-font fixture passes with 14-to-15 glyph instances, multi-cell atlas reuse, an `O` shadow cutout, received-shadow contrast, atomic update, fallback rejection, and repeated disposal on Apple Metal WebGPU.
+- **Appetite:** completed in one focused change without runtime material switching or a physical-material option framework.
+- **Links:** OpenSpec change `integrate-planar-lit-text` · [package README](packages/three/README.md) · [validation report](docs/validation/three-webgpu-text-core.md) · [basic example](examples/three-webgpu-basic/)
+
+## Next
 
 ### Efficient rendering of many independent text objects
 - **Problem:** One mesh and material state per label may become CPU- or draw-call-bound in dense interfaces and scenes.
@@ -338,7 +338,7 @@ remains private to the renderer.
 - Supporting `WebGLRenderer` — the project exists specifically to provide a clean `WebGPURenderer` implementation.
 - Supporting CommonJS or UMD — native ESM is the only distribution format.
 - Preserving `troika-three-text` API compatibility — compatibility would force old callbacks, material derivation, and global configuration into the new design.
-- Accepting arbitrary classic Three materials — v1 uses a dedicated unlit node material; explicit material variants can be added when demanded.
+- Accepting arbitrary classic Three materials — v1 uses dedicated unlit and planar standard node materials; further variants require concrete demand.
 - Porting `BatchedText` in v1 — it is an optimization without current evidence.
 - Building a WebGPU compute SDF generator in v1 — the CPU-worker path is simpler and sufficient to validate the product.
 - Creating packages for shared types, workers, internal utilities, or atlas backends — package boundaries require an independently useful public capability.
@@ -368,9 +368,11 @@ remains private to the renderer.
 - **First atlas lifetime:** each `Text` owns one private growing RGBA atlas with full dirty texture uploads and no eviction; introduce sharing only when many-label measurements justify the extra ownership policy.
 - **First appearance surface:** ship flat unlit TSL fill, per-style color, opacity, and rectangular clipping on Three.js 0.185.1; defer curvature, lighting, shadows, strokes, and arbitrary material derivation.
 - **Planar lit/shadow seam:** a standard node material can reuse instanced `positionNode`, RGBA `colorNode`, and antialiased `opacityNode`; add planar normals, a midpoint SDF `maskShadowNode`, and set `shadowSide` to the visible side for zero-thickness glyph quads. Do not add `castShadowNode`, transmitted shadows, duplicate shadow geometry, or private renderer hooks for the ordinary planar case.
+- **Production planar lighting:** `TextOptions.lit` is a construction-only boolean. The standard variant uses fixed metalness `0` and roughness `0.9`, shares all production glyph nodes and lifecycle state, and leaves `castShadow`, `receiveShadow`, lights, shadow maps, renderer, and scene ownership to ordinary Three.js callers. Runtime material switching and a physical-material option hierarchy remain deferred.
 
 ## Changelog
 
+- 2026-07-21: Integrated construction-fixed planar standard-material text into the production Three package. Reused the existing renderer kernel, added constant normals and the proven visible-side SDF shadow mask, updated the public example and package consumer, and validated real Latin/Arabic lighting, glyph-shaped cast/receive shadows, a 14-to-15-glyph update, fallback rejection, and repeatable disposal on Apple Metal WebGPU.
 - 2026-07-21: Established `LayoutResult` as the reusable renderer-neutral handoff. Added per-glyph `fontUnitScale`, changed Three to accept completed layout, removed layout/selection execution and font-facts coupling from the renderer, and revalidated unchanged real-font multi-cell output on actual Apple Metal WebGPU.
 - 2026-07-21: Validated front-facing planar standard-material text and glyph-shaped cast/receive shadows on actual Apple Metal WebGPU. The public seam uses ordinary normals plus shared position/color/opacity nodes, a binary SDF shadow mask, and an explicit visible shadow side; production API and real-font integration remain the next bounded change.
 - 2026-07-21: Implemented resolved-input `@webgpu-text/three` with atomic promise synchronization, caller-owned structural font handles, lazy outline/SDF caching, per-object multi-cell RGBA atlas growth, instanced unlit TSL rendering, style colors, opacity, clipping, selections, disposal, clean package installation, a public-only example, and actual-WebGPU Latin/Arabic visual evidence on Three.js 0.185.1.

@@ -7,8 +7,14 @@ import {
 } from '@webgpu-text/layout'
 import { Text } from '@webgpu-text/three'
 import {
+  AmbientLight,
+  BoxGeometry,
   Color,
+  DirectionalLight,
+  Mesh,
+  MeshStandardNodeMaterial,
   OrthographicCamera,
+  PlaneGeometry,
   Scene,
   WebGPURenderer,
   type WebGPURendererParameters,
@@ -19,6 +25,7 @@ import { commands, page } from 'vitest/browser'
 const WIDTH = 512
 const HEIGHT = 256
 const BACKGROUND = [16, 24, 32] as const
+type SceneMode = 'ambient' | 'cast' | 'lit' | 'receive' | 'shadow'
 const latinUrl = new URL(
   '../../../test-fixtures/fonts/harfbuzz-validation/NotoSans-wdth-wght.ttf',
   import.meta.url,
@@ -80,7 +87,7 @@ function resolvedRun(
 }
 
 function input(fonts: { latin: FontHandle; arabic: FontHandle }, withNewGlyph: boolean) {
-  const latin = withNewGlyph ? 'WebGPU Z ' : 'WebGPU '
+  const latin = withNewGlyph ? 'IO WebGPU Z ' : 'IO WebGPU '
   const arabic = 'مرحبا'
   const text = `${latin}${arabic}`
   const latinRun = resolvedRun(
@@ -129,7 +136,7 @@ function layout(fonts: { latin: FontHandle; arabic: FontHandle }, withNewGlyph: 
 }
 
 function pixelAt(image: ImageData, x: number, y: number) {
-  const offset = (y * image.width + x) * 4
+  const offset = (Math.floor(y) * image.width + Math.floor(x)) * 4
   return [
     image.data[offset] ?? 0,
     image.data[offset + 1] ?? 0,
@@ -149,7 +156,7 @@ function observations(image: ImageData) {
   let occupied = 0
   let cyan = 0
   let yellow = 0
-  for (let y = 0; y < image.height; y += 1) {
+  for (let y = 0; y < Math.floor(image.height * 0.45); y += 1) {
     for (let x = 0; x < image.width; x += 1) {
       const pixel = pixelAt(image, x, y)
       if (distance(pixel, BACKGROUND) > 12) occupied += 1
@@ -158,6 +165,34 @@ function observations(image: ImageData) {
     }
   }
   return { occupied, cyan, yellow }
+}
+
+function luminance(color: readonly number[]) {
+  return (color[0] ?? 0) * 0.2126 + (color[1] ?? 0) * 0.7152 + (color[2] ?? 0) * 0.0722
+}
+
+function worldToPixel(x: number, y: number) {
+  return { x: ((x + 2) / 4) * WIDTH, y: ((1 - y) / 2) * HEIGHT }
+}
+
+function sampleWorld(image: ImageData, x: number, y: number, radius = 2) {
+  const center = worldToPixel(x, y)
+  const sum = [0, 0, 0]
+  let count = 0
+  for (let offsetY = -radius; offsetY <= radius; offsetY += 1) {
+    for (let offsetX = -radius; offsetX <= radius; offsetX += 1) {
+      const pixel = pixelAt(image, center.x + offsetX, center.y + offsetY)
+      sum[0] += pixel[0]
+      sum[1] += pixel[1]
+      sum[2] += pixel[2]
+      count += 1
+    }
+  }
+  return sum.map((value) => value / count) as [number, number, number]
+}
+
+function darkerBy(lit: ImageData, shadowed: ImageData, x: number, y: number) {
+  return luminance(sampleWorld(lit, x, y)) - luminance(sampleWorld(shadowed, x, y))
 }
 
 function changedPixels(left: ImageData, right: ImageData, maximumX = left.width) {
@@ -205,6 +240,7 @@ async function createHarness() {
   renderer.setPixelRatio(1)
   renderer.setSize(WIDTH, HEIGHT, false)
   await renderer.init()
+  renderer.shadowMap.enabled = true
   if (
     (renderer.backend as typeof renderer.backend & { isWebGPUBackend?: boolean })
       .isWebGPUBackend !== true
@@ -217,24 +253,87 @@ async function createHarness() {
   const scene = new Scene()
   scene.background = new Color(0x101820)
   const camera = new OrthographicCamera(-2, 2, 1, -1, 0.1, 10)
-  camera.position.z = 3
+  camera.position.z = 5
   const text = new Text({
     layout: layout(fonts, false),
     fonts: new Map([
       ['latin', fonts.latin],
       ['arabic', fonts.arabic],
     ]),
+    lit: true,
     styleColors: { latin: 0x33ccff, arabic: 0xffcc33 },
-    opacity: 0.82,
+    opacity: 1,
     sdfSize: 64,
   })
   await text.sync()
-  scene.add(text)
+  text.position.y = 0.25
+
+  const receiverGeometry = new PlaneGeometry(4, 1.2)
+  const receiverMaterial = new MeshStandardNodeMaterial({
+    color: new Color(0x78828c),
+    metalness: 0,
+    roughness: 1,
+  })
+  const receiver = new Mesh(receiverGeometry, receiverMaterial)
+  receiver.position.set(0, -0.4, -0.6)
+
+  const occluderGeometry = new BoxGeometry(0.2, 0.26, 0.06)
+  const occluderMaterial = new MeshStandardNodeMaterial({
+    color: new Color(0xffffff),
+    metalness: 0,
+    roughness: 1,
+  })
+  occluderMaterial.colorWrite = false
+  occluderMaterial.depthWrite = false
+  const occluder = new Mesh(occluderGeometry, occluderMaterial)
+
+  const firstBounds = text.geometry.getAttribute('glyphBounds').array
+  const firstCenterX = ((firstBounds[0] ?? 0) + (firstBounds[2] ?? 0)) / 2
+  const firstCenterY = ((firstBounds[1] ?? 0) + (firstBounds[3] ?? 0)) / 2 + text.position.y
+  occluder.position.set(firstCenterX - 0.72, firstCenterY + 0.72, 1.2)
+
+  const ambient = new AmbientLight(0xffffff, 0.12)
+  const directional = new DirectionalLight(0xffffff, 2.4)
+  directional.position.set(-3, 3, 5)
+  directional.target.position.set(0, 0, 0)
+  directional.shadow.mapSize.set(1024, 1024)
+  directional.shadow.camera.left = -4
+  directional.shadow.camera.right = 4
+  directional.shadow.camera.top = 3
+  directional.shadow.camera.bottom = -3
+  directional.shadow.camera.near = 0.1
+  directional.shadow.camera.far = 12
+  directional.shadow.camera.updateProjectionMatrix()
+  directional.shadow.bias = -0.0005
+  directional.shadow.normalBias = 0.01
+
+  scene.add(receiver, text, occluder, ambient, directional, directional.target)
+
+  function setMode(mode: SceneMode) {
+    const castText = mode === 'cast' || mode === 'shadow'
+    const receiveOnText = mode === 'receive' || mode === 'shadow'
+    directional.intensity = mode === 'ambient' ? 0 : 2.4
+    directional.castShadow = castText || receiveOnText
+    text.castShadow = castText
+    text.receiveShadow = receiveOnText
+    receiver.receiveShadow = castText
+    occluder.castShadow = receiveOnText
+  }
+
+  setMode('lit')
   document.body.style.margin = '0'
   document.body.replaceChildren(renderer.domElement)
+  let disposed = false
   const dispose = () => {
-    scene.remove(text)
+    if (disposed) return
+    disposed = true
+    scene.clear()
     text.dispose()
+    receiverGeometry.dispose()
+    receiverMaterial.dispose()
+    occluderGeometry.dispose()
+    occluderMaterial.dispose()
+    directional.dispose()
     renderer.dispose()
     renderer.domElement.remove()
     fonts.latin.dispose()
@@ -246,6 +345,7 @@ async function createHarness() {
     fonts,
     renderer,
     text,
+    setMode,
     render: async () => {
       renderer.render(scene, camera)
       await Promise.resolve()
@@ -254,24 +354,69 @@ async function createHarness() {
   }
 }
 
+async function captureMode(harness: Awaited<ReturnType<typeof createHarness>>, mode: SceneMode) {
+  harness.setMode(mode)
+  await harness.render()
+  await harness.render()
+  return capture(harness.renderer)
+}
+
 afterEach(() => {
   for (const dispose of disposers.splice(0)) dispose()
   document.body.replaceChildren()
 })
 
 describe('production @webgpu-text/three actual-WebGPU evidence', () => {
-  test('renders, updates, reuses prepared layout, and disposes public real-font text', async () => {
+  test('lights, shadows, updates, and disposes public real-font text', async () => {
     await page.viewport(WIDTH + 24, HEIGHT + 24)
     const harness = await createHarness()
-    await harness.render()
-    const baseline = await capture(harness.renderer)
-    const baselineObservation = observations(baseline)
+    const ambient = await captureMode(harness, 'ambient')
+    const lit = await captureMode(harness, 'lit')
+    const cast = await captureMode(harness, 'cast')
+    const receive = await captureMode(harness, 'receive')
+    const baselineObservation = observations(lit)
     const initialCount = harness.text.geometry.instanceCount
     const initialSlots = harness.text.geometry.getAttribute('glyphSlot').array
     expect(Math.max(...[...initialSlots].slice(0, initialCount))).toBeGreaterThanOrEqual(4)
     expect(baselineObservation.occupied).toBeGreaterThan(800)
     expect(baselineObservation.cyan).toBeGreaterThan(100)
     expect(baselineObservation.yellow).toBeGreaterThan(100)
+    const material = harness.text.material
+    if (!(material instanceof MeshStandardNodeMaterial)) {
+      throw new Error('Expected the production planar standard material')
+    }
+
+    const instanceBounds = harness.text.geometry.getAttribute('glyphBounds').array
+    const iCenter = {
+      x: ((instanceBounds[0] ?? 0) + (instanceBounds[2] ?? 0)) / 2,
+      y: ((instanceBounds[1] ?? 0) + (instanceBounds[3] ?? 0)) / 2 + harness.text.position.y,
+    }
+    const oBounds = {
+      left: instanceBounds[4] ?? 0,
+      bottom: (instanceBounds[5] ?? 0) + harness.text.position.y,
+      right: instanceBounds[6] ?? 0,
+      top: (instanceBounds[7] ?? 0) + harness.text.position.y,
+    }
+    const oStroke = {
+      x: oBounds.left + (oBounds.right - oBounds.left) * 0.28,
+      y: (oBounds.bottom + oBounds.top) / 2,
+    }
+    const oCutout = {
+      x: (oBounds.left + oBounds.right) / 2,
+      y: (oBounds.bottom + oBounds.top) / 2,
+    }
+    const lightGain =
+      luminance(sampleWorld(lit, iCenter.x, iCenter.y)) -
+      luminance(sampleWorld(ambient, iCenter.x, iCenter.y))
+    expect(lightGain).toBeGreaterThan(8)
+    const castShadow = darkerBy(lit, cast, oStroke.x + 0.36, oStroke.y - 0.36)
+    const castCutout = darkerBy(lit, cast, oCutout.x + 0.36, oCutout.y - 0.36)
+    expect(castShadow).toBeGreaterThan(6)
+    expect(castCutout).toBeLessThan(castShadow * 0.6)
+    const receivedShadow = darkerBy(lit, receive, iCenter.x, iCenter.y)
+    const unshadowedGlyph = darkerBy(lit, receive, oStroke.x, oStroke.y)
+    expect(receivedShadow).toBeGreaterThan(6)
+    expect(unshadowedGlyph).toBeLessThan(receivedShadow * 0.6)
     const committed = harness.text.layoutResult
     if (!committed) throw new Error('Expected a committed renderer-neutral layout')
     expect(
@@ -281,11 +426,12 @@ describe('production @webgpu-text/three actual-WebGPU evidence', () => {
     harness.text.layout = layout(harness.fonts, true)
     harness.text.clipRect = { left: -1.7, bottom: -0.5, right: 0.7, top: 0.8 }
     await harness.text.sync()
-    await harness.render()
-    const updated = await capture(harness.renderer)
+    const updated = await captureMode(harness, 'lit')
     expect(harness.text.geometry.instanceCount).toBeGreaterThan(initialCount)
-    expect(changedPixels(baseline, updated)).toBeGreaterThan(100)
-    expect(changedPixels(baseline, updated, 110)).toBeLessThan(30)
+    expect(changedPixels(lit, updated)).toBeGreaterThan(100)
+    expect(changedPixels(lit, updated, 110)).toBeLessThan(30)
+
+    await captureMode(harness, 'shadow')
 
     await page.screenshot({
       element: harness.renderer.domElement,
@@ -310,13 +456,26 @@ describe('production @webgpu-text/three actual-WebGPU evidence', () => {
       initialInstanceCount: initialCount,
       updatedInstanceCount: harness.text.geometry.instanceCount,
       initialSemanticPixels: baselineObservation,
+      litSemanticPixels: {
+        lightGain,
+        castShadow,
+        castCutout,
+        receivedShadow,
+        unshadowedGlyph,
+      },
+      material: {
+        lit: harness.text.lit,
+        metalness: material.metalness,
+        roughness: material.roughness,
+        publicNodes: ['positionNode', 'colorNode', 'opacityNode', 'maskShadowNode'],
+      },
       fixtureFonts: 'NotoSans-wdth-wght.ttf + NotoSansArabic-wdth-wght.ttf',
     })
 
     harness.dispose()
     disposers.shift()
     const second = await createHarness()
-    await second.render()
+    await captureMode(second, 'shadow')
     expect(observations(await capture(second.renderer)).occupied).toBeGreaterThan(800)
   })
 

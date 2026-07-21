@@ -14,13 +14,26 @@
     "height": 256,
     "dpr": 1
   },
-  "initialInstanceCount": 12,
-  "updatedInstanceCount": 13,
+  "initialInstanceCount": 14,
+  "updatedInstanceCount": 15,
   "initialSemanticPixels": {
-    "occupied": 2923,
-    "cyan": 2155,
-    "yellow": 752
+    "occupied": 10102,
+    "cyan": 2721,
+    "yellow": 743
+  },
+  "litSemanticPixels": {
+    "lightGain": 87.52767999999998,
+    "castShadow": 17.400024000000002,
+    "castCutout": 0,
+    "receivedShadow": 87.52767999999998,
+    "unshadowedGlyph": 39.609095999999994
+  },
+  "material": {
+    "lit": true,
+    "metalness": 0,
+    "roughness": 0.9,
+    "publicNodes": ["positionNode", "colorNode", "opacityNode", "maskShadowNode"]
   },
   "fixtureFonts": "NotoSans-wdth-wght.ttf + NotoSansArabic-wdth-wght.ttf",
-  "frameSha256": "22193ac9f2654c30e49299491e0acc067d15ceafb6652bdc9653fc8e7eca5b06"
+  "frameSha256": "5f13dea325eb37c56f1f85fb7d2a096e0be0131cad137b35fd016ac00d75c57a"
 }
