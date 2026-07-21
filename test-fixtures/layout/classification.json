@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 1,
+  "entries": [
+    {
+      "caseId": "line-empty-input",
+      "classification": "preserve",
+      "sourceArea": "Typesetter line initialization",
+      "rationale": "A deterministic empty result with one editable line is useful to every layout consumer."
+    },
+    {
+      "caseId": "line-empty-and-breaks",
+      "classification": "intentional-change",
+      "sourceArea": "Typesetter newline normalization",
+      "rationale": "CR and CRLF remain single hard breaks but output retains indices into the caller's original UTF-16 string."
+    },
+    {
+      "caseId": "line-trailing-whitespace",
+      "classification": "preserve",
+      "sourceArea": "Typesetter line measurement",
+      "rationale": "Trailing whitespace should remain editable without inflating aligned content width."
+    },
+    {
+      "caseId": "wrap-normal-soft",
+      "classification": "preserve",
+      "sourceArea": "Typesetter wrapping",
+      "rationale": "Whitespace soft wrapping is required for ordinary text."
+    },
+    {
+      "caseId": "wrap-nowrap-overflow",
+      "classification": "preserve",
+      "sourceArea": "Typesetter wrapping",
+      "rationale": "No-wrap and unbreakable overflow are explicit layout policies."
+    },
+    {
+      "caseId": "wrap-break-word-indent",
+      "classification": "preserve",
+      "sourceArea": "Typesetter wrapping and indentation",
+      "rationale": "Break-word and first-line indentation remain independently useful."
+    },
+    {
+      "caseId": "metrics-spacing-baseline",
+      "classification": "preserve",
+      "sourceArea": "Typesetter font metrics",
+      "rationale": "Mixed metrics and spacing must produce stable line geometry."
+    },
+    {
+      "caseId": "align-left",
+      "classification": "preserve",
+      "sourceArea": "Typesetter alignment",
+      "rationale": "Left alignment is the baseline placement policy."
+    },
+    {
+      "caseId": "align-center",
+      "classification": "preserve",
+      "sourceArea": "Typesetter alignment",
+      "rationale": "Center alignment is renderer-neutral."
+    },
+    {
+      "caseId": "align-right",
+      "classification": "preserve",
+      "sourceArea": "Typesetter alignment",
+      "rationale": "Right alignment is renderer-neutral."
+    },
+    {
+      "caseId": "align-justify",
+      "classification": "preserve",
+      "sourceArea": "Typesetter alignment",
+      "rationale": "Justification remains a layout concern, including exclusion of trailing whitespace."
+    },
+    {
+      "caseId": "anchor-numeric-keyword-percent",
+      "classification": "preserve",
+      "sourceArea": "Typesetter anchors",
+      "rationale": "Keeping anchors in layout makes render, measurement, and hit-testing geometry agree."
+    },
+    {
+      "caseId": "bidi-ltr-rtl-multiline",
+      "classification": "preserve",
+      "sourceArea": "Typesetter bidi placement",
+      "rationale": "Per-line visual reordering with logical source identity is essential multilingual behavior."
+    },
+    {
+      "caseId": "runs-style-size-language",
+      "classification": "intentional-change",
+      "sourceArea": "TextBuilder style ranges and Typesetter run splitting",
+      "rationale": "Preserve behavior but replace mutable start-index maps with validated half-open spans and stable style keys."
+    },
+    {
+      "caseId": "runs-fallback-grapheme",
+      "classification": "intentional-change",
+      "sourceArea": "FontResolver fallback",
+      "rationale": "Fallback must operate on grapheme-safe ranges rather than independent code points with only surrogate special-casing."
+    },
+    {
+      "caseId": "bounds-overhang-empty-grouping",
+      "classification": "intentional-change",
+      "sourceArea": "Typesetter bounds",
+      "rationale": "Preserve block and visible bounds but remove renderer chunk grouping from the layout contract."
+    },
+    {
+      "caseId": "carets-complex-clusters",
+      "classification": "intentional-change",
+      "sourceArea": "Typesetter caret interpolation",
+      "rationale": "Retain editable ligature stops while preventing caret boundaries inside surrogate pairs or combining graphemes."
+    },
+    {
+      "caseId": "selection-forward-reversed-empty",
+      "classification": "preserve",
+      "sourceArea": "selectionUtils range normalization",
+      "rationale": "Pure normalized selection geometry is independently useful."
+    },
+    {
+      "caseId": "selection-multiline-bidi",
+      "classification": "preserve",
+      "sourceArea": "selectionUtils rectangle merging",
+      "rationale": "Line- and direction-aware selection rectangles remain renderer-neutral."
+    },
+    {
+      "caseId": "font-integration-runs",
+      "classification": "intentional-change",
+      "sourceArea": "FontParser shaping seam",
+      "rationale": "HarfBuzz public shaped runs replace Troika glyph selection while retaining UTF-16 source mapping."
+    }
+  ]
+}

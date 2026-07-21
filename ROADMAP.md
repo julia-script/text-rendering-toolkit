@@ -60,7 +60,7 @@ The green nodes contain the behavior we want to preserve. The red nodes encode t
 | Existing area | Target package | Greenfield treatment |
 |---|---|---|
 | `FontParser` parsing, metrics, shaping and outlines | `@scope/font` | Preserve its contracts and fixtures, but replace the Typr-derived parser and partial shaper with a HarfBuzzjs-backed font engine |
-| `FontResolver` | `@scope/text-layout` | Separate font-provider policy from browser fetching and caching |
+| `FontResolver` | future `@scope/text-layout` selection policy plus application adapters | Preserve pure fallback ideas while leaving byte acquisition to the application; any URL/cache helper remains optional and outside the core path |
 | `Typesetter` | `@scope/text-layout` | Split shaping orchestration, line layout, bidi placement, result assembly, and interaction data |
 | Selection and caret utilities | `@scope/text-layout` | Port as pure helpers over renderer-neutral layout results |
 | CPU behavior behind `SDFGenerator` | `@scope/sdf` | Port the MIT-licensed CPU encoder with its copyright and permission notice; expose pure outline-to-typed-array generation and remove canvas/WebGL paths |
@@ -128,10 +128,10 @@ The dependency direction is a project rule: lower layers never import renderer l
 
 ```mermaid
 flowchart LR
-    User[Text constructor and mutable properties] --> Sync[await text.sync]
+    User[Text constructor, caller-owned font handles and mutable properties] --> Sync[await text.sync]
     Sync --> Renderer[three-webgpu-text orchestration]
     Renderer --> LayoutWorker[text-layout ESM worker adapter]
-    LayoutWorker --> Resolver[Font provider and fallback resolution]
+    LayoutWorker --> Resolver[Caller-supplied font registry and fallback resolution]
     Resolver --> Font[HarfBuzz-backed font engine]
     Font --> Layout[Wrapping, bidi, placement and carets]
     Layout --> Result[Typed LayoutResult with glyph references]
@@ -225,7 +225,7 @@ import { Text } from '@scope/three-webgpu-text'
 
 const text = new Text({
   text: 'Hello',
-  font: '/fonts/inter.ttf',
+  font,
   fontSize: 0.1,
   color: 0xffffff
 })
@@ -252,7 +252,7 @@ text.dispose()
 ### Establish a trustworthy greenfield foundation
 - **Problem:** The useful implementation is embedded in another project’s monorepo, old build system, JavaScript sources, and renderer-specific assumptions.
 - **Outcome & done-when:** The repository is an independently buildable strict-TypeScript ESM workspace with four package shells, enforced dependency direction, provenance notices, a narrow Three peer range only in the renderer, no committed dependency on `old/`, and reproducible build/typecheck/test commands.
-- **Status:** substantially complete — workspace scaffolding, checks, package shells, and HarfBuzz/font-fixture provenance are in place; the initial repository baseline commit remains.
+- **Status:** complete — commit `0b79f07` establishes the independent strict-TypeScript ESM workspace, package boundaries, checks, provenance, and production font core without a committed or runtime dependency on `old/`.
 - **Appetite:** worth about 2–3 focused days.
 - **Links:** OpenSpec change `reset-repository-and-document-roadmap` · [architecture](ARCHITECTURE.md)
 
@@ -273,9 +273,16 @@ text.dispose()
 ### Preserve text behavior behind executable fixtures
 - **Problem:** The original layout algorithms are mature but lack a package-level regression suite, while HarfBuzz will intentionally improve some shaping results rather than reproduce Troika exactly.
 - **Outcome & done-when:** Deterministic fixtures cover Latin kerning/ligatures, Arabic, Indic, Khmer, mixed bidi, wrapping/alignment, fallback fonts, style ranges, caret positions, glyph bounds, and accepted font formats. Troika fixtures preserve layout intent; HarfBuzz results become the shaping baseline where the old partial shaper differs.
-- **Status:** in progress — the production font package now preserves its multilingual shaping matrix; the next change captures layout-policy fixtures for wrapping, bidi placement, alignment, fallback, style ranges, carets, selection, and bounds independently of HarfBuzz glyph choices.
+- **Status:** complete — nineteen synthetic policy cases cover line construction, wrapping, alignment, bidi placement, run boundaries, bounds, carets, and selections; eleven public-font runs prove the HarfBuzz seam; every stable case has classified Troika provenance. This is validation evidence, not an implemented itemizer or layout engine.
 - **Appetite:** worth about 1 focused week.
-- **Links:** future OpenSpec changes should be scoped separately to `font`, `text-layout`, and `sdf`
+- **Links:** OpenSpec change `capture-layout-policy-fixtures` · [validation report](docs/validation/layout-policy.md) · [layout responsibility](ARCHITECTURE.md#scopetext-layout)
+
+### Implement the resolved text-layout core
+- **Problem:** Accepted layout behavior was executable only as fixture data, leaving no production operation that consumers could call independently of font selection and rendering.
+- **Outcome & done-when:** A pure ESM API validates fully resolved shaped runs and produces deterministic lines, visual glyph placement, bounds, carets, and selection rectangles with exact fixture conformance and no dependency on `old/` or higher layers.
+- **Status:** complete — `layoutResolvedText()` and `getSelectionRects()` conform to all nineteen synthetic cases and the public-font seam. This status covers only the resolved core; automatic itemization/fallback, complete Unicode line breaking, reshaping at breaks, workers, provider policy, and bidi caret affinity remain unimplemented.
+- **Appetite:** worth about 1 focused week.
+- **Links:** OpenSpec change `implement-text-layout-core` · [package README](packages/layout/README.md) · [validation report](docs/validation/layout-policy.md)
 
 ### Deliver the first ordinary-text package
 - **Problem:** The renderer spike and ported layout engine are only useful when integrated behind a small lifecycle-safe public API.
@@ -328,8 +335,9 @@ text.dispose()
 
 - **Font backend:** use HarfBuzzjs behind project-owned TypeScript contracts for font lifetime, shaping, metrics, coverage, and lazy numeric outlines. Keep Typr and Troika as attributed reference material and fixture sources, not production runtime code.
 - **Shaping baseline:** accept HarfBuzz as authoritative for font-specific shaping. Preserve Troika’s renderer-neutral paragraph layout, wrapping, bidi orchestration, fallback, caret, and selection behavior where it remains applicable.
+- **Font acquisition:** applications obtain font bytes by their own network, filesystem, bundler, or storage policy and pass bytes/handles into the package pipeline. Core packages never accept font URLs or call `fetch`; a future convenience helper may wrap acquisition without becoming the main API.
 - **WASM performance:** do not describe the published HarfBuzzjs wrapper as zero-allocation. Reuse persistent font objects and shaping buffers, measure the hot path, and introduce a thinner adapter or fork only with profiling evidence.
-- **Outline access:** `LayoutResult` contains glyph references, while `LayoutSession.getGlyphOutline(ref)` resolves outlines lazily and asynchronously on atlas misses.
+- **Outline access:** `LayoutResult` contains stable font/glyph references. Callers or renderer orchestration resolve outlines lazily from caller-owned font handles/registries on atlas misses; a future session helper may automate that without owning font acquisition.
 - **Published wrapper boundary:** vendor the exact validated `harfbuzzjs@1.4.0` runtime and expose only a narrow internal bridge to its packaged drawing and cleanup functions. Never use its SVG round-trip or add a second parser; replace the bridge when upstream exposes equivalent public APIs.
 - **Font formats:** v1 accepts normalized TTF and CFF/OTF bytes. Detect and explicitly reject WOFF/WOFF2 until a separate decoder evaluation justifies their API and bundle cost.
 - **Cleanup:** `FontHandle.dispose()` deterministically destroys its owned HarfBuzz objects; worker termination remains the deterministic whole-engine boundary for the singleton WASM runtime.
@@ -342,6 +350,8 @@ text.dispose()
 
 ## Changelog
 
+- 2026-07-21: Implemented the pure resolved-run layout core with exact synthetic conformance, public-font seam coverage, validated ESM/type packaging, and explicit caller ownership of font-byte acquisition. Automatic itemization/fallback, complete Unicode line breaking, reshaping, workers, and bidi affinity remain follow-ups.
+- 2026-07-21: Validated the renderer-neutral layout-policy boundary with nineteen deterministic synthetic fixtures, eleven public-font runs, complete preserve/change classification, and an `old/`-independent handoff. Automatic itemization and production layout remain the next separate change.
 - 2026-07-20: Implemented standalone `@webgpu-text/font` with owned TTF/OTF input, font facts and coverage, explicit-run HarfBuzz shaping, operation-scoped variations, cached numeric outlines, deterministic disposal, package-install validation, and attributed vendored runtime/fixtures. The next bounded slice is layout-policy fixture capture.
 - 2026-07-20: Completed the actual-WebGPU rendering seam spike on Three.js 0.185.1 and Chrome for Testing 149. Validated instanced RGBA SDF rendering, semantic antialiasing/color/transform observations, post-render texture and attribute uploads, fallback rejection, and repeated disposal; bounded promotion to the renderer kernel and deferred multi-cell atlas evidence to its first production follow-up.
 - 2026-07-20: Completed the HarfBuzzjs validation spike. Confirmed exact cross-runtime shaping, UTF-16 clusters, variable-font facts, TTF/OTF support, and ESM workers; rejected direct WOFF/WOFF2 input, direct numeric outlines through published 1.4.0, and deterministic in-process disposal; selected normalized TTF/OTF input and worker termination as v1 boundaries.

@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "reference": {
+    "repositoryRevision": "bca98dddeb3602b04d5452602e7da32df2fafe06",
+    "sourceHashes": {
+      "Typesetter.js": "358e1f9eb372cda6aba6744972d466e8c6864fa6b2e66e72da7391cd44deff32",
+      "FontResolver.js": "751d0f1045733fd306d89da0ce8fcc9539175df8b1ce0720592f09468d9fb3c1",
+      "selectionUtils.js": "0cc2106dcfd7e0145771ee90d04d304a8fe2a0579610edceb578a7b42427bba2",
+      "TextBuilder.js": "41d013f5e136fb695c701283d2b4aa91ae3d91dfa9aa56209b679338d47ddb13"
+    }
+  },
+  "observations": [
+    {
+      "caseId": "line-empty-input",
+      "source": "Typesetter.js:218-246,392-430",
+      "observation": "Empty text still creates the initial line record and deterministic block metrics."
+    },
+    {
+      "caseId": "line-empty-and-breaks",
+      "source": "Typesetter.js:208-213,382-389",
+      "observation": "CRLF and CR are replaced by LF before layout; each newline starts another line, including a trailing empty line."
+    },
+    {
+      "caseId": "line-trailing-whitespace",
+      "source": "Typesetter.js:392-404,491-525",
+      "observation": "Trailing whitespace is excluded from measured line width and justification distribution while its logical characters remain."
+    },
+    {
+      "caseId": "wrap-normal-soft",
+      "source": "Typesetter.js:320-370",
+      "observation": "Finite-width normal wrapping searches backward for the most recent allowed break and marks the prior line soft-wrapped."
+    },
+    {
+      "caseId": "wrap-nowrap-overflow",
+      "source": "Typesetter.js:244,320-370",
+      "observation": "The nowrap option disables the overflow wrapping branch, and an unbreakable run may exceed maxWidth."
+    },
+    {
+      "caseId": "wrap-break-word-indent",
+      "source": "Typesetter.js:246-249,320-370",
+      "observation": "Indentation initializes the first line offset; break-word permits a hard overflow split when no earlier break is available."
+    },
+    {
+      "caseId": "metrics-spacing-baseline",
+      "source": "Typesetter.js:273-310,392-430",
+      "observation": "Per-run font size scales metrics; a line selects its tallest height and lowest baseline, and letter spacing advances glyph placement."
+    },
+    {
+      "caseId": "align-justify",
+      "source": "Typesetter.js:491-525",
+      "observation": "Center and right alignment translate a line; justification distributes remaining width only across non-trailing whitespace on soft-wrapped lines."
+    },
+    {
+      "caseId": "anchor-numeric-keyword-percent",
+      "source": "Typesetter.js:432-463",
+      "observation": "Numeric, keyword, and percentage anchors translate final glyph positions, carets, and reported bounds."
+    },
+    {
+      "caseId": "bidi-ltr-rtl-multiline",
+      "source": "Typesetter.js:481-558",
+      "observation": "Bidi levels are resolved for the paragraph, then reorder segments are applied independently within each constructed line."
+    },
+    {
+      "caseId": "runs-style-size-language",
+      "source": "TextBuilder.js:150-209; Typesetter.js:113-166,257-310",
+      "observation": "Start-indexed style maps are converted into font, size, and vertical-offset ranges before font runs are split at size boundaries."
+    },
+    {
+      "caseId": "runs-fallback-grapheme",
+      "source": "FontResolver.js:145-243",
+      "observation": "Fallback is selected by Unicode code point with explicit surrogate-pair carry-forward; combining and broader grapheme grouping are not resolved as one unit."
+    },
+    {
+      "caseId": "bounds-overhang-empty-grouping",
+      "source": "Typesetter.js:473-486,606-646,701-707",
+      "observation": "Block bounds follow line layout, visible bounds union scaled visible glyph extents, and additional chunk bounds are emitted only for renderer culling."
+    },
+    {
+      "caseId": "carets-complex-clusters",
+      "source": "Typesetter.js:559-596,669-681,736-749",
+      "observation": "Caret edges follow bidi direction and missing character positions inside ligatures are filled by evenly dividing the ligature width."
+    },
+    {
+      "caseId": "selection-forward-reversed-empty",
+      "source": "selectionUtils.js:51-110",
+      "observation": "Selection ranges are normalized and clipped before adjacent character rectangles are accumulated."
+    },
+    {
+      "caseId": "selection-multiline-bidi",
+      "source": "selectionUtils.js:71-105",
+      "observation": "A new rectangle starts across line or direction discontinuities, then overlapping rectangles on the same row are merged."
+    }
+  ]
+}

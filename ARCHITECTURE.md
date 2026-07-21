@@ -19,6 +19,20 @@ The greenfield split therefore cuts through `FontParser`, `SDFGenerator`, and es
 
 The most important deliberate departure is font shaping. Troika’s custom Typr-based path is retained as evidence and fixture material, but the production font engine will use [HarfBuzzjs](https://github.com/harfbuzz/harfbuzzjs). This avoids carrying a project-owned subset of OpenType shaping into a compatibility-free codebase.
 
+## Implementation status
+
+The greenfield pnpm/Turborepo/Biome/Vitest baseline and the production
+`@webgpu-text/font` and resolved `@webgpu-text/layout` cores are implemented and
+validated. Layout now accepts fully selected, itemized, shaped, and scaled runs
+and provides deterministic line construction, visual placement, bounds,
+carets, and selection rectangles. The accepted policy boundary and its evidence
+are documented in [`docs/validation/layout-policy.md`](docs/validation/layout-policy.md).
+
+Automatic script/direction itemization, font selection and fallback, complete
+Unicode line breaking, reshaping around line boundaries, bidi caret affinity,
+and workers remain separate follow-ups. Font-byte acquisition is caller-owned:
+no core package accepts URLs or performs network fetching.
+
 ## Current responsibility map
 
 ```mermaid
@@ -146,20 +160,26 @@ The important correction from the old naming is that “font loading,” “font
 
 **Owns:**
 
-- A `FontProvider` interface and optional browser URL-loading implementation.
-- Font caching, user-font selection, fallback resolution, language/style/weight runs.
-- Paragraph direction and bidirectional visual ordering.
-- Line breaking, wrapping, alignment, indentation, anchoring, line metrics, and per-range styles.
+- The implemented `ResolvedLayoutInput` boundary for fully selected, itemized, shaped, and scaled runs.
+- Deterministic hard breaks, whitespace wrapping, alignment, indentation, anchoring, line metrics, and resolved bidi-level visual ordering.
 - Positioned glyph instances, block/visible bounds, caret positions, selection rectangles, and point-to-caret hit testing.
-- Optional ESM worker entry points for moving layout off the main thread.
+- Future automatic itemization/fallback policy over caller-supplied font handles or a caller-supplied provider.
+- Future optional ESM worker entry points for moving layout off the main thread.
 
-**Inputs:** text and layout options plus a `FontProvider` returning `FontHandle` values.
+**Inputs today:** text policy plus `ResolvedShapedRun` values using one effective layout-unit coordinate system.
 
-**Outputs:** a renderer-neutral `LayoutResult` containing glyph references, font identities, positions, sizes, bounds, and carets. Outlines are not embedded in the result; a `LayoutSession` resolves them lazily by glyph reference.
+**Outputs:** a renderer-neutral `LayoutResult` containing glyph references, font identities, positions, sizes, bounds, and carets. Outlines are not embedded in the result.
 
-**Does not own:** SDF resolution, atlas indices, textures, materials, scene objects, or renderer synchronization.
+**Does not own:** font-byte acquisition or URL fetching, SDF resolution, atlas indices, textures, materials, scene objects, or renderer synchronization.
 
 This package is useful by itself for editors, DOM/canvas renderers, hit testing, measurement, server-side preprocessing, and non-SDF renderers.
+
+Its policy boundary is fixed by three separate evidence layers: controlled
+synthetic resolved runs are the normative layout oracle, public
+`@webgpu-text/font` results prove the shaped-run seam, and normalized Troika
+observations explain which behavior is preserved or changed. Keeping those
+layers separate prevents a HarfBuzz/font revision from silently rewriting
+wrapping, alignment, caret, or selection policy.
 
 ### `@scope/sdf`
 
@@ -210,7 +230,7 @@ The exact TypeScript names are provisional; the separation is not.
 | `FontHandle` | `font` | `text-layout`, direct users | normalized metrics, coverage, shaping and lazy outline access | HarfBuzz pointers, network state, layout settings, atlas state |
 | `ShapedRun` | `font` | `text-layout`, direct users | glyph IDs, cluster/source indices, advances, offsets | line breaks, final x/y placement |
 | `LayoutResult` | `text-layout` | renderer, editors, direct users | positioned glyph references, font keys, bounds, line data, carets | outlines, SDF pixels, atlas indices, Three objects |
-| `GlyphOutline` | `font`, exposed lazily through `LayoutSession` | `sdf`, direct users | path commands and view box for one glyph reference | placement, SDF pixels, atlas state |
+| `GlyphOutline` | `font` | `sdf`, renderer orchestration, direct users | path commands and view box for one glyph reference | placement, SDF pixels, atlas state |
 | `Outline` | any producer | `sdf` | path commands and view box | font tables, text, placement |
 | `SdfBitmap` | `sdf` | renderer, direct users | one-channel pixels and encoding metadata | canvas and GPU handles |
 | `RendererAtlas` | renderer | renderer internals | RGBA bytes, slot metadata, dirty regions, cache and Three texture | public SDF API and parser details |
@@ -227,16 +247,16 @@ sequenceDiagram
     participant Three as @scope/three-webgpu-text
     participant GPU as Three WebGPURenderer
 
+    App->>App: acquire bytes by application policy
     App->>Font: load(fontBytes)
     Font-->>App: FontHandle
-    App->>Layout: layout(text, options, fontProvider)
-    Layout->>Font: shape each resolved run
-    Font-->>Layout: ShapedRun with glyph references
+    App->>Font: shape selected directional/script runs
+    Font-->>App: ShapedRun in font units
+    App->>App: scale and assemble ResolvedLayoutInput
+    App->>Layout: layoutResolvedText(input)
     Layout-->>App: LayoutResult
-    App->>Layout: getGlyphOutline(glyphRef) on demand
-    Layout->>Font: resolve cached outline
-    Font-->>Layout: GlyphOutline
-    Layout-->>App: GlyphOutline
+    App->>Font: getOutline(glyphId) on demand
+    Font-->>App: GlyphOutline
     App->>SDF: generate(outline, options)
     SDF-->>App: SdfBitmap
     App->>Three: create/update from layout and bitmap data
@@ -268,17 +288,11 @@ font.dispose()
 ### Lay out text without rendering it
 
 ```ts
-import { createLayoutSession } from '@scope/text-layout'
+import { layoutResolvedText } from '@webgpu-text/layout'
 
-const layout = createLayoutSession({ defaultFont: '/fonts/inter.ttf' })
-const result = await layout.layoutText({
-  text: 'Hello مرحبا',
-  maxWidth: 480,
-  includeCarets: true
-})
-
-// Computed only if this consumer actually needs vector data:
-const outline = await layout.getGlyphOutline(result.glyphs[0].ref)
+// The application acquires bytes, selects fonts, itemizes, shapes, and scales
+// runs before this pure call. See packages/layout/README.md for the full shape.
+const result = layoutResolvedText(resolvedInput)
 ```
 
 ### Generate an SDF from an arbitrary outline
@@ -302,7 +316,7 @@ import { Text } from '@scope/three-webgpu-text'
 
 const text = new Text({
   text: 'Hello',
-  font: '/fonts/inter.ttf',
+  font,
   fontSize: 0.1
 })
 
@@ -353,7 +367,7 @@ The workspace can publish four packages from one repository and version them tog
 | `FontParser.js` GSUB/GPOS, joining, glyph mapping, and kerning | `font` shaping adapter | Replace with HarfBuzz shaping; retain representative old outputs only for comparison and intentional-difference review |
 | `FontParser.js` outline cache | `font` outline adapter | Preserve lazy/cache behavior with direct numeric HarfBuzz callbacks and a glyph/variation cache; never use its SVG round-trip |
 | `woff2otf.js`, generated Typr factory, and Typr sources | local reference only | Do not port into the production runtime. V1 accepts normalized TTF/OTF and rejects WOFF/WOFF2 explicitly; decoder evaluation is separate follow-up work |
-| `FontResolver.js` | `text-layout` font-provider modules | Separate pure selection policy from browser fetching and cache ownership |
+| `FontResolver.js` | future `text-layout` selection policy plus application adapters | Preserve only pure selection/fallback ideas; applications own byte acquisition, while optional helpers may own URL/cache convenience outside the core path |
 | `Typesetter.js` | `text-layout` | Split run shaping, line construction, bidi placement, result assembly, and interaction data while preserving fixtures |
 | `selectionUtils.js` | `text-layout` | Port as pure helpers over `LayoutResult` |
 | CPU behavior behind `SDFGenerator.js` | `sdf` | Port the MIT-licensed CPU encoder with its notice and golden fixtures; expose pure typed-array input/output; delete WebGL and canvas paths |
@@ -386,13 +400,19 @@ Each package gets tests at its own contract:
 
 Cross-package integration fixtures cover only the contracts between packages. This prevents renderer failures from being mistaken for parser failures and allows each lower layer to be validated without a GPU.
 
+The accepted layout corpus and implementation handoff are documented in
+[`docs/validation/layout-policy.md`](docs/validation/layout-policy.md). Its
+synthetic fixtures are production conformance inputs; its real-font records are
+boundary observations. They prove the resolved layout core, not automatic
+itemization, provider/fallback policy, or worker support.
+
 ## Architectural rules for future changes
 
 1. A lower-level package cannot import a higher-level package.
 2. Only `three-webgpu-text` may import `three`.
 3. Only `text-layout` decides line placement and caret geometry.
 4. Only `sdf` defines SDF encoding; only the renderer decodes it in TSL.
-5. URL loading and workers are adapters around pure operations, not prerequisites for them.
+5. Applications own font-byte acquisition. Any future URL/cache helper and workers are optional adapters around pure operations, never prerequisites or core-package behavior.
 6. Global mutable configuration and process-wide singleton atlases are prohibited.
 7. Every package must have at least one direct consumer example that imports no higher layer.
 8. A new package requires an independently useful public capability, not merely a convenient folder boundary.
@@ -403,7 +423,7 @@ Cross-package integration fixtures cover only the contracts between packages. Th
 
 Troika does not merely import a parser. It layers custom Arabic joining, selected GSUB/GPOS handling, kerning, cluster mapping, and outline behavior on top of a generated Typr build. Porting that code would make this project responsible for a partial OpenType shaping engine indefinitely. That cost is not justified when compatibility with Troika’s exact shaping output is explicitly out of scope.
 
-The first `font` implementation will therefore wrap [HarfBuzzjs](https://github.com/harfbuzz/harfbuzzjs) behind stable `FontHandle`, `ShapedRun`, and `GlyphOutline` contracts. HarfBuzz owns font-specific glyph substitution and positioning. `text-layout` continues to own font fallback, directional/script run orchestration, line breaking, wrapping, visual placement, carets, and selection geometry.
+The first `font` implementation therefore wraps [HarfBuzzjs](https://github.com/harfbuzz/harfbuzzjs) behind stable `FontHandle`, `ShapedRun`, and `GlyphOutline` contracts. HarfBuzz owns font-specific glyph substitution and positioning. The implemented layout core owns line construction, wrapping, resolved bidi-level visual placement, carets, and selection geometry. Automatic fallback and directional/script itemization remain future layout policy over caller-supplied fonts; they do not imply URL fetching.
 
 HarfBuzzjs exposes the font facts needed by v1, so the project does not need a second general-purpose parser such as OpenType.js or Fontkit. The published 1.4.0 wrapper's public surface renders glyphs only through SVG-string convenience methods, but its packaged WASM already exports the required drawing functions. A general table-inspection or font-editing API remains a separate future capability, not a dependency of text rendering.
 
@@ -432,7 +452,12 @@ The validated input policy is TTF and CFF/OTF only. The tested WOFF and WOFF2 co
 
 ### Resolve outlines lazily
 
-`LayoutResult` carries stable glyph references, not vector paths. A `LayoutSession` exposes asynchronous `getGlyphOutline(ref)` access and may proxy that request to its layout worker. The renderer requests an outline only when a glyph is missing from its atlas, then both the font backend and renderer cache the result.
+`LayoutResult` carries stable font/glyph references, not vector paths. The
+implemented resolved core leaves outline lookup with the caller's font registry.
+A future high-level session may proxy lazy lookups to a worker, but it must not
+make outlines eager or take ownership of font acquisition. The renderer requests
+an outline only when a glyph is missing from its atlas, then the font backend and
+renderer can cache the result.
 
 This keeps ordinary measurement, caret, and hit-testing use cases from paying outline computation, transfer, and memory costs. A future serialization helper may materialize all outlines, but v1 will not add an `includeOutlines` layout option.
 

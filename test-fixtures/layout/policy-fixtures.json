@@ -1,0 +1,4026 @@
+{
+  "schemaVersion": 1,
+  "numericPrecision": 6,
+  "fixtures": [
+    {
+      "id": "line-empty-input",
+      "intent": "Represent empty input with one editable empty line and deterministic zero bounds.",
+      "tags": [
+        "line-construction",
+        "empty-input",
+        "carets",
+        "bounds"
+      ],
+      "classification": "preserve",
+      "rationale": "Renderer-neutral layout behavior remains useful independently of the old renderer.",
+      "evidence": {
+        "layer": "synthetic",
+        "source": "synthetic fixture",
+        "integrity": "layout-policy-schema-v1"
+      },
+      "input": {
+        "text": "",
+        "paragraphLevel": 0,
+        "defaultMetrics": {
+          "ascender": 8,
+          "descender": -2,
+          "lineGap": 2
+        },
+        "maxWidth": null,
+        "whiteSpace": "normal",
+        "overflowWrap": "normal",
+        "textAlign": "left",
+        "textIndent": 0,
+        "letterSpacing": 0,
+        "lineHeight": "normal",
+        "anchorX": 0,
+        "anchorY": 0,
+        "runs": []
+      },
+      "expected": {
+        "sourceLengthUtf16": 0,
+        "fontKeys": [],
+        "glyphs": [],
+        "lines": [
+          {
+            "start": 0,
+            "end": 0,
+            "glyphStart": 0,
+            "glyphEnd": 0,
+            "baseline": 0,
+            "left": 0,
+            "right": 0,
+            "bottom": -2,
+            "top": 8,
+            "breakAfter": "none"
+          }
+        ],
+        "carets": [
+          {
+            "offset": 0,
+            "lineIndex": 0,
+            "x": 0,
+            "bottom": -2,
+            "top": 8
+          }
+        ],
+        "blockBounds": {
+          "left": 0,
+          "bottom": 0,
+          "right": 0,
+          "top": 0
+        },
+        "visibleBounds": null
+      },
+      "selections": []
+    },
+    {
+      "id": "line-empty-and-breaks",
+      "intent": "Treat CRLF as one hard break, preserve source indices, and retain explicit empty lines.",
+      "tags": [
+        "line-construction",
+        "newlines",
+        "empty-lines",
+        "utf16"
+      ],
+      "classification": "intentional-change",
+      "rationale": "Keep original UTF-16 indices while treating CRLF as one break; Troika normalizes and shortens the string.",
+      "evidence": {
+        "layer": "troika-reference",
+        "source": "Troika reference observation",
+        "integrity": "bca98dddeb3602b04d5452602e7da32df2fafe06"
+      },
+      "input": {
+        "text": "A\r\n\rB\n",
+        "paragraphLevel": 0,
+        "defaultMetrics": {
+          "ascender": 8,
+          "descender": -2,
+          "lineGap": 2
+        },
+        "maxWidth": null,
+        "whiteSpace": "normal",
+        "overflowWrap": "normal",
+        "textAlign": "left",
+        "textIndent": 0,
+        "letterSpacing": 0,
+        "lineHeight": "normal",
+        "anchorX": 0,
+        "anchorY": 0,
+        "runs": [
+          {
+            "start": 0,
+            "end": 6,
+            "direction": "ltr",
+            "bidiLevel": 0,
+            "script": "Latn",
+            "language": "en",
+            "styleKey": "default",
+            "fontKey": "synthetic/base",
+            "fontSize": 10,
+            "metrics": {
+              "ascender": 8,
+              "descender": -2,
+              "lineGap": 2
+            },
+            "variations": {},
+            "glyphs": [
+              {
+                "glyphId": 65,
+                "start": 0,
+                "end": 1,
+                "xAdvance": 10,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": {
+                  "left": 0,
+                  "bottom": -2,
+                  "right": 8,
+                  "top": 8
+                }
+              },
+              {
+                "glyphId": 66,
+                "start": 4,
+                "end": 5,
+                "xAdvance": 10,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": {
+                  "left": 0,
+                  "bottom": -2,
+                  "right": 8,
+                  "top": 8
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "sourceLengthUtf16": 6,
+        "fontKeys": [
+          "synthetic/base"
+        ],
+        "glyphs": [
+          {
+            "start": 0,
+            "end": 1,
+            "fontKey": "synthetic/base",
+            "styleKey": "default",
+            "glyphId": 65,
+            "variations": {},
+            "lineIndex": 0,
+            "x": 0,
+            "y": 0,
+            "xAdvance": 10,
+            "yAdvance": 0,
+            "xOffset": 0,
+            "yOffset": 0,
+            "bounds": {
+              "left": 0,
+              "bottom": -2,
+              "right": 8,
+              "top": 8
+            }
+          },
+          {
+            "start": 4,
+            "end": 5,
+            "fontKey": "synthetic/base",
+            "styleKey": "default",
+            "glyphId": 66,
+            "variations": {},
+            "lineIndex": 2,
+            "x": 0,
+            "y": -24,
+            "xAdvance": 10,
+            "yAdvance": 0,
+            "xOffset": 0,
+            "yOffset": 0,
+            "bounds": {
+              "left": 0,
+              "bottom": -2,
+              "right": 8,
+              "top": 8
+            }
+          }
+        ],
+        "lines": [
+          {
+            "start": 0,
+            "end": 3,
+            "glyphStart": 0,
+            "glyphEnd": 1,
+            "baseline": 0,
+            "left": 0,
+            "right": 10,
+            "bottom": -2,
+            "top": 8,
+            "breakAfter": "hard"
+          },
+          {
+            "start": 3,
+            "end": 4,
+            "glyphStart": 1,
+            "glyphEnd": 1,
+            "baseline": -12,
+            "left": 0,
+            "right": 0,
+            "bottom": -14,
+            "top": -4,
+            "breakAfter": "hard"
+          },
+          {
+            "start": 4,
+            "end": 6,
+            "glyphStart": 1,
+            "glyphEnd": 2,
+            "baseline": -24,
+            "left": 0,
+            "right": 10,
+            "bottom": -26,
+            "top": -16,
+            "breakAfter": "hard"
+          },
+          {
+            "start": 6,
+            "end": 6,
+            "glyphStart": 2,
+            "glyphEnd": 2,
+            "baseline": -36,
+            "left": 0,
+            "right": 0,
+            "bottom": -38,
+            "top": -28,
+            "breakAfter": "none"
+          }
+        ],
+        "carets": [
+          {
+            "offset": 0,
+            "lineIndex": 0,
+            "x": 0,
+            "bottom": -2,
+            "top": 8
+          },
+          {
+            "offset": 1,
+            "lineIndex": 0,
+            "x": 10,
+            "bottom": -2,
+            "top": 8
+          },
+          {
+            "offset": 3,
+            "lineIndex": 1,
+            "x": 0,
+            "bottom": -14,
+            "top": -4
+          },
+          {
+            "offset": 4,
+            "lineIndex": 2,
+            "x": 0,
+            "bottom": -26,
+            "top": -16
+          },
+          {
+            "offset": 5,
+            "lineIndex": 2,
+            "x": 10,
+            "bottom": -26,
+            "top": -16
+          },
+          {
+            "offset": 6,
+            "lineIndex": 3,
+            "x": 0,
+            "bottom": -38,
+            "top": -28
+          }
+        ],
+        "blockBounds": {
+          "left": 0,
+          "bottom": -38,
+          "right": 10,
+          "top": 8
+        },
+        "visibleBounds": {
+          "left": 0,
+          "bottom": -26,
+          "right": 8,
+          "top": 8
+        }
+      },
+      "selections": []
+    },
+    {
+      "id": "line-trailing-whitespace",
+      "intent": "Exclude trailing whitespace from line and block width while retaining caret advances.",
+      "tags": [
+        "line-construction",
+        "whitespace",
+        "bounds"
+      ],
+      "classification": "preserve",
+      "rationale": "Renderer-neutral layout behavior remains useful independently of the old renderer.",
+      "evidence": {
+        "layer": "synthetic",
+        "source": "synthetic fixture",
+        "integrity": "layout-policy-schema-v1"
+      },
+      "input": {
+        "text": "A  ",
+        "paragraphLevel": 0,
+        "defaultMetrics": {
+          "ascender": 8,
+          "descender": -2,
+          "lineGap": 2
+        },
+        "maxWidth": null,
+        "whiteSpace": "normal",
+        "overflowWrap": "normal",
+        "textAlign": "left",
+        "textIndent": 0,
+        "letterSpacing": 0,
+        "lineHeight": "normal",
+        "anchorX": 0,
+        "anchorY": 0,
+        "runs": [
+          {
+            "start": 0,
+            "end": 3,
+            "direction": "ltr",
+            "bidiLevel": 0,
+            "script": "Latn",
+            "language": "en",
+            "styleKey": "default",
+            "fontKey": "synthetic/base",
+            "fontSize": 10,
+            "metrics": {
+              "ascender": 8,
+              "descender": -2,
+              "lineGap": 2
+            },
+            "variations": {},
+            "glyphs": [
+              {
+                "glyphId": 65,
+                "start": 0,
+                "end": 1,
+                "xAdvance": 10,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": {
+                  "left": 0,
+                  "bottom": -2,
+                  "right": 8,
+                  "top": 8
+                }
+              },
+              {
+                "glyphId": 32,
+                "start": 1,
+                "end": 2,
+                "xAdvance": 5,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": null
+              },
+              {
+                "glyphId": 32,
+                "start": 2,
+                "end": 3,
+                "xAdvance": 5,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": null
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "sourceLengthUtf16": 3,
+        "fontKeys": [
+          "synthetic/base"
+        ],
+        "glyphs": [
+          {
+            "start": 0,
+            "end": 1,
+            "fontKey": "synthetic/base",
+            "styleKey": "default",
+            "glyphId": 65,
+            "variations": {},
+            "lineIndex": 0,
+            "x": 0,
+            "y": 0,
+            "xAdvance": 10,
+            "yAdvance": 0,
+            "xOffset": 0,
+            "yOffset": 0,
+            "bounds": {
+              "left": 0,
+              "bottom": -2,
+              "right": 8,
+              "top": 8
+            }
+          }
+        ],
+        "lines": [
+          {
+            "start": 0,
+            "end": 3,
+            "glyphStart": 0,
+            "glyphEnd": 1,
+            "baseline": 0,
+            "left": 0,
+            "right": 10,
+            "bottom": -2,
+            "top": 8,
+            "breakAfter": "none"
+          }
+        ],
+        "carets": [
+          {
+            "offset": 0,
+            "lineIndex": 0,
+            "x": 0,
+            "bottom": -2,
+            "top": 8
+          },
+          {
+            "offset": 1,
+            "lineIndex": 0,
+            "x": 10,
+            "bottom": -2,
+            "top": 8
+          },
+          {
+            "offset": 2,
+            "lineIndex": 0,
+            "x": 15,
+            "bottom": -2,
+            "top": 8
+          },
+          {
+            "offset": 3,
+            "lineIndex": 0,
+            "x": 20,
+            "bottom": -2,
+            "top": 8
+          }
+        ],
+        "blockBounds": {
+          "left": 0,
+          "bottom": -2,
+          "right": 10,
+          "top": 8
+        },
+        "visibleBounds": {
+          "left": 0,
+          "bottom": -2,
+          "right": 8,
+          "top": 8
+        }
+      },
+      "selections": []
+    },
+    {
+      "id": "wrap-normal-soft",
+      "intent": "Soft-wrap after whitespace when the next visible glyph exceeds the finite width.",
+      "tags": [
+        "wrapping",
+        "soft-break",
+        "finite-width"
+      ],
+      "classification": "preserve",
+      "rationale": "Renderer-neutral layout behavior remains useful independently of the old renderer.",
+      "evidence": {
+        "layer": "synthetic",
+        "source": "synthetic fixture",
+        "integrity": "layout-policy-schema-v1"
+      },
+      "input": {
+        "text": "A A",
+        "paragraphLevel": 0,
+        "defaultMetrics": {
+          "ascender": 8,
+          "descender": -2,
+          "lineGap": 2
+        },
+        "maxWidth": 15,
+        "whiteSpace": "normal",
+        "overflowWrap": "normal",
+        "textAlign": "left",
+        "textIndent": 0,
+        "letterSpacing": 0,
+        "lineHeight": "normal",
+        "anchorX": 0,
+        "anchorY": 0,
+        "runs": [
+          {
+            "start": 0,
+            "end": 3,
+            "direction": "ltr",
+            "bidiLevel": 0,
+            "script": "Latn",
+            "language": "en",
+            "styleKey": "default",
+            "fontKey": "synthetic/base",
+            "fontSize": 10,
+            "metrics": {
+              "ascender": 8,
+              "descender": -2,
+              "lineGap": 2
+            },
+            "variations": {},
+            "glyphs": [
+              {
+                "glyphId": 65,
+                "start": 0,
+                "end": 1,
+                "xAdvance": 10,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": {
+                  "left": 0,
+                  "bottom": -2,
+                  "right": 8,
+                  "top": 8
+                }
+              },
+              {
+                "glyphId": 32,
+                "start": 1,
+                "end": 2,
+                "xAdvance": 5,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": null
+              },
+              {
+                "glyphId": 65,
+                "start": 2,
+                "end": 3,
+                "xAdvance": 10,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": {
+                  "left": 0,
+                  "bottom": -2,
+                  "right": 8,
+                  "top": 8
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "sourceLengthUtf16": 3,
+        "fontKeys": [
+          "synthetic/base"
+        ],
+        "glyphs": [
+          {
+            "start": 0,
+            "end": 1,
+            "fontKey": "synthetic/base",
+            "styleKey": "default",
+            "glyphId": 65,
+            "variations": {},
+            "lineIndex": 0,
+            "x": 0,
+            "y": 0,
+            "xAdvance": 10,
+            "yAdvance": 0,
+            "xOffset": 0,
+            "yOffset": 0,
+            "bounds": {
+              "left": 0,
+              "bottom": -2,
+              "right": 8,
+              "top": 8
+            }
+          },
+          {
+            "start": 2,
+            "end": 3,
+            "fontKey": "synthetic/base",
+            "styleKey": "default",
+            "glyphId": 65,
+            "variations": {},
+            "lineIndex": 1,
+            "x": 0,
+            "y": -12,
+            "xAdvance": 10,
+            "yAdvance": 0,
+            "xOffset": 0,
+            "yOffset": 0,
+            "bounds": {
+              "left": 0,
+              "bottom": -2,
+              "right": 8,
+              "top": 8
+            }
+          }
+        ],
+        "lines": [
+          {
+            "start": 0,
+            "end": 2,
+            "glyphStart": 0,
+            "glyphEnd": 1,
+            "baseline": 0,
+            "left": 0,
+            "right": 10,
+            "bottom": -2,
+            "top": 8,
+            "breakAfter": "soft"
+          },
+          {
+            "start": 2,
+            "end": 3,
+            "glyphStart": 1,
+            "glyphEnd": 2,
+            "baseline": -12,
+            "left": 0,
+            "right": 10,
+            "bottom": -14,
+            "top": -4,
+            "breakAfter": "none"
+          }
+        ],
+        "carets": [
+          {
+            "offset": 0,
+            "lineIndex": 0,
+            "x": 0,
+            "bottom": -2,
+            "top": 8
+          },
+          {
+            "offset": 1,
+            "lineIndex": 0,
+            "x": 10,
+            "bottom": -2,
+            "top": 8
+          },
+          {
+            "offset": 2,
+            "lineIndex": 1,
+            "x": 0,
+            "bottom": -14,
+            "top": -4
+          },
+          {
+            "offset": 3,
+            "lineIndex": 1,
+            "x": 10,
+            "bottom": -14,
+            "top": -4
+          }
+        ],
+        "blockBounds": {
+          "left": 0,
+          "bottom": -14,
+          "right": 15,
+          "top": 8
+        },
+        "visibleBounds": {
+          "left": 0,
+          "bottom": -14,
+          "right": 8,
+          "top": 8
+        }
+      },
+      "selections": []
+    },
+    {
+      "id": "wrap-nowrap-overflow",
+      "intent": "Allow a no-wrap line and an unbreakable run to exceed maxWidth without changing glyph order.",
+      "tags": [
+        "wrapping",
+        "nowrap",
+        "overflow",
+        "unbreakable"
+      ],
+      "classification": "preserve",
+      "rationale": "Renderer-neutral layout behavior remains useful independently of the old renderer.",
+      "evidence": {
+        "layer": "synthetic",
+        "source": "synthetic fixture",
+        "integrity": "layout-policy-schema-v1"
+      },
+      "input": {
+        "text": "AAA",
+        "paragraphLevel": 0,
+        "defaultMetrics": {
+          "ascender": 8,
+          "descender": -2,
+          "lineGap": 2
+        },
+        "maxWidth": 15,
+        "whiteSpace": "nowrap",
+        "overflowWrap": "normal",
+        "textAlign": "left",
+        "textIndent": 0,
+        "letterSpacing": 0,
+        "lineHeight": "normal",
+        "anchorX": 0,
+        "anchorY": 0,
+        "runs": [
+          {
+            "start": 0,
+            "end": 3,
+            "direction": "ltr",
+            "bidiLevel": 0,
+            "script": "Latn",
+            "language": "en",
+            "styleKey": "default",
+            "fontKey": "synthetic/base",
+            "fontSize": 10,
+            "metrics": {
+              "ascender": 8,
+              "descender": -2,
+              "lineGap": 2
+            },
+            "variations": {},
+            "glyphs": [
+              {
+                "glyphId": 65,
+                "start": 0,
+                "end": 1,
+                "xAdvance": 10,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": {
+                  "left": 0,
+                  "bottom": -2,
+                  "right": 8,
+                  "top": 8
+                }
+              },
+              {
+                "glyphId": 65,
+                "start": 1,
+                "end": 2,
+                "xAdvance": 10,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": {
+                  "left": 0,
+                  "bottom": -2,
+                  "right": 8,
+                  "top": 8
+                }
+              },
+              {
+                "glyphId": 65,
+                "start": 2,
+                "end": 3,
+                "xAdvance": 10,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": {
+                  "left": 0,
+                  "bottom": -2,
+                  "right": 8,
+                  "top": 8
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "sourceLengthUtf16": 3,
+        "fontKeys": [
+          "synthetic/base"
+        ],
+        "glyphs": [
+          {
+            "start": 0,
+            "end": 1,
+            "fontKey": "synthetic/base",
+            "styleKey": "default",
+            "glyphId": 65,
+            "variations": {},
+            "lineIndex": 0,
+            "x": 0,
+            "y": 0,
+            "xAdvance": 10,
+            "yAdvance": 0,
+            "xOffset": 0,
+            "yOffset": 0,
+            "bounds": {
+              "left": 0,
+              "bottom": -2,
+              "right": 8,
+              "top": 8
+            }
+          },
+          {
+            "start": 1,
+            "end": 2,
+            "fontKey": "synthetic/base",
+            "styleKey": "default",
+            "glyphId": 65,
+            "variations": {},
+            "lineIndex": 0,
+            "x": 10,
+            "y": 0,
+            "xAdvance": 10,
+            "yAdvance": 0,
+            "xOffset": 0,
+            "yOffset": 0,
+            "bounds": {
+              "left": 0,
+              "bottom": -2,
+              "right": 8,
+              "top": 8
+            }
+          },
+          {
+            "start": 2,
+            "end": 3,
+            "fontKey": "synthetic/base",
+            "styleKey": "default",
+            "glyphId": 65,
+            "variations": {},
+            "lineIndex": 0,
+            "x": 20,
+            "y": 0,
+            "xAdvance": 10,
+            "yAdvance": 0,
+            "xOffset": 0,
+            "yOffset": 0,
+            "bounds": {
+              "left": 0,
+              "bottom": -2,
+              "right": 8,
+              "top": 8
+            }
+          }
+        ],
+        "lines": [
+          {
+            "start": 0,
+            "end": 3,
+            "glyphStart": 0,
+            "glyphEnd": 3,
+            "baseline": 0,
+            "left": 0,
+            "right": 30,
+            "bottom": -2,
+            "top": 8,
+            "breakAfter": "none"
+          }
+        ],
+        "carets": [
+          {
+            "offset": 0,
+            "lineIndex": 0,
+            "x": 0,
+            "bottom": -2,
+            "top": 8
+          },
+          {
+            "offset": 1,
+            "lineIndex": 0,
+            "x": 10,
+            "bottom": -2,
+            "top": 8
+          },
+          {
+            "offset": 2,
+            "lineIndex": 0,
+            "x": 20,
+            "bottom": -2,
+            "top": 8
+          },
+          {
+            "offset": 3,
+            "lineIndex": 0,
+            "x": 30,
+            "bottom": -2,
+            "top": 8
+          }
+        ],
+        "blockBounds": {
+          "left": 0,
+          "bottom": -2,
+          "right": 30,
+          "top": 8
+        },
+        "visibleBounds": {
+          "left": 0,
+          "bottom": -2,
+          "right": 28,
+          "top": 8
+        }
+      },
+      "selections": []
+    },
+    {
+      "id": "wrap-break-word-indent",
+      "intent": "Apply indentation before break-word overflow and reset it on the continuation line.",
+      "tags": [
+        "wrapping",
+        "break-word",
+        "indentation",
+        "hard-overflow"
+      ],
+      "classification": "preserve",
+      "rationale": "Renderer-neutral layout behavior remains useful independently of the old renderer.",
+      "evidence": {
+        "layer": "synthetic",
+        "source": "synthetic fixture",
+        "integrity": "layout-policy-schema-v1"
+      },
+      "input": {
+        "text": "AAA",
+        "paragraphLevel": 0,
+        "defaultMetrics": {
+          "ascender": 8,
+          "descender": -2,
+          "lineGap": 2
+        },
+        "maxWidth": 20,
+        "whiteSpace": "normal",
+        "overflowWrap": "break-word",
+        "textAlign": "left",
+        "textIndent": 5,
+        "letterSpacing": 0,
+        "lineHeight": "normal",
+        "anchorX": 0,
+        "anchorY": 0,
+        "runs": [
+          {
+            "start": 0,
+            "end": 3,
+            "direction": "ltr",
+            "bidiLevel": 0,
+            "script": "Latn",
+            "language": "en",
+            "styleKey": "default",
+            "fontKey": "synthetic/base",
+            "fontSize": 10,
+            "metrics": {
+              "ascender": 8,
+              "descender": -2,
+              "lineGap": 2
+            },
+            "variations": {},
+            "glyphs": [
+              {
+                "glyphId": 65,
+                "start": 0,
+                "end": 1,
+                "xAdvance": 10,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": {
+                  "left": 0,
+                  "bottom": -2,
+                  "right": 8,
+                  "top": 8
+                }
+              },
+              {
+                "glyphId": 65,
+                "start": 1,
+                "end": 2,
+                "xAdvance": 10,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": {
+                  "left": 0,
+                  "bottom": -2,
+                  "right": 8,
+                  "top": 8
+                }
+              },
+              {
+                "glyphId": 65,
+                "start": 2,
+                "end": 3,
+                "xAdvance": 10,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": {
+                  "left": 0,
+                  "bottom": -2,
+                  "right": 8,
+                  "top": 8
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "sourceLengthUtf16": 3,
+        "fontKeys": [
+          "synthetic/base"
+        ],
+        "glyphs": [
+          {
+            "start": 0,
+            "end": 1,
+            "fontKey": "synthetic/base",
+            "styleKey": "default",
+            "glyphId": 65,
+            "variations": {},
+            "lineIndex": 0,
+            "x": 5,
+            "y": 0,
+            "xAdvance": 10,
+            "yAdvance": 0,
+            "xOffset": 0,
+            "yOffset": 0,
+            "bounds": {
+              "left": 0,
+              "bottom": -2,
+              "right": 8,
+              "top": 8
+            }
+          },
+          {
+            "start": 1,
+            "end": 2,
+            "fontKey": "synthetic/base",
+            "styleKey": "default",
+            "glyphId": 65,
+            "variations": {},
+            "lineIndex": 1,
+            "x": 0,
+            "y": -12,
+            "xAdvance": 10,
+            "yAdvance": 0,
+            "xOffset": 0,
+            "yOffset": 0,
+            "bounds": {
+              "left": 0,
+              "bottom": -2,
+              "right": 8,
+              "top": 8
+            }
+          },
+          {
+            "start": 2,
+            "end": 3,
+            "fontKey": "synthetic/base",
+            "styleKey": "default",
+            "glyphId": 65,
+            "variations": {},
+            "lineIndex": 1,
+            "x": 10,
+            "y": -12,
+            "xAdvance": 10,
+            "yAdvance": 0,
+            "xOffset": 0,
+            "yOffset": 0,
+            "bounds": {
+              "left": 0,
+              "bottom": -2,
+              "right": 8,
+              "top": 8
+            }
+          }
+        ],
+        "lines": [
+          {
+            "start": 0,
+            "end": 1,
+            "glyphStart": 0,
+            "glyphEnd": 1,
+            "baseline": 0,
+            "left": 5,
+            "right": 15,
+            "bottom": -2,
+            "top": 8,
+            "breakAfter": "soft"
+          },
+          {
+            "start": 1,
+            "end": 3,
+            "glyphStart": 1,
+            "glyphEnd": 3,
+            "baseline": -12,
+            "left": 0,
+            "right": 20,
+            "bottom": -14,
+            "top": -4,
+            "breakAfter": "none"
+          }
+        ],
+        "carets": [
+          {
+            "offset": 0,
+            "lineIndex": 0,
+            "x": 5,
+            "bottom": -2,
+            "top": 8
+          },
+          {
+            "offset": 1,
+            "lineIndex": 1,
+            "x": 0,
+            "bottom": -14,
+            "top": -4
+          },
+          {
+            "offset": 2,
+            "lineIndex": 1,
+            "x": 10,
+            "bottom": -14,
+            "top": -4
+          },
+          {
+            "offset": 3,
+            "lineIndex": 1,
+            "x": 20,
+            "bottom": -14,
+            "top": -4
+          }
+        ],
+        "blockBounds": {
+          "left": 0,
+          "bottom": -14,
+          "right": 20,
+          "top": 8
+        },
+        "visibleBounds": {
+          "left": 0,
+          "bottom": -14,
+          "right": 18,
+          "top": 8
+        }
+      },
+      "selections": []
+    },
+    {
+      "id": "metrics-spacing-baseline",
+      "intent": "Use the tallest participating metrics and apply letter spacing after each shaped advance.",
+      "tags": [
+        "metrics",
+        "letter-spacing",
+        "line-height",
+        "font-size",
+        "baseline"
+      ],
+      "classification": "preserve",
+      "rationale": "Renderer-neutral layout behavior remains useful independently of the old renderer.",
+      "evidence": {
+        "layer": "synthetic",
+        "source": "synthetic fixture",
+        "integrity": "layout-policy-schema-v1"
+      },
+      "input": {
+        "text": "AB",
+        "paragraphLevel": 0,
+        "defaultMetrics": {
+          "ascender": 8,
+          "descender": -2,
+          "lineGap": 2
+        },
+        "maxWidth": null,
+        "whiteSpace": "normal",
+        "overflowWrap": "normal",
+        "textAlign": "left",
+        "textIndent": 0,
+        "letterSpacing": 2,
+        "lineHeight": 16,
+        "anchorX": 0,
+        "anchorY": 0,
+        "runs": [
+          {
+            "start": 0,
+            "end": 1,
+            "direction": "ltr",
+            "bidiLevel": 0,
+            "script": "Latn",
+            "language": "en",
+            "styleKey": "default",
+            "fontKey": "synthetic/base",
+            "fontSize": 10,
+            "metrics": {
+              "ascender": 8,
+              "descender": -2,
+              "lineGap": 2
+            },
+            "variations": {},
+            "glyphs": [
+              {
+                "glyphId": 65,
+                "start": 0,
+                "end": 1,
+                "xAdvance": 12,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": {
+                  "left": 0,
+                  "bottom": -2,
+                  "right": 8,
+                  "top": 8
+                }
+              }
+            ]
+          },
+          {
+            "start": 1,
+            "end": 2,
+            "direction": "ltr",
+            "bidiLevel": 0,
+            "script": "Latn",
+            "language": "en",
+            "styleKey": "large",
+            "fontKey": "synthetic/tall",
+            "fontSize": 16,
+            "metrics": {
+              "ascender": 12,
+              "descender": -4,
+              "lineGap": 4
+            },
+            "variations": {},
+            "glyphs": [
+              {
+                "glyphId": 66,
+                "start": 1,
+                "end": 2,
+                "xAdvance": 16,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": {
+                  "left": 0,
+                  "bottom": -4,
+                  "right": 14,
+                  "top": 12
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "sourceLengthUtf16": 2,
+        "fontKeys": [
+          "synthetic/base",
+          "synthetic/tall"
+        ],
+        "glyphs": [
+          {
+            "start": 0,
+            "end": 1,
+            "fontKey": "synthetic/base",
+            "styleKey": "default",
+            "glyphId": 65,
+            "variations": {},
+            "lineIndex": 0,
+            "x": 0,
+            "y": 0,
+            "xAdvance": 12,
+            "yAdvance": 0,
+            "xOffset": 0,
+            "yOffset": 0,
+            "bounds": {
+              "left": 0,
+              "bottom": -2,
+              "right": 8,
+              "top": 8
+            }
+          },
+          {
+            "start": 1,
+            "end": 2,
+            "fontKey": "synthetic/tall",
+            "styleKey": "large",
+            "glyphId": 66,
+            "variations": {},
+            "lineIndex": 0,
+            "x": 14,
+            "y": 0,
+            "xAdvance": 16,
+            "yAdvance": 0,
+            "xOffset": 0,
+            "yOffset": 0,
+            "bounds": {
+              "left": 0,
+              "bottom": -4,
+              "right": 14,
+              "top": 12
+            }
+          }
+        ],
+        "lines": [
+          {
+            "start": 0,
+            "end": 2,
+            "glyphStart": 0,
+            "glyphEnd": 2,
+            "baseline": 0,
+            "left": 0,
+            "right": 30,
+            "bottom": -2,
+            "top": 14,
+            "breakAfter": "none"
+          }
+        ],
+        "carets": [
+          {
+            "offset": 0,
+            "lineIndex": 0,
+            "x": 0,
+            "bottom": -2,
+            "top": 14
+          },
+          {
+            "offset": 1,
+            "lineIndex": 0,
+            "x": 14,
+            "bottom": -2,
+            "top": 14
+          },
+          {
+            "offset": 2,
+            "lineIndex": 0,
+            "x": 30,
+            "bottom": -2,
+            "top": 14
+          }
+        ],
+        "blockBounds": {
+          "left": 0,
+          "bottom": -4,
+          "right": 30,
+          "top": 12
+        },
+        "visibleBounds": {
+          "left": 0,
+          "bottom": -4,
+          "right": 28,
+          "top": 12
+        }
+      },
+      "selections": []
+    },
+    {
+      "id": "align-left",
+      "intent": "left alignment translates a ten-unit line within a thirty-unit block.",
+      "tags": [
+        "alignment",
+        "left"
+      ],
+      "classification": "preserve",
+      "rationale": "Renderer-neutral layout behavior remains useful independently of the old renderer.",
+      "evidence": {
+        "layer": "synthetic",
+        "source": "synthetic fixture",
+        "integrity": "layout-policy-schema-v1"
+      },
+      "input": {
+        "text": "A",
+        "paragraphLevel": 0,
+        "defaultMetrics": {
+          "ascender": 8,
+          "descender": -2,
+          "lineGap": 2
+        },
+        "maxWidth": 30,
+        "whiteSpace": "normal",
+        "overflowWrap": "normal",
+        "textAlign": "left",
+        "textIndent": 0,
+        "letterSpacing": 0,
+        "lineHeight": "normal",
+        "anchorX": 0,
+        "anchorY": 0,
+        "runs": [
+          {
+            "start": 0,
+            "end": 1,
+            "direction": "ltr",
+            "bidiLevel": 0,
+            "script": "Latn",
+            "language": "en",
+            "styleKey": "default",
+            "fontKey": "synthetic/base",
+            "fontSize": 10,
+            "metrics": {
+              "ascender": 8,
+              "descender": -2,
+              "lineGap": 2
+            },
+            "variations": {},
+            "glyphs": [
+              {
+                "glyphId": 65,
+                "start": 0,
+                "end": 1,
+                "xAdvance": 10,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": {
+                  "left": 0,
+                  "bottom": -2,
+                  "right": 8,
+                  "top": 8
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "sourceLengthUtf16": 1,
+        "fontKeys": [
+          "synthetic/base"
+        ],
+        "glyphs": [
+          {
+            "start": 0,
+            "end": 1,
+            "fontKey": "synthetic/base",
+            "styleKey": "default",
+            "glyphId": 65,
+            "variations": {},
+            "lineIndex": 0,
+            "x": 0,
+            "y": 0,
+            "xAdvance": 10,
+            "yAdvance": 0,
+            "xOffset": 0,
+            "yOffset": 0,
+            "bounds": {
+              "left": 0,
+              "bottom": -2,
+              "right": 8,
+              "top": 8
+            }
+          }
+        ],
+        "lines": [
+          {
+            "start": 0,
+            "end": 1,
+            "glyphStart": 0,
+            "glyphEnd": 1,
+            "baseline": 0,
+            "left": 0,
+            "right": 10,
+            "bottom": -2,
+            "top": 8,
+            "breakAfter": "none"
+          }
+        ],
+        "carets": [
+          {
+            "offset": 0,
+            "lineIndex": 0,
+            "x": 0,
+            "bottom": -2,
+            "top": 8
+          },
+          {
+            "offset": 1,
+            "lineIndex": 0,
+            "x": 10,
+            "bottom": -2,
+            "top": 8
+          }
+        ],
+        "blockBounds": {
+          "left": 0,
+          "bottom": -2,
+          "right": 30,
+          "top": 8
+        },
+        "visibleBounds": {
+          "left": 0,
+          "bottom": -2,
+          "right": 8,
+          "top": 8
+        }
+      },
+      "selections": []
+    },
+    {
+      "id": "align-center",
+      "intent": "center alignment translates a ten-unit line within a thirty-unit block.",
+      "tags": [
+        "alignment",
+        "center"
+      ],
+      "classification": "preserve",
+      "rationale": "Renderer-neutral layout behavior remains useful independently of the old renderer.",
+      "evidence": {
+        "layer": "synthetic",
+        "source": "synthetic fixture",
+        "integrity": "layout-policy-schema-v1"
+      },
+      "input": {
+        "text": "A",
+        "paragraphLevel": 0,
+        "defaultMetrics": {
+          "ascender": 8,
+          "descender": -2,
+          "lineGap": 2
+        },
+        "maxWidth": 30,
+        "whiteSpace": "normal",
+        "overflowWrap": "normal",
+        "textAlign": "center",
+        "textIndent": 0,
+        "letterSpacing": 0,
+        "lineHeight": "normal",
+        "anchorX": 0,
+        "anchorY": 0,
+        "runs": [
+          {
+            "start": 0,
+            "end": 1,
+            "direction": "ltr",
+            "bidiLevel": 0,
+            "script": "Latn",
+            "language": "en",
+            "styleKey": "default",
+            "fontKey": "synthetic/base",
+            "fontSize": 10,
+            "metrics": {
+              "ascender": 8,
+              "descender": -2,
+              "lineGap": 2
+            },
+            "variations": {},
+            "glyphs": [
+              {
+                "glyphId": 65,
+                "start": 0,
+                "end": 1,
+                "xAdvance": 10,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": {
+                  "left": 0,
+                  "bottom": -2,
+                  "right": 8,
+                  "top": 8
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "sourceLengthUtf16": 1,
+        "fontKeys": [
+          "synthetic/base"
+        ],
+        "glyphs": [
+          {
+            "start": 0,
+            "end": 1,
+            "fontKey": "synthetic/base",
+            "styleKey": "default",
+            "glyphId": 65,
+            "variations": {},
+            "lineIndex": 0,
+            "x": 10,
+            "y": 0,
+            "xAdvance": 10,
+            "yAdvance": 0,
+            "xOffset": 0,
+            "yOffset": 0,
+            "bounds": {
+              "left": 0,
+              "bottom": -2,
+              "right": 8,
+              "top": 8
+            }
+          }
+        ],
+        "lines": [
+          {
+            "start": 0,
+            "end": 1,
+            "glyphStart": 0,
+            "glyphEnd": 1,
+            "baseline": 0,
+            "left": 10,
+            "right": 20,
+            "bottom": -2,
+            "top": 8,
+            "breakAfter": "none"
+          }
+        ],
+        "carets": [
+          {
+            "offset": 0,
+            "lineIndex": 0,
+            "x": 10,
+            "bottom": -2,
+            "top": 8
+          },
+          {
+            "offset": 1,
+            "lineIndex": 0,
+            "x": 20,
+            "bottom": -2,
+            "top": 8
+          }
+        ],
+        "blockBounds": {
+          "left": 0,
+          "bottom": -2,
+          "right": 30,
+          "top": 8
+        },
+        "visibleBounds": {
+          "left": 10,
+          "bottom": -2,
+          "right": 18,
+          "top": 8
+        }
+      },
+      "selections": []
+    },
+    {
+      "id": "align-right",
+      "intent": "right alignment translates a ten-unit line within a thirty-unit block.",
+      "tags": [
+        "alignment",
+        "right"
+      ],
+      "classification": "preserve",
+      "rationale": "Renderer-neutral layout behavior remains useful independently of the old renderer.",
+      "evidence": {
+        "layer": "synthetic",
+        "source": "synthetic fixture",
+        "integrity": "layout-policy-schema-v1"
+      },
+      "input": {
+        "text": "A",
+        "paragraphLevel": 0,
+        "defaultMetrics": {
+          "ascender": 8,
+          "descender": -2,
+          "lineGap": 2
+        },
+        "maxWidth": 30,
+        "whiteSpace": "normal",
+        "overflowWrap": "normal",
+        "textAlign": "right",
+        "textIndent": 0,
+        "letterSpacing": 0,
+        "lineHeight": "normal",
+        "anchorX": 0,
+        "anchorY": 0,
+        "runs": [
+          {
+            "start": 0,
+            "end": 1,
+            "direction": "ltr",
+            "bidiLevel": 0,
+            "script": "Latn",
+            "language": "en",
+            "styleKey": "default",
+            "fontKey": "synthetic/base",
+            "fontSize": 10,
+            "metrics": {
+              "ascender": 8,
+              "descender": -2,
+              "lineGap": 2
+            },
+            "variations": {},
+            "glyphs": [
+              {
+                "glyphId": 65,
+                "start": 0,
+                "end": 1,
+                "xAdvance": 10,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": {
+                  "left": 0,
+                  "bottom": -2,
+                  "right": 8,
+                  "top": 8
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "sourceLengthUtf16": 1,
+        "fontKeys": [
+          "synthetic/base"
+        ],
+        "glyphs": [
+          {
+            "start": 0,
+            "end": 1,
+            "fontKey": "synthetic/base",
+            "styleKey": "default",
+            "glyphId": 65,
+            "variations": {},
+            "lineIndex": 0,
+            "x": 20,
+            "y": 0,
+            "xAdvance": 10,
+            "yAdvance": 0,
+            "xOffset": 0,
+            "yOffset": 0,
+            "bounds": {
+              "left": 0,
+              "bottom": -2,
+              "right": 8,
+              "top": 8
+            }
+          }
+        ],
+        "lines": [
+          {
+            "start": 0,
+            "end": 1,
+            "glyphStart": 0,
+            "glyphEnd": 1,
+            "baseline": 0,
+            "left": 20,
+            "right": 30,
+            "bottom": -2,
+            "top": 8,
+            "breakAfter": "none"
+          }
+        ],
+        "carets": [
+          {
+            "offset": 0,
+            "lineIndex": 0,
+            "x": 20,
+            "bottom": -2,
+            "top": 8
+          },
+          {
+            "offset": 1,
+            "lineIndex": 0,
+            "x": 30,
+            "bottom": -2,
+            "top": 8
+          }
+        ],
+        "blockBounds": {
+          "left": 0,
+          "bottom": -2,
+          "right": 30,
+          "top": 8
+        },
+        "visibleBounds": {
+          "left": 20,
+          "bottom": -2,
+          "right": 28,
+          "top": 8
+        }
+      },
+      "selections": []
+    },
+    {
+      "id": "align-justify",
+      "intent": "Expand internal whitespace on a soft-wrapped justified line but exclude trailing whitespace.",
+      "tags": [
+        "alignment",
+        "justify",
+        "whitespace"
+      ],
+      "classification": "preserve",
+      "rationale": "Renderer-neutral layout behavior remains useful independently of the old renderer.",
+      "evidence": {
+        "layer": "synthetic",
+        "source": "synthetic fixture",
+        "integrity": "layout-policy-schema-v1"
+      },
+      "input": {
+        "text": "A A ",
+        "paragraphLevel": 0,
+        "defaultMetrics": {
+          "ascender": 8,
+          "descender": -2,
+          "lineGap": 2
+        },
+        "maxWidth": 40,
+        "whiteSpace": "normal",
+        "overflowWrap": "normal",
+        "textAlign": "justify",
+        "textIndent": 0,
+        "letterSpacing": 0,
+        "lineHeight": "normal",
+        "anchorX": 0,
+        "anchorY": 0,
+        "runs": [
+          {
+            "start": 0,
+            "end": 4,
+            "direction": "ltr",
+            "bidiLevel": 0,
+            "script": "Latn",
+            "language": "en",
+            "styleKey": "default",
+            "fontKey": "synthetic/base",
+            "fontSize": 10,
+            "metrics": {
+              "ascender": 8,
+              "descender": -2,
+              "lineGap": 2
+            },
+            "variations": {},
+            "glyphs": [
+              {
+                "glyphId": 65,
+                "start": 0,
+                "end": 1,
+                "xAdvance": 10,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": {
+                  "left": 0,
+                  "bottom": -2,
+                  "right": 8,
+                  "top": 8
+                }
+              },
+              {
+                "glyphId": 32,
+                "start": 1,
+                "end": 2,
+                "xAdvance": 5,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": null
+              },
+              {
+                "glyphId": 65,
+                "start": 2,
+                "end": 3,
+                "xAdvance": 10,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": {
+                  "left": 0,
+                  "bottom": -2,
+                  "right": 8,
+                  "top": 8
+                }
+              },
+              {
+                "glyphId": 32,
+                "start": 3,
+                "end": 4,
+                "xAdvance": 5,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": null
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "sourceLengthUtf16": 4,
+        "fontKeys": [
+          "synthetic/base"
+        ],
+        "glyphs": [
+          {
+            "start": 0,
+            "end": 1,
+            "fontKey": "synthetic/base",
+            "styleKey": "default",
+            "glyphId": 65,
+            "variations": {},
+            "lineIndex": 0,
+            "x": 0,
+            "y": 0,
+            "xAdvance": 10,
+            "yAdvance": 0,
+            "xOffset": 0,
+            "yOffset": 0,
+            "bounds": {
+              "left": 0,
+              "bottom": -2,
+              "right": 8,
+              "top": 8
+            }
+          },
+          {
+            "start": 2,
+            "end": 3,
+            "fontKey": "synthetic/base",
+            "styleKey": "default",
+            "glyphId": 65,
+            "variations": {},
+            "lineIndex": 0,
+            "x": 30,
+            "y": 0,
+            "xAdvance": 10,
+            "yAdvance": 0,
+            "xOffset": 0,
+            "yOffset": 0,
+            "bounds": {
+              "left": 0,
+              "bottom": -2,
+              "right": 8,
+              "top": 8
+            }
+          }
+        ],
+        "lines": [
+          {
+            "start": 0,
+            "end": 4,
+            "glyphStart": 0,
+            "glyphEnd": 2,
+            "baseline": 0,
+            "left": 0,
+            "right": 40,
+            "bottom": -2,
+            "top": 8,
+            "breakAfter": "soft"
+          }
+        ],
+        "carets": [
+          {
+            "offset": 0,
+            "lineIndex": 0,
+            "x": 0,
+            "bottom": -2,
+            "top": 8
+          },
+          {
+            "offset": 1,
+            "lineIndex": 0,
+            "x": 10,
+            "bottom": -2,
+            "top": 8
+          },
+          {
+            "offset": 2,
+            "lineIndex": 0,
+            "x": 30,
+            "bottom": -2,
+            "top": 8
+          },
+          {
+            "offset": 3,
+            "lineIndex": 0,
+            "x": 40,
+            "bottom": -2,
+            "top": 8
+          },
+          {
+            "offset": 4,
+            "lineIndex": 0,
+            "x": 45,
+            "bottom": -2,
+            "top": 8
+          }
+        ],
+        "blockBounds": {
+          "left": 0,
+          "bottom": -2,
+          "right": 40,
+          "top": 8
+        },
+        "visibleBounds": {
+          "left": 0,
+          "bottom": -2,
+          "right": 38,
+          "top": 8
+        }
+      },
+      "selections": []
+    },
+    {
+      "id": "anchor-numeric-keyword-percent",
+      "intent": "Apply one shared anchor translation to layout and interaction geometry.",
+      "tags": [
+        "anchors",
+        "numeric",
+        "keyword",
+        "percentage"
+      ],
+      "classification": "preserve",
+      "rationale": "Renderer-neutral layout behavior remains useful independently of the old renderer.",
+      "evidence": {
+        "layer": "synthetic",
+        "source": "synthetic fixture",
+        "integrity": "layout-policy-schema-v1"
+      },
+      "input": {
+        "text": "A",
+        "paragraphLevel": 0,
+        "defaultMetrics": {
+          "ascender": 8,
+          "descender": -2,
+          "lineGap": 2
+        },
+        "maxWidth": null,
+        "whiteSpace": "normal",
+        "overflowWrap": "normal",
+        "textAlign": "left",
+        "textIndent": 0,
+        "letterSpacing": 0,
+        "lineHeight": "normal",
+        "anchorX": "50%",
+        "anchorY": 5,
+        "runs": [
+          {
+            "start": 0,
+            "end": 1,
+            "direction": "ltr",
+            "bidiLevel": 0,
+            "script": "Latn",
+            "language": "en",
+            "styleKey": "default",
+            "fontKey": "synthetic/base",
+            "fontSize": 10,
+            "metrics": {
+              "ascender": 8,
+              "descender": -2,
+              "lineGap": 2
+            },
+            "variations": {},
+            "glyphs": [
+              {
+                "glyphId": 65,
+                "start": 0,
+                "end": 1,
+                "xAdvance": 10,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": {
+                  "left": 0,
+                  "bottom": -2,
+                  "right": 8,
+                  "top": 8
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "sourceLengthUtf16": 1,
+        "fontKeys": [
+          "synthetic/base"
+        ],
+        "glyphs": [
+          {
+            "start": 0,
+            "end": 1,
+            "fontKey": "synthetic/base",
+            "styleKey": "default",
+            "glyphId": 65,
+            "variations": {},
+            "lineIndex": 0,
+            "x": -5,
+            "y": 5,
+            "xAdvance": 10,
+            "yAdvance": 0,
+            "xOffset": 0,
+            "yOffset": 0,
+            "bounds": {
+              "left": 0,
+              "bottom": -2,
+              "right": 8,
+              "top": 8
+            }
+          }
+        ],
+        "lines": [
+          {
+            "start": 0,
+            "end": 1,
+            "glyphStart": 0,
+            "glyphEnd": 1,
+            "baseline": 5,
+            "left": -5,
+            "right": 5,
+            "bottom": 3,
+            "top": 13,
+            "breakAfter": "none"
+          }
+        ],
+        "carets": [
+          {
+            "offset": 0,
+            "lineIndex": 0,
+            "x": -5,
+            "bottom": 3,
+            "top": 13
+          },
+          {
+            "offset": 1,
+            "lineIndex": 0,
+            "x": 5,
+            "bottom": 3,
+            "top": 13
+          }
+        ],
+        "blockBounds": {
+          "left": -5,
+          "bottom": 3,
+          "right": 5,
+          "top": 13
+        },
+        "visibleBounds": {
+          "left": -5,
+          "bottom": 3,
+          "right": 3,
+          "top": 13
+        }
+      },
+      "selections": [
+        {
+          "query": {
+            "start": 0,
+            "end": 1
+          },
+          "rects": [
+            {
+              "lineIndex": 0,
+              "left": -5,
+              "bottom": 3,
+              "right": 5,
+              "top": 13
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bidi-ltr-rtl-multiline",
+      "intent": "Keep logical ranges while placing explicit LTR and RTL runs in visual line order.",
+      "tags": [
+        "bidi",
+        "ltr",
+        "rtl",
+        "multiline"
+      ],
+      "classification": "preserve",
+      "rationale": "Renderer-neutral layout behavior remains useful independently of the old renderer.",
+      "evidence": {
+        "layer": "synthetic",
+        "source": "synthetic fixture",
+        "integrity": "layout-policy-schema-v1"
+      },
+      "input": {
+        "text": "Aאב\nB",
+        "paragraphLevel": 0,
+        "defaultMetrics": {
+          "ascender": 8,
+          "descender": -2,
+          "lineGap": 2
+        },
+        "maxWidth": null,
+        "whiteSpace": "normal",
+        "overflowWrap": "normal",
+        "textAlign": "left",
+        "textIndent": 0,
+        "letterSpacing": 0,
+        "lineHeight": "normal",
+        "anchorX": 0,
+        "anchorY": 0,
+        "runs": [
+          {
+            "start": 0,
+            "end": 1,
+            "direction": "ltr",
+            "bidiLevel": 0,
+            "script": "Latn",
+            "language": "en",
+            "styleKey": "default",
+            "fontKey": "synthetic/base",
+            "fontSize": 10,
+            "metrics": {
+              "ascender": 8,
+              "descender": -2,
+              "lineGap": 2
+            },
+            "variations": {},
+            "glyphs": [
+              {
+                "glyphId": 65,
+                "start": 0,
+                "end": 1,
+                "xAdvance": 10,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": {
+                  "left": 0,
+                  "bottom": -2,
+                  "right": 8,
+                  "top": 8
+                }
+              }
+            ]
+          },
+          {
+            "start": 1,
+            "end": 3,
+            "direction": "rtl",
+            "bidiLevel": 1,
+            "script": "Hebr",
+            "language": "he",
+            "styleKey": "default",
+            "fontKey": "synthetic/base",
+            "fontSize": 10,
+            "metrics": {
+              "ascender": 8,
+              "descender": -2,
+              "lineGap": 2
+            },
+            "variations": {},
+            "glyphs": [
+              {
+                "glyphId": 1489,
+                "start": 2,
+                "end": 3,
+                "xAdvance": 10,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": {
+                  "left": 0,
+                  "bottom": -2,
+                  "right": 8,
+                  "top": 8
+                }
+              },
+              {
+                "glyphId": 1488,
+                "start": 1,
+                "end": 2,
+                "xAdvance": 10,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": {
+                  "left": 0,
+                  "bottom": -2,
+                  "right": 8,
+                  "top": 8
+                }
+              }
+            ]
+          },
+          {
+            "start": 4,
+            "end": 5,
+            "direction": "ltr",
+            "bidiLevel": 0,
+            "script": "Latn",
+            "language": "en",
+            "styleKey": "default",
+            "fontKey": "synthetic/base",
+            "fontSize": 10,
+            "metrics": {
+              "ascender": 8,
+              "descender": -2,
+              "lineGap": 2
+            },
+            "variations": {},
+            "glyphs": [
+              {
+                "glyphId": 66,
+                "start": 4,
+                "end": 5,
+                "xAdvance": 10,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": {
+                  "left": 0,
+                  "bottom": -2,
+                  "right": 8,
+                  "top": 8
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "sourceLengthUtf16": 5,
+        "fontKeys": [
+          "synthetic/base"
+        ],
+        "glyphs": [
+          {
+            "start": 0,
+            "end": 1,
+            "fontKey": "synthetic/base",
+            "styleKey": "default",
+            "glyphId": 65,
+            "variations": {},
+            "lineIndex": 0,
+            "x": 0,
+            "y": 0,
+            "xAdvance": 10,
+            "yAdvance": 0,
+            "xOffset": 0,
+            "yOffset": 0,
+            "bounds": {
+              "left": 0,
+              "bottom": -2,
+              "right": 8,
+              "top": 8
+            }
+          },
+          {
+            "start": 1,
+            "end": 2,
+            "fontKey": "synthetic/base",
+            "styleKey": "default",
+            "glyphId": 1488,
+            "variations": {},
+            "lineIndex": 0,
+            "x": 20,
+            "y": 0,
+            "xAdvance": 10,
+            "yAdvance": 0,
+            "xOffset": 0,
+            "yOffset": 0,
+            "bounds": {
+              "left": 0,
+              "bottom": -2,
+              "right": 8,
+              "top": 8
+            }
+          },
+          {
+            "start": 2,
+            "end": 3,
+            "fontKey": "synthetic/base",
+            "styleKey": "default",
+            "glyphId": 1489,
+            "variations": {},
+            "lineIndex": 0,
+            "x": 10,
+            "y": 0,
+            "xAdvance": 10,
+            "yAdvance": 0,
+            "xOffset": 0,
+            "yOffset": 0,
+            "bounds": {
+              "left": 0,
+              "bottom": -2,
+              "right": 8,
+              "top": 8
+            }
+          },
+          {
+            "start": 4,
+            "end": 5,
+            "fontKey": "synthetic/base",
+            "styleKey": "default",
+            "glyphId": 66,
+            "variations": {},
+            "lineIndex": 1,
+            "x": 0,
+            "y": -12,
+            "xAdvance": 10,
+            "yAdvance": 0,
+            "xOffset": 0,
+            "yOffset": 0,
+            "bounds": {
+              "left": 0,
+              "bottom": -2,
+              "right": 8,
+              "top": 8
+            }
+          }
+        ],
+        "lines": [
+          {
+            "start": 0,
+            "end": 4,
+            "glyphStart": 0,
+            "glyphEnd": 3,
+            "baseline": 0,
+            "left": 0,
+            "right": 30,
+            "bottom": -2,
+            "top": 8,
+            "breakAfter": "hard"
+          },
+          {
+            "start": 4,
+            "end": 5,
+            "glyphStart": 3,
+            "glyphEnd": 4,
+            "baseline": -12,
+            "left": 0,
+            "right": 10,
+            "bottom": -14,
+            "top": -4,
+            "breakAfter": "none"
+          }
+        ],
+        "carets": [
+          {
+            "offset": 0,
+            "lineIndex": 0,
+            "x": 0,
+            "bottom": -2,
+            "top": 8
+          },
+          {
+            "offset": 1,
+            "lineIndex": 0,
+            "x": 10,
+            "bottom": -2,
+            "top": 8
+          },
+          {
+            "offset": 2,
+            "lineIndex": 0,
+            "x": 20,
+            "bottom": -2,
+            "top": 8
+          },
+          {
+            "offset": 3,
+            "lineIndex": 0,
+            "x": 10,
+            "bottom": -2,
+            "top": 8
+          },
+          {
+            "offset": 4,
+            "lineIndex": 1,
+            "x": 0,
+            "bottom": -14,
+            "top": -4
+          },
+          {
+            "offset": 5,
+            "lineIndex": 1,
+            "x": 10,
+            "bottom": -14,
+            "top": -4
+          }
+        ],
+        "blockBounds": {
+          "left": 0,
+          "bottom": -14,
+          "right": 30,
+          "top": 8
+        },
+        "visibleBounds": {
+          "left": 0,
+          "bottom": -14,
+          "right": 28,
+          "top": 8
+        }
+      },
+      "selections": []
+    },
+    {
+      "id": "runs-style-size-language",
+      "intent": "Split style, size, language, and variation values at valid UTF-16 boundaries.",
+      "tags": [
+        "runs",
+        "style",
+        "size",
+        "language",
+        "variations"
+      ],
+      "classification": "intentional-change",
+      "rationale": "Preserve style behavior while replacing mutable start-index maps with half-open spans and stable style keys.",
+      "evidence": {
+        "layer": "synthetic",
+        "source": "synthetic fixture",
+        "integrity": "layout-policy-schema-v1"
+      },
+      "input": {
+        "text": "AB",
+        "paragraphLevel": 0,
+        "defaultMetrics": {
+          "ascender": 8,
+          "descender": -2,
+          "lineGap": 2
+        },
+        "maxWidth": null,
+        "whiteSpace": "normal",
+        "overflowWrap": "normal",
+        "textAlign": "left",
+        "textIndent": 0,
+        "letterSpacing": 0,
+        "lineHeight": "normal",
+        "anchorX": 0,
+        "anchorY": 0,
+        "runs": [
+          {
+            "start": 0,
+            "end": 1,
+            "direction": "ltr",
+            "bidiLevel": 0,
+            "script": "Latn",
+            "language": "en",
+            "styleKey": "default",
+            "fontKey": "synthetic/base",
+            "fontSize": 10,
+            "metrics": {
+              "ascender": 8,
+              "descender": -2,
+              "lineGap": 2
+            },
+            "variations": {},
+            "glyphs": [
+              {
+                "glyphId": 65,
+                "start": 0,
+                "end": 1,
+                "xAdvance": 10,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": {
+                  "left": 0,
+                  "bottom": -2,
+                  "right": 8,
+                  "top": 8
+                }
+              }
+            ]
+          },
+          {
+            "start": 1,
+            "end": 2,
+            "direction": "ltr",
+            "bidiLevel": 0,
+            "script": "Latn",
+            "language": "fr",
+            "styleKey": "emphasis",
+            "fontKey": "synthetic/base",
+            "fontSize": 14,
+            "metrics": {
+              "ascender": 12,
+              "descender": -2,
+              "lineGap": 0
+            },
+            "variations": {
+              "wght": 700
+            },
+            "glyphs": [
+              {
+                "glyphId": 66,
+                "start": 1,
+                "end": 2,
+                "xAdvance": 12,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": {
+                  "left": 0,
+                  "bottom": -2,
+                  "right": 8,
+                  "top": 8
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "sourceLengthUtf16": 2,
+        "fontKeys": [
+          "synthetic/base"
+        ],
+        "glyphs": [
+          {
+            "start": 0,
+            "end": 1,
+            "fontKey": "synthetic/base",
+            "styleKey": "default",
+            "glyphId": 65,
+            "variations": {},
+            "lineIndex": 0,
+            "x": 0,
+            "y": 0,
+            "xAdvance": 10,
+            "yAdvance": 0,
+            "xOffset": 0,
+            "yOffset": 0,
+            "bounds": {
+              "left": 0,
+              "bottom": -2,
+              "right": 8,
+              "top": 8
+            }
+          },
+          {
+            "start": 1,
+            "end": 2,
+            "fontKey": "synthetic/base",
+            "styleKey": "emphasis",
+            "glyphId": 66,
+            "variations": {
+              "wght": 700
+            },
+            "lineIndex": 0,
+            "x": 10,
+            "y": 0,
+            "xAdvance": 12,
+            "yAdvance": 0,
+            "xOffset": 0,
+            "yOffset": 0,
+            "bounds": {
+              "left": 0,
+              "bottom": -2,
+              "right": 8,
+              "top": 8
+            }
+          }
+        ],
+        "lines": [
+          {
+            "start": 0,
+            "end": 2,
+            "glyphStart": 0,
+            "glyphEnd": 2,
+            "baseline": 0,
+            "left": 0,
+            "right": 22,
+            "bottom": -2,
+            "top": 12,
+            "breakAfter": "none"
+          }
+        ],
+        "carets": [
+          {
+            "offset": 0,
+            "lineIndex": 0,
+            "x": 0,
+            "bottom": -2,
+            "top": 12
+          },
+          {
+            "offset": 1,
+            "lineIndex": 0,
+            "x": 10,
+            "bottom": -2,
+            "top": 12
+          },
+          {
+            "offset": 2,
+            "lineIndex": 0,
+            "x": 22,
+            "bottom": -2,
+            "top": 12
+          }
+        ],
+        "blockBounds": {
+          "left": 0,
+          "bottom": -2,
+          "right": 22,
+          "top": 12
+        },
+        "visibleBounds": {
+          "left": 0,
+          "bottom": -2,
+          "right": 18,
+          "top": 8
+        }
+      },
+      "selections": []
+    },
+    {
+      "id": "runs-fallback-grapheme",
+      "intent": "Resolve a supplementary grapheme as one fallback run without splitting its surrogate pair.",
+      "tags": [
+        "runs",
+        "fallback",
+        "grapheme",
+        "supplementary-plane"
+      ],
+      "classification": "intentional-change",
+      "rationale": "Fallback must resolve the complete supplementary grapheme instead of independent code units.",
+      "evidence": {
+        "layer": "synthetic",
+        "source": "synthetic fixture",
+        "integrity": "layout-policy-schema-v1"
+      },
+      "input": {
+        "text": "A😀",
+        "paragraphLevel": 0,
+        "defaultMetrics": {
+          "ascender": 8,
+          "descender": -2,
+          "lineGap": 2
+        },
+        "maxWidth": null,
+        "whiteSpace": "normal",
+        "overflowWrap": "normal",
+        "textAlign": "left",
+        "textIndent": 0,
+        "letterSpacing": 0,
+        "lineHeight": "normal",
+        "anchorX": 0,
+        "anchorY": 0,
+        "runs": [
+          {
+            "start": 0,
+            "end": 1,
+            "direction": "ltr",
+            "bidiLevel": 0,
+            "script": "Latn",
+            "language": "en",
+            "styleKey": "default",
+            "fontKey": "synthetic/base",
+            "fontSize": 10,
+            "metrics": {
+              "ascender": 8,
+              "descender": -2,
+              "lineGap": 2
+            },
+            "variations": {},
+            "glyphs": [
+              {
+                "glyphId": 65,
+                "start": 0,
+                "end": 1,
+                "xAdvance": 10,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": {
+                  "left": 0,
+                  "bottom": -2,
+                  "right": 8,
+                  "top": 8
+                }
+              }
+            ]
+          },
+          {
+            "start": 1,
+            "end": 3,
+            "direction": "ltr",
+            "bidiLevel": 0,
+            "script": "Zyyy",
+            "language": "en",
+            "styleKey": "default",
+            "fontKey": "synthetic/symbols",
+            "fontSize": 10,
+            "metrics": {
+              "ascender": 10,
+              "descender": -3,
+              "lineGap": 1
+            },
+            "variations": {},
+            "glyphs": [
+              {
+                "glyphId": 128512,
+                "start": 1,
+                "end": 3,
+                "xAdvance": 12,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": {
+                  "left": 0,
+                  "bottom": -3,
+                  "right": 12,
+                  "top": 10
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "sourceLengthUtf16": 3,
+        "fontKeys": [
+          "synthetic/base",
+          "synthetic/symbols"
+        ],
+        "glyphs": [
+          {
+            "start": 0,
+            "end": 1,
+            "fontKey": "synthetic/base",
+            "styleKey": "default",
+            "glyphId": 65,
+            "variations": {},
+            "lineIndex": 0,
+            "x": 0,
+            "y": 0,
+            "xAdvance": 10,
+            "yAdvance": 0,
+            "xOffset": 0,
+            "yOffset": 0,
+            "bounds": {
+              "left": 0,
+              "bottom": -2,
+              "right": 8,
+              "top": 8
+            }
+          },
+          {
+            "start": 1,
+            "end": 3,
+            "fontKey": "synthetic/symbols",
+            "styleKey": "default",
+            "glyphId": 128512,
+            "variations": {},
+            "lineIndex": 0,
+            "x": 10,
+            "y": 0,
+            "xAdvance": 12,
+            "yAdvance": 0,
+            "xOffset": 0,
+            "yOffset": 0,
+            "bounds": {
+              "left": 0,
+              "bottom": -3,
+              "right": 12,
+              "top": 10
+            }
+          }
+        ],
+        "lines": [
+          {
+            "start": 0,
+            "end": 3,
+            "glyphStart": 0,
+            "glyphEnd": 2,
+            "baseline": 0,
+            "left": 0,
+            "right": 22,
+            "bottom": -2,
+            "top": 10,
+            "breakAfter": "none"
+          }
+        ],
+        "carets": [
+          {
+            "offset": 0,
+            "lineIndex": 0,
+            "x": 0,
+            "bottom": -2,
+            "top": 10
+          },
+          {
+            "offset": 1,
+            "lineIndex": 0,
+            "x": 10,
+            "bottom": -2,
+            "top": 10
+          },
+          {
+            "offset": 3,
+            "lineIndex": 0,
+            "x": 22,
+            "bottom": -2,
+            "top": 10
+          }
+        ],
+        "blockBounds": {
+          "left": 0,
+          "bottom": -3,
+          "right": 22,
+          "top": 10
+        },
+        "visibleBounds": {
+          "left": 0,
+          "bottom": -3,
+          "right": 22,
+          "top": 10
+        }
+      },
+      "selections": []
+    },
+    {
+      "id": "bounds-overhang-empty-grouping",
+      "intent": "Separate block and visible bounds and keep them independent of renderer grouping.",
+      "tags": [
+        "bounds",
+        "overhang",
+        "empty-glyph",
+        "grouping"
+      ],
+      "classification": "intentional-change",
+      "rationale": "Retain block and visible bounds while removing renderer chunk grouping from the layout contract.",
+      "evidence": {
+        "layer": "synthetic",
+        "source": "synthetic fixture",
+        "integrity": "layout-policy-schema-v1"
+      },
+      "input": {
+        "text": "A ",
+        "paragraphLevel": 0,
+        "defaultMetrics": {
+          "ascender": 8,
+          "descender": -2,
+          "lineGap": 2
+        },
+        "maxWidth": null,
+        "whiteSpace": "normal",
+        "overflowWrap": "normal",
+        "textAlign": "left",
+        "textIndent": 0,
+        "letterSpacing": 0,
+        "lineHeight": "normal",
+        "anchorX": 0,
+        "anchorY": 0,
+        "runs": [
+          {
+            "start": 0,
+            "end": 2,
+            "direction": "ltr",
+            "bidiLevel": 0,
+            "script": "Latn",
+            "language": "en",
+            "styleKey": "default",
+            "fontKey": "synthetic/base",
+            "fontSize": 10,
+            "metrics": {
+              "ascender": 8,
+              "descender": -2,
+              "lineGap": 2
+            },
+            "variations": {},
+            "glyphs": [
+              {
+                "glyphId": 65,
+                "start": 0,
+                "end": 1,
+                "xAdvance": 10,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": {
+                  "left": -2,
+                  "bottom": -3,
+                  "right": 12,
+                  "top": 9
+                }
+              },
+              {
+                "glyphId": 32,
+                "start": 1,
+                "end": 2,
+                "xAdvance": 5,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": null
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "sourceLengthUtf16": 2,
+        "fontKeys": [
+          "synthetic/base"
+        ],
+        "glyphs": [
+          {
+            "start": 0,
+            "end": 1,
+            "fontKey": "synthetic/base",
+            "styleKey": "default",
+            "glyphId": 65,
+            "variations": {},
+            "lineIndex": 0,
+            "x": 0,
+            "y": 0,
+            "xAdvance": 10,
+            "yAdvance": 0,
+            "xOffset": 0,
+            "yOffset": 0,
+            "bounds": {
+              "left": -2,
+              "bottom": -3,
+              "right": 12,
+              "top": 9
+            }
+          }
+        ],
+        "lines": [
+          {
+            "start": 0,
+            "end": 2,
+            "glyphStart": 0,
+            "glyphEnd": 1,
+            "baseline": 0,
+            "left": 0,
+            "right": 10,
+            "bottom": -2,
+            "top": 8,
+            "breakAfter": "none"
+          }
+        ],
+        "carets": [
+          {
+            "offset": 0,
+            "lineIndex": 0,
+            "x": 0,
+            "bottom": -2,
+            "top": 8
+          },
+          {
+            "offset": 1,
+            "lineIndex": 0,
+            "x": 10,
+            "bottom": -2,
+            "top": 8
+          },
+          {
+            "offset": 2,
+            "lineIndex": 0,
+            "x": 15,
+            "bottom": -2,
+            "top": 8
+          }
+        ],
+        "blockBounds": {
+          "left": 0,
+          "bottom": -2,
+          "right": 10,
+          "top": 8
+        },
+        "visibleBounds": {
+          "left": -2,
+          "bottom": -3,
+          "right": 12,
+          "top": 9
+        }
+      },
+      "selections": []
+    },
+    {
+      "id": "carets-complex-clusters",
+      "intent": "Expose editable ligature interiors while suppressing combining and surrogate-splitting stops.",
+      "tags": [
+        "carets",
+        "ligature",
+        "combining",
+        "supplementary-plane"
+      ],
+      "classification": "intentional-change",
+      "rationale": "Keep editable ligature stops but suppress boundaries inside combining graphemes and surrogate pairs.",
+      "evidence": {
+        "layer": "synthetic",
+        "source": "synthetic fixture",
+        "integrity": "layout-policy-schema-v1"
+      },
+      "input": {
+        "text": "ffi é 😀",
+        "paragraphLevel": 0,
+        "defaultMetrics": {
+          "ascender": 8,
+          "descender": -2,
+          "lineGap": 2
+        },
+        "maxWidth": null,
+        "whiteSpace": "normal",
+        "overflowWrap": "normal",
+        "textAlign": "left",
+        "textIndent": 0,
+        "letterSpacing": 0,
+        "lineHeight": "normal",
+        "anchorX": 0,
+        "anchorY": 0,
+        "runs": [
+          {
+            "start": 0,
+            "end": 9,
+            "direction": "ltr",
+            "bidiLevel": 0,
+            "script": "Latn",
+            "language": "en",
+            "styleKey": "default",
+            "fontKey": "synthetic/base",
+            "fontSize": 10,
+            "metrics": {
+              "ascender": 11,
+              "descender": -2,
+              "lineGap": 0
+            },
+            "variations": {},
+            "glyphs": [
+              {
+                "glyphId": 501,
+                "start": 0,
+                "end": 3,
+                "xAdvance": 18,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": {
+                  "left": 0,
+                  "bottom": -2,
+                  "right": 8,
+                  "top": 8
+                }
+              },
+              {
+                "glyphId": 32,
+                "start": 3,
+                "end": 4,
+                "xAdvance": 5,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": null
+              },
+              {
+                "glyphId": 101,
+                "start": 4,
+                "end": 6,
+                "xAdvance": 10,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": {
+                  "left": 0,
+                  "bottom": -2,
+                  "right": 8,
+                  "top": 8
+                }
+              },
+              {
+                "glyphId": 769,
+                "start": 4,
+                "end": 6,
+                "xAdvance": 0,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": {
+                  "left": 3,
+                  "bottom": 6,
+                  "right": 7,
+                  "top": 11
+                }
+              },
+              {
+                "glyphId": 32,
+                "start": 6,
+                "end": 7,
+                "xAdvance": 5,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": null
+              },
+              {
+                "glyphId": 128512,
+                "start": 7,
+                "end": 9,
+                "xAdvance": 12,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": {
+                  "left": 0,
+                  "bottom": -2,
+                  "right": 8,
+                  "top": 8
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "sourceLengthUtf16": 9,
+        "fontKeys": [
+          "synthetic/base"
+        ],
+        "glyphs": [
+          {
+            "start": 0,
+            "end": 3,
+            "fontKey": "synthetic/base",
+            "styleKey": "default",
+            "glyphId": 501,
+            "variations": {},
+            "lineIndex": 0,
+            "x": 0,
+            "y": 0,
+            "xAdvance": 18,
+            "yAdvance": 0,
+            "xOffset": 0,
+            "yOffset": 0,
+            "bounds": {
+              "left": 0,
+              "bottom": -2,
+              "right": 8,
+              "top": 8
+            }
+          },
+          {
+            "start": 4,
+            "end": 6,
+            "fontKey": "synthetic/base",
+            "styleKey": "default",
+            "glyphId": 101,
+            "variations": {},
+            "lineIndex": 0,
+            "x": 23,
+            "y": 0,
+            "xAdvance": 10,
+            "yAdvance": 0,
+            "xOffset": 0,
+            "yOffset": 0,
+            "bounds": {
+              "left": 0,
+              "bottom": -2,
+              "right": 8,
+              "top": 8
+            }
+          },
+          {
+            "start": 4,
+            "end": 6,
+            "fontKey": "synthetic/base",
+            "styleKey": "default",
+            "glyphId": 769,
+            "variations": {},
+            "lineIndex": 0,
+            "x": 23,
+            "y": 0,
+            "xAdvance": 0,
+            "yAdvance": 0,
+            "xOffset": 0,
+            "yOffset": 0,
+            "bounds": {
+              "left": 3,
+              "bottom": 6,
+              "right": 7,
+              "top": 11
+            }
+          },
+          {
+            "start": 7,
+            "end": 9,
+            "fontKey": "synthetic/base",
+            "styleKey": "default",
+            "glyphId": 128512,
+            "variations": {},
+            "lineIndex": 0,
+            "x": 38,
+            "y": 0,
+            "xAdvance": 12,
+            "yAdvance": 0,
+            "xOffset": 0,
+            "yOffset": 0,
+            "bounds": {
+              "left": 0,
+              "bottom": -2,
+              "right": 8,
+              "top": 8
+            }
+          }
+        ],
+        "lines": [
+          {
+            "start": 0,
+            "end": 9,
+            "glyphStart": 0,
+            "glyphEnd": 4,
+            "baseline": 0,
+            "left": 0,
+            "right": 50,
+            "bottom": -2,
+            "top": 11,
+            "breakAfter": "none"
+          }
+        ],
+        "carets": [
+          {
+            "offset": 0,
+            "lineIndex": 0,
+            "x": 0,
+            "bottom": -2,
+            "top": 11
+          },
+          {
+            "offset": 1,
+            "lineIndex": 0,
+            "x": 6,
+            "bottom": -2,
+            "top": 11
+          },
+          {
+            "offset": 2,
+            "lineIndex": 0,
+            "x": 12,
+            "bottom": -2,
+            "top": 11
+          },
+          {
+            "offset": 3,
+            "lineIndex": 0,
+            "x": 18,
+            "bottom": -2,
+            "top": 11
+          },
+          {
+            "offset": 4,
+            "lineIndex": 0,
+            "x": 23,
+            "bottom": -2,
+            "top": 11
+          },
+          {
+            "offset": 6,
+            "lineIndex": 0,
+            "x": 33,
+            "bottom": -2,
+            "top": 11
+          },
+          {
+            "offset": 7,
+            "lineIndex": 0,
+            "x": 38,
+            "bottom": -2,
+            "top": 11
+          },
+          {
+            "offset": 9,
+            "lineIndex": 0,
+            "x": 50,
+            "bottom": -2,
+            "top": 11
+          }
+        ],
+        "blockBounds": {
+          "left": 0,
+          "bottom": -2,
+          "right": 50,
+          "top": 11
+        },
+        "visibleBounds": {
+          "left": 0,
+          "bottom": -2,
+          "right": 46,
+          "top": 11
+        }
+      },
+      "selections": []
+    },
+    {
+      "id": "selection-forward-reversed-empty",
+      "intent": "Normalize reversed ranges and return no rectangles for an empty selection.",
+      "tags": [
+        "selection",
+        "forward",
+        "reversed",
+        "empty",
+        "clipped"
+      ],
+      "classification": "preserve",
+      "rationale": "Renderer-neutral layout behavior remains useful independently of the old renderer.",
+      "evidence": {
+        "layer": "synthetic",
+        "source": "synthetic fixture",
+        "integrity": "layout-policy-schema-v1"
+      },
+      "input": {
+        "text": "AB",
+        "paragraphLevel": 0,
+        "defaultMetrics": {
+          "ascender": 8,
+          "descender": -2,
+          "lineGap": 2
+        },
+        "maxWidth": null,
+        "whiteSpace": "normal",
+        "overflowWrap": "normal",
+        "textAlign": "left",
+        "textIndent": 0,
+        "letterSpacing": 0,
+        "lineHeight": "normal",
+        "anchorX": 0,
+        "anchorY": 0,
+        "runs": [
+          {
+            "start": 0,
+            "end": 2,
+            "direction": "ltr",
+            "bidiLevel": 0,
+            "script": "Latn",
+            "language": "en",
+            "styleKey": "default",
+            "fontKey": "synthetic/base",
+            "fontSize": 10,
+            "metrics": {
+              "ascender": 8,
+              "descender": -2,
+              "lineGap": 2
+            },
+            "variations": {},
+            "glyphs": [
+              {
+                "glyphId": 65,
+                "start": 0,
+                "end": 1,
+                "xAdvance": 10,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": {
+                  "left": 0,
+                  "bottom": -2,
+                  "right": 8,
+                  "top": 8
+                }
+              },
+              {
+                "glyphId": 66,
+                "start": 1,
+                "end": 2,
+                "xAdvance": 10,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": {
+                  "left": 0,
+                  "bottom": -2,
+                  "right": 8,
+                  "top": 8
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "sourceLengthUtf16": 2,
+        "fontKeys": [
+          "synthetic/base"
+        ],
+        "glyphs": [
+          {
+            "start": 0,
+            "end": 1,
+            "fontKey": "synthetic/base",
+            "styleKey": "default",
+            "glyphId": 65,
+            "variations": {},
+            "lineIndex": 0,
+            "x": 0,
+            "y": 0,
+            "xAdvance": 10,
+            "yAdvance": 0,
+            "xOffset": 0,
+            "yOffset": 0,
+            "bounds": {
+              "left": 0,
+              "bottom": -2,
+              "right": 8,
+              "top": 8
+            }
+          },
+          {
+            "start": 1,
+            "end": 2,
+            "fontKey": "synthetic/base",
+            "styleKey": "default",
+            "glyphId": 66,
+            "variations": {},
+            "lineIndex": 0,
+            "x": 10,
+            "y": 0,
+            "xAdvance": 10,
+            "yAdvance": 0,
+            "xOffset": 0,
+            "yOffset": 0,
+            "bounds": {
+              "left": 0,
+              "bottom": -2,
+              "right": 8,
+              "top": 8
+            }
+          }
+        ],
+        "lines": [
+          {
+            "start": 0,
+            "end": 2,
+            "glyphStart": 0,
+            "glyphEnd": 2,
+            "baseline": 0,
+            "left": 0,
+            "right": 20,
+            "bottom": -2,
+            "top": 8,
+            "breakAfter": "none"
+          }
+        ],
+        "carets": [
+          {
+            "offset": 0,
+            "lineIndex": 0,
+            "x": 0,
+            "bottom": -2,
+            "top": 8
+          },
+          {
+            "offset": 1,
+            "lineIndex": 0,
+            "x": 10,
+            "bottom": -2,
+            "top": 8
+          },
+          {
+            "offset": 2,
+            "lineIndex": 0,
+            "x": 20,
+            "bottom": -2,
+            "top": 8
+          }
+        ],
+        "blockBounds": {
+          "left": 0,
+          "bottom": -2,
+          "right": 20,
+          "top": 8
+        },
+        "visibleBounds": {
+          "left": 0,
+          "bottom": -2,
+          "right": 18,
+          "top": 8
+        }
+      },
+      "selections": [
+        {
+          "query": {
+            "start": 0,
+            "end": 2
+          },
+          "rects": [
+            {
+              "lineIndex": 0,
+              "left": 0,
+              "bottom": -2,
+              "right": 20,
+              "top": 8
+            }
+          ]
+        },
+        {
+          "query": {
+            "start": 2,
+            "end": 0
+          },
+          "rects": [
+            {
+              "lineIndex": 0,
+              "left": 0,
+              "bottom": -2,
+              "right": 20,
+              "top": 8
+            }
+          ]
+        },
+        {
+          "query": {
+            "start": 1,
+            "end": 1
+          },
+          "rects": []
+        },
+        {
+          "query": {
+            "start": -5,
+            "end": 8
+          },
+          "rects": [
+            {
+              "lineIndex": 0,
+              "left": 0,
+              "bottom": -2,
+              "right": 20,
+              "top": 8
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "selection-multiline-bidi",
+      "intent": "Produce deterministic per-line rectangles for a selection crossing an RTL line.",
+      "tags": [
+        "selection",
+        "multiline",
+        "bidi",
+        "rtl"
+      ],
+      "classification": "preserve",
+      "rationale": "Renderer-neutral layout behavior remains useful independently of the old renderer.",
+      "evidence": {
+        "layer": "synthetic",
+        "source": "synthetic fixture",
+        "integrity": "layout-policy-schema-v1"
+      },
+      "input": {
+        "text": "AB\nאב",
+        "paragraphLevel": 0,
+        "defaultMetrics": {
+          "ascender": 8,
+          "descender": -2,
+          "lineGap": 2
+        },
+        "maxWidth": null,
+        "whiteSpace": "normal",
+        "overflowWrap": "normal",
+        "textAlign": "left",
+        "textIndent": 0,
+        "letterSpacing": 0,
+        "lineHeight": "normal",
+        "anchorX": 0,
+        "anchorY": 0,
+        "runs": [
+          {
+            "start": 0,
+            "end": 2,
+            "direction": "ltr",
+            "bidiLevel": 0,
+            "script": "Latn",
+            "language": "en",
+            "styleKey": "default",
+            "fontKey": "synthetic/base",
+            "fontSize": 10,
+            "metrics": {
+              "ascender": 8,
+              "descender": -2,
+              "lineGap": 2
+            },
+            "variations": {},
+            "glyphs": [
+              {
+                "glyphId": 65,
+                "start": 0,
+                "end": 1,
+                "xAdvance": 10,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": {
+                  "left": 0,
+                  "bottom": -2,
+                  "right": 8,
+                  "top": 8
+                }
+              },
+              {
+                "glyphId": 66,
+                "start": 1,
+                "end": 2,
+                "xAdvance": 10,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": {
+                  "left": 0,
+                  "bottom": -2,
+                  "right": 8,
+                  "top": 8
+                }
+              }
+            ]
+          },
+          {
+            "start": 3,
+            "end": 5,
+            "direction": "rtl",
+            "bidiLevel": 1,
+            "script": "Hebr",
+            "language": "he",
+            "styleKey": "default",
+            "fontKey": "synthetic/base",
+            "fontSize": 10,
+            "metrics": {
+              "ascender": 8,
+              "descender": -2,
+              "lineGap": 2
+            },
+            "variations": {},
+            "glyphs": [
+              {
+                "glyphId": 1489,
+                "start": 4,
+                "end": 5,
+                "xAdvance": 10,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": {
+                  "left": 0,
+                  "bottom": -2,
+                  "right": 8,
+                  "top": 8
+                }
+              },
+              {
+                "glyphId": 1488,
+                "start": 3,
+                "end": 4,
+                "xAdvance": 10,
+                "yAdvance": 0,
+                "xOffset": 0,
+                "yOffset": 0,
+                "flags": 0,
+                "bounds": {
+                  "left": 0,
+                  "bottom": -2,
+                  "right": 8,
+                  "top": 8
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "sourceLengthUtf16": 5,
+        "fontKeys": [
+          "synthetic/base"
+        ],
+        "glyphs": [
+          {
+            "start": 0,
+            "end": 1,
+            "fontKey": "synthetic/base",
+            "styleKey": "default",
+            "glyphId": 65,
+            "variations": {},
+            "lineIndex": 0,
+            "x": 0,
+            "y": 0,
+            "xAdvance": 10,
+            "yAdvance": 0,
+            "xOffset": 0,
+            "yOffset": 0,
+            "bounds": {
+              "left": 0,
+              "bottom": -2,
+              "right": 8,
+              "top": 8
+            }
+          },
+          {
+            "start": 1,
+            "end": 2,
+            "fontKey": "synthetic/base",
+            "styleKey": "default",
+            "glyphId": 66,
+            "variations": {},
+            "lineIndex": 0,
+            "x": 10,
+            "y": 0,
+            "xAdvance": 10,
+            "yAdvance": 0,
+            "xOffset": 0,
+            "yOffset": 0,
+            "bounds": {
+              "left": 0,
+              "bottom": -2,
+              "right": 8,
+              "top": 8
+            }
+          },
+          {
+            "start": 3,
+            "end": 4,
+            "fontKey": "synthetic/base",
+            "styleKey": "default",
+            "glyphId": 1488,
+            "variations": {},
+            "lineIndex": 1,
+            "x": 10,
+            "y": -12,
+            "xAdvance": 10,
+            "yAdvance": 0,
+            "xOffset": 0,
+            "yOffset": 0,
+            "bounds": {
+              "left": 0,
+              "bottom": -2,
+              "right": 8,
+              "top": 8
+            }
+          },
+          {
+            "start": 4,
+            "end": 5,
+            "fontKey": "synthetic/base",
+            "styleKey": "default",
+            "glyphId": 1489,
+            "variations": {},
+            "lineIndex": 1,
+            "x": 0,
+            "y": -12,
+            "xAdvance": 10,
+            "yAdvance": 0,
+            "xOffset": 0,
+            "yOffset": 0,
+            "bounds": {
+              "left": 0,
+              "bottom": -2,
+              "right": 8,
+              "top": 8
+            }
+          }
+        ],
+        "lines": [
+          {
+            "start": 0,
+            "end": 3,
+            "glyphStart": 0,
+            "glyphEnd": 2,
+            "baseline": 0,
+            "left": 0,
+            "right": 20,
+            "bottom": -2,
+            "top": 8,
+            "breakAfter": "hard"
+          },
+          {
+            "start": 3,
+            "end": 5,
+            "glyphStart": 2,
+            "glyphEnd": 4,
+            "baseline": -12,
+            "left": 0,
+            "right": 20,
+            "bottom": -14,
+            "top": -4,
+            "breakAfter": "none"
+          }
+        ],
+        "carets": [
+          {
+            "offset": 0,
+            "lineIndex": 0,
+            "x": 0,
+            "bottom": -2,
+            "top": 8
+          },
+          {
+            "offset": 1,
+            "lineIndex": 0,
+            "x": 10,
+            "bottom": -2,
+            "top": 8
+          },
+          {
+            "offset": 2,
+            "lineIndex": 0,
+            "x": 20,
+            "bottom": -2,
+            "top": 8
+          },
+          {
+            "offset": 3,
+            "lineIndex": 1,
+            "x": 20,
+            "bottom": -14,
+            "top": -4
+          },
+          {
+            "offset": 4,
+            "lineIndex": 1,
+            "x": 10,
+            "bottom": -14,
+            "top": -4
+          },
+          {
+            "offset": 5,
+            "lineIndex": 1,
+            "x": 0,
+            "bottom": -14,
+            "top": -4
+          }
+        ],
+        "blockBounds": {
+          "left": 0,
+          "bottom": -14,
+          "right": 20,
+          "top": 8
+        },
+        "visibleBounds": {
+          "left": 0,
+          "bottom": -14,
+          "right": 18,
+          "top": 8
+        }
+      },
+      "selections": [
+        {
+          "query": {
+            "start": 0,
+            "end": 5
+          },
+          "rects": [
+            {
+              "lineIndex": 0,
+              "left": 0,
+              "bottom": -2,
+              "right": 20,
+              "top": 8
+            },
+            {
+              "lineIndex": 1,
+              "left": 0,
+              "bottom": -14,
+              "right": 20,
+              "top": -4
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
