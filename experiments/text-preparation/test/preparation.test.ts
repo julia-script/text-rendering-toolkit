@@ -84,14 +84,15 @@ describe('canonical preparation evidence', () => {
     }
   })
 
-  test('keeps candidate dependencies and exports out of publishable packages', async () => {
+  test('promotes candidate dependencies only into the layout package', async () => {
     for (const name of ['font', 'layout', 'sdf', 'three']) {
       const manifest = JSON.parse(
         await readFile(new URL(`packages/${name}/package.json`, root), 'utf8'),
       ) as { readonly dependencies?: Readonly<Record<string, string>>; readonly exports?: unknown }
       expect(manifest.exports, name).toBeDefined()
-      expect(Object.keys(manifest.dependencies ?? {}), name).not.toContain('bidi-js')
-      expect(Object.keys(manifest.dependencies ?? {}), name).not.toContain('unicode-script')
+      const dependencies = Object.keys(manifest.dependencies ?? {})
+      expect(dependencies.includes('bidi-js'), name).toBe(name === 'layout')
+      expect(dependencies.includes('unicode-script'), name).toBe(name === 'layout')
     }
   })
 })

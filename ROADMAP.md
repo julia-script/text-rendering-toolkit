@@ -11,7 +11,7 @@ Build a small, production-quality family of text-processing packages culminating
 
 The result is deliberately greenfield: strict TypeScript source, native ESM packages, explicit data contracts between layers, promise-based synchronization, TSL node materials, and no compatibility commitment to `troika-three-text`, `WebGLRenderer`, CommonJS, or UMD.
 
-**Current objective achieved:** representative multilingual text now renders through `WebGPURenderer` using a WebGL-free runtime, backed by deterministic layout/SDF tests, a real-font actual-WebGPU fixture, strict TypeScript checks, and a public-only consumer example. `LayoutResult` is the completed renderer-neutral handoff, so Three performs no shaping, line layout, caret, or selection policy. The Three package now ships both its default unlit material and an opt-in construction-fixed planar standard material with glyph-shaped cast and received shadows. A separate validation has also fixed the renderer-neutral raw-text preparation contract without yet adding it to a production package.
+**Current objective achieved:** representative multilingual text now renders through `WebGPURenderer` using a WebGL-free runtime, backed by deterministic layout/SDF tests, a real-font actual-WebGPU fixture, strict TypeScript checks, and a public-only consumer example. `LayoutResult` is the completed renderer-neutral handoff, so Three performs no shaping, line layout, caret, or selection policy. The Three package now ships both its default unlit material and an opt-in construction-fixed planar standard material with glyph-shaped cast and received shadows. `@webgpu-text/layout` now turns ordinary raw text into the same handoff through reusable serializable preparation, explicit caller-font fallback, and HarfBuzz shaping.
 
 ## Where we are starting
 
@@ -247,19 +247,13 @@ remains private to the renderer.
 
 ## Now
 
-No delivery change is active. All previously committed “Now” work is complete and
-recorded in the changelog and archived OpenSpec changes. The leading candidate
-for the next committed slice is renderer-neutral raw-text preparation, currently
-kept in **Next** until its implementation change is proposed.
+### Implement renderer-neutral raw-text preparation
+- **Problem:** The validated preparation contract was private evidence, so production consumers still had to construct resolved runs manually.
+- **Outcome & done-when:** `@webgpu-text/layout` exposes reusable `prepareText()`, font-aware `layoutPreparedText()`, and one-call `layoutText()` with canonical conformance, lazy outlines, caller-owned fonts, clean package installation, and browser-compatible ESM evidence.
+- **Status:** complete — production raw-text preparation, explicit caller-font fallback, HarfBuzz shaping, lazy-outline `LayoutResult` composition, parsed-value validation, clean package installation, and browser-compatible ESM conformance pass the canonical corpus without changing the resolved expert API or Three renderer.
+- **Links:** OpenSpec change `implement-renderer-neutral-text-preparation` · [package README](packages/layout/README.md) · [validation report](docs/validation/text-preparation-boundary.md)
 
 ## Next
-
-### Implement renderer-neutral raw-text preparation
-- **Problem:** The validated preparation contract is still private evidence, so production consumers must manually construct resolved runs.
-- **Hypothesis:** promote the proven two-stage contract into `@webgpu-text/layout` with `prepareText()`, `layoutPreparedText()`, and a one-call `layoutText()` convenience while preserving `layoutResolvedText()` unchanged.
-- **Confidence:** high
-- **Assumes:** the validated Unicode 13 bidi limitation and Unicode 17 script dependency are acceptable for the first documented slice.
-- **Open questions:** Should the dependency declaration gap be fixed upstream before release? Should the first public result expose per-paragraph metadata beyond prepared segments?
 
 ### Efficient rendering of many independent text objects
 - **Problem:** One mesh and material state per label may become CPU- or draw-call-bound in dense interfaces and scenes.
@@ -318,6 +312,7 @@ kept in **Next** until its implementation change is proposed.
 
 ## Changelog
 
+- 2026-07-21: Implemented production renderer-neutral raw-text preparation in `@webgpu-text/layout`. Added reusable serializable `prepareText()`, explicit-font `layoutPreparedText()`, one-call `layoutText()`, pinned Unicode 13 bidi and Unicode 17 script dependencies, structured failures, lazy outlines, canonical multilingual conformance, clean-package validation, and browser ESM evidence while preserving caller font ownership and the existing resolved expert API.
 - 2026-07-21: Reconciled the roadmap after archiving `validate-text-preparation-boundary`. All twelve OpenSpec changes are archived, no delivery change is active, and completed cards were cleared from **Now**. Production renderer-neutral raw-text preparation remains the leading **Next** candidate; no scope or priority pivot was inferred.
 - 2026-07-21: Validated renderer-neutral raw-text preparation over fifteen canonical cases. Accepted a reusable serializable `PreparedText` boundary, explicit caller-font fallback, `bidi-js@1.0.3`, Unicode 17 script data, and unchanged public HarfBuzz/layout composition; recorded that shaping dominates measured execution and deferred complete breaking/reshaping, bidi affinity, workers, fetching, emoji/color fonts, and batching.
 - 2026-07-21: Integrated construction-fixed planar standard-material text into the production Three package. Reused the existing renderer kernel, added constant normals and the proven visible-side SDF shadow mask, updated the public example and package consumer, and validated real Latin/Arabic lighting, glyph-shaped cast/receive shadows, a 14-to-15-glyph update, fallback rejection, and repeatable disposal on Apple Metal WebGPU.

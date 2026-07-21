@@ -31,16 +31,16 @@ instanced geometry, and shared TSL nodes bound to either the default unlit or
 construction-fixed planar standard material through an atomic `Text.sync()`
 lifecycle.
 
-Automatic script/direction itemization and explicit caller-font fallback now
-have a validated two-stage production contract, but are not yet exported from a
-publishable package. Complete Unicode line breaking, reshaping around line
+Automatic script/direction itemization and explicit caller-font fallback are
+now production `@webgpu-text/layout` operations through `prepareText()`,
+`layoutPreparedText()`, and `layoutText()`. Complete Unicode line breaking, reshaping around line
 boundaries, bidi caret affinity, workers, shared atlas residency/eviction,
 curved or configurable physical materials, and batching remain separate
 follow-ups. The production standard
 variant now promotes the validated front-facing planar seam with glyph-shaped
 cast and received shadows through ordinary Three.js scene flags. Font-byte
 acquisition is caller-owned: no core package
-accepts URLs or performs network fetching. The layout package turns fully
+accepts URLs or performs network fetching. The layout package turns raw text or fully
 resolved runs into `LayoutResult`; the first renderer accepts only that completed
 handoff rather than implementing a partial raw-text policy.
 
@@ -176,14 +176,14 @@ The important correction from the old naming is that “font loading,” “font
 - The implemented `ResolvedLayoutInput` boundary for fully selected, itemized, shaped, and scaled runs.
 - Deterministic hard breaks, whitespace wrapping, alignment, indentation, anchoring, line metrics, and resolved bidi-level visual ordering.
 - Positioned glyph instances, block/visible bounds, caret positions, selection rectangles, and point-to-caret hit testing.
-- The validated future `PreparedText` policy: grapheme segmentation,
+- The implemented `PreparedText` policy: grapheme segmentation,
   paragraph bidi levels, ISO script adoption, style intersection, and explicit
   ordered fallback over caller-supplied font handles.
 - Future optional ESM worker entry points for moving layout off the main thread.
 
-**Inputs today:** text policy plus `ResolvedShapedRun` values using one effective layout-unit coordinate system.
-
-**Validated next input:** immutable serializable `PreparedText` plus a
+**Inputs:** raw text/style policy, immutable serializable `PreparedText`, or
+expert `ResolvedShapedRun` values using one effective layout-unit coordinate
+system. The prepared path receives a
 `ReadonlyMap<string, FontHandle>`. The pure first stage does not consult fonts;
 the synchronous second stage selects, shapes, scales, and delegates to the
 existing resolved core.
@@ -272,10 +272,11 @@ sequenceDiagram
     App->>App: acquire bytes by application policy
     App->>Font: load(fontBytes)
     Font-->>App: FontHandle
-    App->>Font: shape selected directional/script runs
-    Font-->>App: ShapedRun in font units
-    App->>App: scale and assemble ResolvedLayoutInput
-    App->>Layout: layoutResolvedText(input)
+    App->>Layout: prepareText(raw input)
+    Layout-->>App: serializable PreparedText
+    App->>Layout: layoutPreparedText(prepared, fonts)
+    Layout->>Font: coverage and explicit-run shaping
+    Font-->>Layout: ShapedRun in font units
     Layout-->>App: LayoutResult
     App->>Three: create/update with LayoutResult and font registry
     Three->>Font: getOutline(glyphId) on atlas miss
@@ -319,10 +320,12 @@ import { layoutResolvedText } from '@webgpu-text/layout'
 const result = layoutResolvedText(resolvedInput)
 ```
 
-The validated production follow-up will also support reusable raw-text
-preparation without moving font acquisition into the package:
+The production package also supports reusable raw-text preparation without
+moving font acquisition into the package:
 
 ```ts
+import { layoutPreparedText, prepareText } from '@webgpu-text/layout'
+
 const prepared = prepareText({
   text: 'Hello مرحبا',
   style: {
@@ -407,7 +410,7 @@ The workspace can publish four packages from one repository and version them tog
 | `FontParser.js` GSUB/GPOS, joining, glyph mapping, and kerning | `font` shaping adapter | Replace with HarfBuzz shaping; retain representative old outputs only for comparison and intentional-difference review |
 | `FontParser.js` outline cache | `font` outline adapter | Preserve lazy/cache behavior with direct numeric HarfBuzz callbacks and a glyph/variation cache; never use its SVG round-trip |
 | `woff2otf.js`, generated Typr factory, and Typr sources | local reference only | Do not port into the production runtime. V1 accepts normalized TTF/OTF and rejects WOFF/WOFF2 explicitly; decoder evaluation is separate follow-up work |
-| `FontResolver.js` | future `text-layout` selection policy plus application adapters | Preserve only pure selection/fallback ideas; applications own byte acquisition, while optional helpers may own URL/cache convenience outside the core path |
+| `FontResolver.js` | implemented `text-layout` fallback policy plus future application adapters | Preserve only pure ordered selection/fallback over caller handles; applications own byte acquisition, while optional helpers may own URL/cache convenience outside the core path |
 | `Typesetter.js` | `text-layout` | Split run shaping, line construction, bidi placement, result assembly, and interaction data while preserving fixtures |
 | `selectionUtils.js` | `text-layout` | Port as pure helpers over `LayoutResult` |
 | CPU behavior behind `SDFGenerator.js` | `sdf` | Port the MIT-licensed CPU encoder with its notice and golden fixtures; expose pure typed-array input/output; delete WebGL and canvas paths |
@@ -444,7 +447,7 @@ The accepted layout corpus and implementation handoff are documented in
 [`docs/validation/layout-policy.md`](docs/validation/layout-policy.md). Its
 synthetic fixtures are production conformance inputs; its real-font records are
 boundary observations. Automatic itemization and caller-font fallback are
-separately proven by
+production conformance paths backed by
 [`docs/validation/text-preparation-boundary.md`](docs/validation/text-preparation-boundary.md),
 including their Unicode versions and deliberate limits. Worker and provider
 support remain unproven.
@@ -475,15 +478,15 @@ This split is accepted for semantic reuse and transferability, not promised
 speed. The one-call `layoutText()` convenience may compose both stages, while
 `layoutResolvedText()` remains the expert boundary. No stage accepts URLs,
 fetches bytes, discovers browser/system fonts, owns handles, or contains
-renderer state. `bidi-js@1.0.3` and Unicode 17.0.0 script data are the validated
-candidate revisions; their limitations and comparison are recorded in the
+renderer state. `bidi-js@1.0.3` and Unicode 17.0.0 script data are the pinned
+production revisions; their limitations and comparison are recorded in the
 [text-preparation report](docs/validation/text-preparation-boundary.md).
 
 ### Use HarfBuzzjs as the font and shaping engine
 
 Troika does not merely import a parser. It layers custom Arabic joining, selected GSUB/GPOS handling, kerning, cluster mapping, and outline behavior on top of a generated Typr build. Porting that code would make this project responsible for a partial OpenType shaping engine indefinitely. That cost is not justified when compatibility with Troika’s exact shaping output is explicitly out of scope.
 
-The first `font` implementation therefore wraps [HarfBuzzjs](https://github.com/harfbuzz/harfbuzzjs) behind stable `FontHandle`, `ShapedRun`, and `GlyphOutline` contracts. HarfBuzz owns font-specific glyph substitution and positioning. The implemented layout core owns line construction, wrapping, resolved bidi-level visual placement, carets, and selection geometry. Validated automatic fallback and directional/script itemization remain the next production layout policy over caller-supplied fonts; they do not imply URL fetching.
+The first `font` implementation therefore wraps [HarfBuzzjs](https://github.com/harfbuzz/harfbuzzjs) behind stable `FontHandle`, `ShapedRun`, and `GlyphOutline` contracts. HarfBuzz owns font-specific glyph substitution and positioning. The implemented layout package owns raw-text bidi/script itemization, explicit caller-font fallback and shaping orchestration, line construction, wrapping, resolved bidi-level visual placement, carets, and selection geometry. None of these operations imply URL fetching.
 
 HarfBuzzjs exposes the font facts needed by v1, so the project does not need a second general-purpose parser such as OpenType.js or Fontkit. The published 1.4.0 wrapper's public surface renders glyphs only through SVG-string convenience methods, but its packaged WASM already exports the required drawing functions. A general table-inspection or font-editing API remains a separate future capability, not a dependency of text rendering.
 

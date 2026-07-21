@@ -106,6 +106,12 @@ importers:
       '@webgpu-text/font':
         specifier: workspace:^
         version: link:../font
+      bidi-js:
+        specifier: 1.0.3
+        version: 1.0.3
+      unicode-script:
+        specifier: 1.2.0
+        version: 1.2.0
 
   packages/sdf:
     devDependencies:
@@ -713,13 +719,14 @@ packages:
     resolution: {integrity: sha512-lW616l85ucIQL+FocMmL7pQFPqBmwejrCMg+iPxyImlrANNJG9NHq/RkyCZopDhd8C3LA03PHRJDjkbGu8vvug==}
     engines: {node: ^10 || ^12 || >=14}
 
+  require-from-string@2.0.2:
+    resolution: {integrity: sha512-Xf0nWe6RseziFMu+Ap9biiUbmplq6S9/p+7w7YXP/JBHhrUDDUhwa+vANyubuqfZWTveU//DYVGsDG7RKL/vEw==}
+    engines: {node: '>=0.10.0'}
+
   rolldown@1.1.5:
     resolution: {integrity: sha512-t9z29cJjXf/vxQ8dyhCSpt6H6aSwHTk8cT5I3iy6SMXuFpk5mB6PL6XfC8PCwrPTx93udwKUm9HRteAlTGBLiA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
-
-  require-from-string@2.0.2:
-    resolution: {integrity: sha512-Xf0nWe6RseziFMu+Ap9biiUbmplq6S9/p+7w7YXP/JBHhrUDDUhwa+vANyubuqfZWTveU//DYVGsDG7RKL/vEw==}
 
   siginfo@2.0.0:
     resolution: {integrity: sha512-ybx0WO1/8bSBLEWXZvEd7gMW3Sn3JFlW3TvX1nREbDLRNQNaeNN8WK0meBwPdAaOI7TtRRRJn/Es1zhrrCHu7g==}
@@ -777,6 +784,7 @@ packages:
 
   unicode-script@1.2.0:
     resolution: {integrity: sha512-1Dz/Fs8uWK3EEnrvCXFmR2oQz+oxTe7H8AGwRiaUZ9SWdyF37L4s+a2AZx31+YpRdrKajlUPDDVjWLP8WIQUVw==}
+    engines: {node: '>=18.20'}
 
   vite@8.1.5:
     resolution: {integrity: sha512-7ULLwsCdYx/nRyrpiEwvqb5TFHrMVZyBt+rg/OAXT7rgj/z+DtTDyKFeLAdDkubDVDKD8jOsndmy7m55XcfUsw==}
@@ -1301,6 +1309,8 @@ snapshots:
       picocolors: 1.1.1
       source-map-js: 1.2.1
 
+  require-from-string@2.0.2: {}
+
   rolldown@1.1.5:
     dependencies:
       '@oxc-project/types': 0.139.0
@@ -1321,8 +1331,6 @@ snapshots:
       '@rolldown/binding-wasm32-wasi': 1.1.5
       '@rolldown/binding-win32-arm64-msvc': 1.1.5
       '@rolldown/binding-win32-x64-msvc': 1.1.5
-
-  require-from-string@2.0.2: {}
 
   siginfo@2.0.0: {}
 

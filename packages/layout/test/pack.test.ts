@@ -42,10 +42,11 @@ it('ships ESM runtime and type exports usable with the public font package', () 
     const installed = resolve(consumer, 'node_modules/@webgpu-text/layout')
     expect(existsSync(resolve(installed, 'dist/index.js'))).toBe(true)
     expect(existsSync(resolve(installed, 'dist/index.d.ts'))).toBe(true)
+    expect(existsSync(resolve(installed, 'THIRD_PARTY_NOTICES.md'))).toBe(true)
 
     const source = `
-      import { layoutResolvedText, getSelectionRects } from '@webgpu-text/layout'
-      import type { ResolvedLayoutInput } from '@webgpu-text/layout'
+      import { layoutResolvedText, getSelectionRects, prepareText } from '@webgpu-text/layout'
+      import type { PreparedText, ResolvedLayoutInput } from '@webgpu-text/layout'
 
       const input: ResolvedLayoutInput = {
         text: '', paragraphLevel: 0, defaultMetrics: { ascender: 8, descender: -2, lineGap: 0 },
@@ -58,6 +59,12 @@ it('ships ESM runtime and type exports usable with the public font package', () 
       const scales: number[] = result.glyphs.map((glyph) => glyph.fontUnitScale)
       void scales
       if (result.sourceLengthUtf16 !== 0) throw new Error('Unexpected source length')
+
+      const prepared: PreparedText = prepareText({
+        text: 'Hello',
+        style: { key: 'body', fontKeys: ['body'], fontSize: 24, language: 'en' },
+      })
+      if (prepared.segments[0]?.script !== 'Latn') throw new Error('Unexpected script')
     `
     writeFileSync(resolve(consumer, 'main.ts'), source)
     writeFileSync(

@@ -1,11 +1,69 @@
 # `@webgpu-text/layout`
 
-Pure, renderer-neutral layout of already resolved and shaped text runs. The
-package is strict TypeScript and ESM-only. It has no font fetching, automatic
-font selection, outline extraction, SDF, atlas, worker, DOM, GPU, or Three.js
+Pure, renderer-neutral preparation and layout of raw text or already resolved
+shaped runs. The package is strict TypeScript and ESM-only. It has no font
+fetching, eager outline extraction, SDF, atlas, worker, DOM, GPU, or Three.js
 runtime behavior.
 
-## Usage
+## Raw-text usage
+
+Applications acquire font bytes however they want and keep ownership of every
+`FontHandle`. The layout package only receives an explicit key-to-handle map:
+
+```ts
+import { loadFont } from '@webgpu-text/font'
+import {
+  getSelectionRects,
+  layoutPreparedText,
+  layoutText,
+  prepareText,
+} from '@webgpu-text/layout'
+
+const latin = await loadFont(latinBytes)
+const arabic = await loadFont(arabicBytes)
+const fonts = new Map([
+  ['latin', latin],
+  ['arabic', arabic],
+])
+
+const input = {
+  text: 'Hello مرحبا',
+  style: {
+    key: 'body',
+    fontKeys: ['latin', 'arabic'],
+    fontSize: 24,
+    language: 'und',
+  },
+  layout: { maxWidth: 320 },
+} as const
+
+const prepared = prepareText(input)
+const result = layoutPreparedText(prepared, fonts)
+const selection = getSelectionRects(result, { start: 0, end: 5 })
+
+// Equivalent convenience path when preparation will not be reused:
+const sameResult = layoutText(input, fonts)
+```
+
+`prepareText()` performs only grapheme, bidi, script, style, and layout-policy
+analysis. Its deeply frozen `PreparedText` result contains JSON data, so it can
+be serialized, stored, or transferred and later reused with a structurally
+equivalent caller registry. `layoutPreparedText()` validates parsed values,
+selects the first registered font that covers each complete grapheme, shapes
+through HarfBuzz, scales font units once, and delegates to the same resolved
+layout core.
+
+All named font keys must exist. Missing keys, missing grapheme coverage, invalid
+UTF-16/style boundaries, and invalid serialized values throw
+`TextPreparationError` with a stable `code`, source range, and attempted keys
+where applicable. Neither operation fetches, discovers, caches globally,
+mutates, or disposes fonts.
+
+The first production policy pins `bidi-js@1.0.3` (Unicode 13.0.0 bidi data) and
+`unicode-script@1.2.0` (Unicode 17.0.0 Script/Script_Extensions data). Dependency
+upgrades require rerunning the canonical corpus.
+
+## Expert resolved-run usage
 
 ```ts
 import { getSelectionRects, layoutResolvedText } from '@webgpu-text/layout'
@@ -116,12 +174,21 @@ and resolve only the outlines it needs from the caller-owned font registry.
   height, and numeric/keyword/percentage anchors
 - block and optional visible bounds, logical caret stops, and pure selection
   rectangles
+- grapheme-safe raw-text preparation with whole-text bidi levels, ISO 15924
+  script adoption, style intersection, and explicit ordered caller-font fallback
 
-The package does not yet perform Unicode script or bidi itemization, automatic
-font fallback, or reshaping around a chosen line break. Soft wrapping currently
-uses the accepted whitespace policy rather than the complete Unicode line
-breaking algorithm. Bidi caret affinity at ambiguous visual boundaries and
-worker adapters are also follow-up capabilities.
+Raw-text composition keeps glyph bounds `null` and never calls `getOutline()`;
+renderers can resolve outlines lazily from each positioned glyph's font key,
+glyph ID, variations, and `fontUnitScale`. Consequently `visibleBounds` may be
+`null` while block/line bounds, carets, and selection rectangles remain
+available. Consumers that already own exact glyph bounds can supply them through
+`layoutResolvedText()`.
 
-The normative fixture corpus and implementation handoff are documented in
-[`docs/validation/layout-policy.md`](../../docs/validation/layout-policy.md).
+Soft wrapping still uses the accepted whitespace policy rather than complete
+Unicode line breaking and does not reshape after a chosen break. Dictionary
+breaking, hyphenation, bidi caret affinity, incremental editing, worker
+adapters, font fetching, shared caches, and color-font policy remain follow-ups.
+
+The normative layout and preparation evidence is documented in
+[`docs/validation/layout-policy.md`](../../docs/validation/layout-policy.md) and
+[`docs/validation/text-preparation-boundary.md`](../../docs/validation/text-preparation-boundary.md).

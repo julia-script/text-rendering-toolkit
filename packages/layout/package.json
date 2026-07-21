@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "THIRD_PARTY_NOTICES.md"
   ],
   "exports": {
     ".": {
@@ -18,6 +20,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@webgpu-text/font": "workspace:^"
+    "@webgpu-text/font": "workspace:^",
+    "bidi-js": "1.0.3",
+    "unicode-script": "1.2.0"
   }
 }
