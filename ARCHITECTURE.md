@@ -21,18 +21,20 @@ The most important deliberate departure is font shaping. Troika’s custom Typr-
 
 ## Implementation status
 
-The greenfield pnpm/Turborepo/Biome/Vitest baseline and the production
-`@webgpu-text/font`, resolved `@webgpu-text/layout`, and CPU
-`@webgpu-text/sdf` cores are implemented and validated. SDF generation now
-accepts typed numeric outlines directly, returns self-describing one-channel
-pixels, and is protected by synthetic golden fixtures and public-font seam
-tests without a runtime dependency.
+The greenfield pnpm/Turborepo/Biome/Vitest baseline and all four first
+production cores are implemented and validated: `@webgpu-text/font`, resolved
+`@webgpu-text/layout`, CPU `@webgpu-text/sdf`, and resolved-input
+`@webgpu-text/three`. The renderer composes caller-owned structural font handles,
+lazy numeric outlines, deterministic SDFs, a private growing RGBA atlas,
+instanced geometry, and an unlit TSL material through an atomic `Text.sync()`
+lifecycle.
 
 Automatic script/direction itemization, font selection and fallback, complete
 Unicode line breaking, reshaping around line boundaries, bidi caret affinity,
-workers, SDF caching, atlas ownership, and renderer orchestration remain
-separate follow-ups. Font-byte acquisition is caller-owned: no core package
-accepts URLs or performs network fetching.
+workers, shared atlas residency/eviction, curved or lit materials, and batching
+remain separate follow-ups. Font-byte acquisition is caller-owned: no core
+package accepts URLs or performs network fetching. The first renderer accepts
+fully resolved runs rather than implementing a partial raw-text policy.
 
 ## Current responsibility map
 
@@ -208,20 +210,20 @@ The preserved `SDFGenerator.js` is mostly scheduling and WebGL/canvas integratio
 
 **Owns:**
 
-- The high-level `Text` mesh and promise-based synchronization lifecycle.
-- Layout/SDF orchestration and stale-result cancellation.
-- The complete atlas implementation: slot allocation, RGBA channel packing, byte storage, growth, dirty regions, glyph cache, residency/eviction policy, and lifecycle.
+- The implemented resolved-input `Text` mesh and latest-state promise synchronization lifecycle.
+- Pure layout/SDF orchestration, failure atomicity, and committed selection access.
+- One private atlas per text: flat-slot allocation, RGBA channel packing, byte storage, square growth, full dirty uploads, glyph cache, and lifecycle. V1 has no eviction.
 - RGBA atlas upload into a Three `DataTexture`.
-- Instanced glyph geometry and bounds.
-- TSL node materials for placement, SDF decoding, antialiasing, fill, clipping, orientation, curvature, and later explicit lighting variants.
-- Raycasting and lifecycle-safe disposal.
+- Capacity-aware instanced glyph geometry and explicit bounds.
+- The implemented flat unlit TSL material for placement, SDF decoding, derivative antialiasing, fill, per-style color, opacity, and rectangular clipping.
+- Lifecycle-safe disposal that leaves caller fonts, renderer, and canvas alone.
 - Future batching, if profiling demonstrates a need.
 
-**Inputs:** public text properties, or lower-level precomputed `LayoutResult` and SDF/atlas data.
+**Inputs today:** a public `ResolvedLayoutInput`, a structural map of caller-owned font handles, and baseline appearance values.
 
 **Outputs:** Three scene objects and GPU resources.
 
-**Does not own:** font table parsing algorithms, line layout algorithms, or the CPU SDF encoder.
+**Does not own:** font bytes or fetching, caller font lifetime, itemization/fallback, font table parsing algorithms, line layout algorithms, the CPU SDF encoder, workers, a shared renderer/canvas, or WebGL support.
 
 ## Boundary contracts
 
@@ -317,9 +319,9 @@ const bitmap = generateSdf({
 import { Text } from '@scope/three-webgpu-text'
 
 const text = new Text({
-  text: 'Hello',
-  font,
-  fontSize: 0.1
+  input: resolvedLayoutInput,
+  fonts: new Map([['body', font]]),
+  color: 0xffffff
 })
 
 await text.sync()

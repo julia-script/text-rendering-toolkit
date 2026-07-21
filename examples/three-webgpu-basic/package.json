@@ -1,0 +1,20 @@
+{
+  "name": "@webgpu-text/three-webgpu-basic-example",
+  "version": "0.0.0-private",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@webgpu-text/font": "workspace:^",
+    "@webgpu-text/layout": "workspace:^",
+    "@webgpu-text/three": "workspace:^",
+    "three": "0.185.1"
+  },
+  "devDependencies": {
+    "@types/three": "0.185.1"
+  }
+}

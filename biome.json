@@ -4,6 +4,7 @@
     "includes": [
       "packages/**",
       "!packages/font/src/internal/vendor",
+      "examples/**",
       "experiments/webgpu-rendering-seam/**",
       "*.json"
     ]

@@ -21,8 +21,36 @@ importers:
         specifier: 4.1.10
         version: 4.1.10(@types/node@26.1.1)(@vitest/browser-playwright@4.1.10)(vite@8.1.5(@types/node@26.1.1))
 
+  examples/three-webgpu-basic:
+    dependencies:
+      '@webgpu-text/font':
+        specifier: workspace:^
+        version: link:../../packages/font
+      '@webgpu-text/layout':
+        specifier: workspace:^
+        version: link:../../packages/layout
+      '@webgpu-text/three':
+        specifier: workspace:^
+        version: link:../../packages/three
+      three:
+        specifier: 0.185.1
+        version: 0.185.1
+    devDependencies:
+      '@types/three':
+        specifier: 0.185.1
+        version: 0.185.1
+
   experiments/webgpu-rendering-seam:
     dependencies:
+      '@webgpu-text/font':
+        specifier: workspace:^
+        version: link:../../packages/font
+      '@webgpu-text/layout':
+        specifier: workspace:^
+        version: link:../../packages/layout
+      '@webgpu-text/three':
+        specifier: workspace:^
+        version: link:../../packages/three
       three:
         specifier: 0.185.1
         version: 0.185.1
@@ -71,6 +99,13 @@ importers:
       three:
         specifier: ^0.185.1
         version: 0.185.1
+    devDependencies:
+      '@types/three':
+        specifier: 0.185.1
+        version: 0.185.1
+      '@webgpu-text/font':
+        specifier: workspace:^
+        version: link:../font
 
 packages:
 

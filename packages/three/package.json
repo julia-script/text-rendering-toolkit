@@ -17,6 +17,10 @@
     "test": "vitest run --passWithNoTests",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
+  "devDependencies": {
+    "@types/three": "0.185.1",
+    "@webgpu-text/font": "workspace:^"
+  },
   "dependencies": {
     "@webgpu-text/layout": "workspace:^",
     "@webgpu-text/sdf": "workspace:^"

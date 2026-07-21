@@ -12,6 +12,9 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@webgpu-text/font": "workspace:^",
+    "@webgpu-text/layout": "workspace:^",
+    "@webgpu-text/three": "workspace:^",
     "three": "0.185.1"
   },
   "devDependencies": {

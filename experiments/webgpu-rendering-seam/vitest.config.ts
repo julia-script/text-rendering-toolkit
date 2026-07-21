@@ -1,5 +1,15 @@
+import { createHash } from 'node:crypto'
+import { readFileSync, writeFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { playwright } from '@vitest/browser-playwright'
 import { defineConfig } from 'vitest/config'
+
+const productionFrame = fileURLToPath(
+  new URL('./artifacts/three-webgpu-text-core.png', import.meta.url),
+)
+const productionObservation = fileURLToPath(
+  new URL('./artifacts/three-webgpu-text-core.json', import.meta.url),
+)
 
 export default defineConfig({
   test: {
@@ -19,6 +29,26 @@ export default defineConfig({
             commands: {
               recordObservation(_context, observation: unknown) {
                 console.info('WebGPU observation:', JSON.stringify(observation))
+                if (
+                  observation &&
+                  typeof observation === 'object' &&
+                  'kind' in observation &&
+                  observation.kind === 'three-webgpu-text-core'
+                ) {
+                  writeFileSync(
+                    productionObservation,
+                    `${JSON.stringify(
+                      {
+                        ...observation,
+                        frameSha256: createHash('sha256')
+                          .update(readFileSync(productionFrame))
+                          .digest('hex'),
+                      },
+                      null,
+                      2,
+                    )}\n`,
+                  )
+                }
               },
             },
             enabled: true,

@@ -2,7 +2,7 @@
 
 > Direction, not commitment — Now is committed; Next is planned; Later is exploration.
 > Only Now items may be promised. This document changes as we learn.
-> Last reviewed: 2026-07-20 · Review cadence: after each completed OpenSpec change
+> Last reviewed: 2026-07-21 · Review cadence: after each completed OpenSpec change
 > Scope: whole project
 
 ## Vision
@@ -11,7 +11,7 @@ Build a small, production-quality family of text-processing packages culminating
 
 The result is deliberately greenfield: strict TypeScript source, native ESM packages, explicit data contracts between layers, promise-based synchronization, TSL node materials, and no compatibility commitment to `troika-three-text`, `WebGLRenderer`, CommonJS, or UMD.
 
-**Current objective:** render representative multilingual text correctly through `WebGPURenderer` using a WebGL-free runtime — measured by deterministic layout fixtures, browser-rendered visual fixtures, clean strict TypeScript compilation, and a minimal consumer example.
+**Current objective achieved:** representative multilingual text now renders through `WebGPURenderer` using a WebGL-free runtime, backed by deterministic layout/SDF tests, a real-font actual-WebGPU fixture, strict TypeScript checks, and a public-only consumer example. The next roadmap decision is intentionally not hidden inside this milestone.
 
 ## Where we are starting
 
@@ -224,22 +224,21 @@ Each package must expose a useful direct API. Representative lower-level usage i
 import { Text } from '@scope/three-webgpu-text'
 
 const text = new Text({
-  text: 'Hello',
-  font,
-  fontSize: 0.1,
+  input: resolvedLayoutInput,
+  fonts: new Map([['body', font]]),
   color: 0xffffff
 })
 
 await text.sync()
 scene.add(text)
 
-text.text = 'Updated'
+text.input = nextResolvedLayoutInput
 await text.sync()
 
 text.dispose()
 ```
 
-`Text` will extend Three’s `Mesh` from `three/webgpu`. Its default material will be an unlit node material. Layout results and selection helpers belong to `@scope/text-layout`, not the renderer package. Internal worker machinery and GPU atlas state remain private unless a real integration requires them.
+`Text` extends Three’s `Mesh` from `three/webgpu`. Its default material is an unlit node material. The first public boundary accepts fully resolved layout input and caller-owned font handles; raw-text itemization and fallback remain layout work. Layout results and selection policy belong to `@scope/text-layout`, while per-object GPU atlas state remains private.
 
 ## Column rules
 
@@ -294,9 +293,9 @@ text.dispose()
 ### Deliver the first ordinary-text package
 - **Problem:** The renderer spike and ported layout engine are only useful when integrated behind a small lifecycle-safe public API.
 - **Outcome & done-when:** Consumers can construct, synchronize, update, render, select within, and dispose ordinary multilingual text; browser visual fixtures cover the supported appearance features; a minimal example uses only public exports.
-- **Status:** shaped — batching and PBR material variants are outside this slice.
+- **Status:** complete — `@webgpu-text/three` now provides a resolved-input `Text` mesh with latest-state promise synchronization, lazy outline/SDF caching, a private growing RGBA atlas, instanced TSL rendering, style colors, opacity, clipping, selection access, failure recovery, and lifecycle-safe disposal. A real Noto Sans/Noto Sans Arabic fixture passes on Chrome for Testing 149 through Apple Metal WebGPU with 12 initial and 13 updated instances across multiple atlas cells. Raw-text itemization/fallback, shared atlases, workers, batching, and lit materials remain separate work.
 - **Appetite:** worth about 1 focused week, flexing optional visual features to preserve the box.
-- **Links:** future OpenSpec change not yet proposed
+- **Links:** OpenSpec change `implement-three-webgpu-text-core` · [package README](packages/three/README.md) · [validation report](docs/validation/three-webgpu-text-core.md) · [basic example](examples/three-webgpu-basic/)
 
 ## Next
 
@@ -334,9 +333,7 @@ text.dispose()
 ## Open questions
 
 - Should we adopt the recommended project name **WebGPU Text**, repository `webgpu-text`, and packages `@webgpu-text/font`, `@webgpu-text/layout`, `@webgpu-text/sdf`, and `@webgpu-text/three`? The exact package names are currently unused, but npm scope ownership still needs confirmation.
-- Which exact Three revision should define the initial narrow peer range?
-- Which visual properties are essential for v1 beyond fill, per-glyph color, clipping, orientation, and curve?
-- Which automated runner can reproduce the validated Chromium WebGPU launch? The current authoritative observation is local Chrome for Testing 149 on macOS/Apple Metal.
+- Which CI environment can reproduce the validated Chrome for Testing 149 WebGPU launch currently proven on macOS/Apple Metal?
 
 ## Decisions made
 
@@ -354,9 +351,13 @@ text.dispose()
 - **Renderer kernel:** promote one instanced unit quad, typed bounds/flat-slot/color attributes, renderer-owned RGBA `DataTexture`, and an unlit TSL material for cell/channel addressing, SDF coverage, opacity, clipping, orientation, and curvature. Do not port shader rewriting.
 - **Renderer validation:** pin Three.js 0.185.1 for the first implementation and rerun the private actual-WebGPU experiment before widening or changing the revision. WebGL fallback is never passing evidence.
 - **Renderer ownership:** production text objects own their geometry/material and atlas references; the atlas owner owns texture/cache disposal; the application owns the shared Three renderer and canvas.
+- **First renderer surface:** accept fully resolved layout input plus structural caller-owned font handles; do not hide partial itemization or fallback inside the Three package.
+- **First atlas lifetime:** each `Text` owns one private growing RGBA atlas with full dirty texture uploads and no eviction; introduce sharing only when many-label measurements justify the extra ownership policy.
+- **First appearance surface:** ship flat unlit TSL fill, per-style color, opacity, and rectangular clipping on Three.js 0.185.1; defer curvature, lighting, shadows, strokes, and arbitrary material derivation.
 
 ## Changelog
 
+- 2026-07-21: Implemented resolved-input `@webgpu-text/three` with atomic promise synchronization, caller-owned structural font handles, lazy outline/SDF caching, per-object multi-cell RGBA atlas growth, instanced unlit TSL rendering, style colors, opacity, clipping, selections, disposal, clean package installation, a public-only example, and actual-WebGPU Latin/Arabic visual evidence on Three.js 0.185.1.
 - 2026-07-21: Implemented dependency-free `@webgpu-text/sdf` with typed numeric outlines, deterministic CPU distance generation, exact synthetic golden conformance, public-font interoperability, independent package validation, and attributed `webgl-sdf-generator@1.1.1` provenance. Workers, caching, atlases, GPU generation, and renderer orchestration remain separate work.
 - 2026-07-21: Implemented the pure resolved-run layout core with exact synthetic conformance, public-font seam coverage, validated ESM/type packaging, and explicit caller ownership of font-byte acquisition. Automatic itemization/fallback, complete Unicode line breaking, reshaping, workers, and bidi affinity remain follow-ups.
 - 2026-07-21: Validated the renderer-neutral layout-policy boundary with nineteen deterministic synthetic fixtures, eleven public-font runs, complete preserve/change classification, and an `old/`-independent handoff. Automatic itemization and production layout remain the next separate change.
