@@ -1,0 +1,477 @@
+# Architecture — composable text pipeline
+
+> Proposed greenfield architecture. Package names are placeholders until the npm scope and project name are chosen.
+
+The project should be a small workspace of independently publishable packages, not one indivisible renderer package. A consumer must be able to parse a font without installing Three.js, lay out text without generating an SDF, generate an SDF without using a font parser, or use the complete Three.js WebGPU renderer.
+
+## Executive summary
+
+The preserved `troika-three-text` source already contains several conceptual products, but its file boundaries do not cleanly match those products:
+
+- `FontParser.js` parses font bytes **and** performs font-specific shaping and positioning.
+- `FontResolver.js` loads, caches, and selects fallback fonts.
+- `Typesetter.js` performs line layout, wrapping, bidirectional ordering, alignment, bounds, and caret generation.
+- `SDFGenerator.js` chooses between WebGL and worker-based generation, then writes results into a WebGL canvas.
+- `TextBuilder.js` couples typesetting, SDF generation, atlas allocation, canvas growth, Three textures, and render-quad construction.
+- `GlyphsGeometry.js`, `TextDerivedMaterial.js`, `Text.js`, and `BatchedText.js` form the Three/WebGL presentation layer.
+
+The greenfield split therefore cuts through `FontParser`, `SDFGenerator`, and especially `TextBuilder`; simply moving each old file into a new package would preserve the existing coupling.
+
+The most important deliberate departure is font shaping. Troika’s custom Typr-based path is retained as evidence and fixture material, but the production font engine will use [HarfBuzzjs](https://github.com/harfbuzz/harfbuzzjs). This avoids carrying a project-owned subset of OpenType shaping into a compatibility-free codebase.
+
+## Current responsibility map
+
+```mermaid
+flowchart LR
+    Bytes[Font bytes] --> Parser[FontParser]
+    Parser --> Metrics[Metrics and cmap]
+    Parser --> Shape[GSUB, Arabic forms, GPOS and kerning]
+    Parser --> Outline[Glyph outlines]
+
+    URLs[Font URLs and fallback policy] --> Resolver[FontResolver]
+    Resolver --> Parser
+    Resolver --> Typesetter[Typesetter]
+    Shape --> Typesetter
+    Metrics --> Typesetter
+    Typesetter --> Layout[Positioned glyphs, bounds and carets]
+
+    Layout --> Builder[TextBuilder]
+    Outline --> Builder
+    Builder --> SDF[SDFGenerator]
+    SDF --> External[webgl-sdf-generator]
+    Builder --> Atlas[Canvas atlas and Three Texture]
+    Builder --> Quads[Glyph quad bounds]
+
+    Atlas --> Material[TextDerivedMaterial]
+    Quads --> Geometry[GlyphsGeometry]
+    Material --> Text[Text and BatchedText]
+    Geometry --> Text
+
+    classDef pure fill:#dfe9d2,stroke:#4f6b3c,color:#304326
+    classDef mixed fill:#f6e6bf,stroke:#a67c22,color:#6b5118
+    classDef renderer fill:#f8d9d2,stroke:#a04434,color:#702f25
+    class Metrics,Shape,Outline,Typesetter,Layout pure
+    class Parser,Resolver,Builder,SDF mixed
+    class Atlas,Material,Geometry,Text renderer
+```
+
+### What each preserved module actually owns
+
+| Preserved module | Actual responsibility | Important coupling to remove |
+|---|---|---|
+| `FontParser.js` | TTF/OTF parsing through Typr, WOFF conversion, font metrics, code-point coverage, GSUB substitutions, Arabic joining forms, GPOS adjustments, kerning, glyph outline extraction and caching | Parsing and shaping are hidden behind one `forEachGlyph` callback API |
+| `FontResolver.js` | Fetching, parsing cache, user-font selection, Unicode fallback lookup, style/weight matching | Network I/O and fallback policy are tied to callback and worker factories |
+| `Typesetter.js` | Font-run calculation, size/style runs, wrapping, line metrics, alignment, bidi reordering, positioned glyph arrays, bounds, colors, and carets | It receives font objects with shaping callbacks instead of a typed shaping contract |
+| `selectionUtils.js` | Caret hit testing and selection rectangles derived only from layout output | None of its behavior requires Three.js or SDF data |
+| `SDFGenerator.js` | Scheduling and backend selection around the external `webgl-sdf-generator` package | The module is not the core algorithm; it writes results into a WebGL canvas and manages custom workers |
+| `TextBuilder.js` | Argument normalization, worker invocation, global configuration, atlas ownership, glyph cache, SDF requests, texture growth, quad calculation, and final render-info assembly | This is the main cross-layer coupling point and must be decomposed rather than ported intact |
+| `GlyphsGeometry.js` | Instanced quad attributes, glyph bounds, atlas indices, colors, and aggregate bounds | Three-specific, but not intrinsically WebGL-specific |
+| `TextDerivedMaterial.js` | GLSL injection, SDF decoding, antialiasing, fill/stroke/outline, clipping, orientation, and curved placement | Relies on classic materials, shader rewriting, and WebGL GLSL |
+| `Text.js` | Public mutable object, async synchronization, geometry updates, material state, raycasting, clipping, and disposal | Combines consumer API and Three renderer lifecycle |
+| `BatchedText.js` | Multi-text packing and batched material/attribute indirection | Renderer optimization; not part of font, layout, or SDF concerns |
+
+## Proposed package graph
+
+```mermaid
+flowchart LR
+    Font["@scope/font"]
+    Layout["@scope/text-layout"]
+    Sdf["@scope/sdf"]
+    Renderer["@scope/three-webgpu-text"]
+    Three["three/webgpu"]
+    Bidi["bidi-js"]
+    HarfBuzz["vendored HarfBuzzjs runtime"]
+
+    Font -->|internal attributed runtime| HarfBuzz
+    Layout -->|runtime dependency| Font
+    Layout -->|runtime dependency| Bidi
+    Renderer -->|runtime dependency| Layout
+    Renderer -->|runtime dependency| Sdf
+    Renderer -->|peer dependency| Three
+
+    Font -. "structurally compatible outline data" .-> Sdf
+
+    classDef leaf fill:#dfe9d2,stroke:#4f6b3c,color:#304326
+    classDef compose fill:#dbe6ee,stroke:#5f83a3,color:#2f4d66
+    class Font,Sdf leaf
+    class Layout,Renderer compose
+```
+
+The arrows are deliberately one-way. In particular:
+
+- `font` knows nothing about layout, workers, SDFs, browsers, or Three.js.
+- `text-layout` knows nothing about SDFs, atlases, GPU textures, or Three.js.
+- `sdf` knows nothing about fonts, text, layout, browsers, or Three.js.
+- `three-webgpu-text` is the only package that depends on Three.js or owns GPU resources.
+- No separate shared-types package is introduced. The tiny outline bridge is structural TypeScript data, avoiding a fifth package whose only job is to break dependency cycles.
+
+## Naming direction
+
+The recommended descriptive naming scheme is:
+
+- Project and repository: **WebGPU Text** / `webgpu-text`
+- npm scope: `@webgpu-text`
+- Packages: `@webgpu-text/font`, `@webgpu-text/layout`, `@webgpu-text/sdf`, and `@webgpu-text/three`
+
+The shorter package names work because the scope supplies the context. The umbrella name mentions WebGPU even though the lower packages are renderer-neutral; it describes the project that publishes them, not their runtime requirements. Registry checks found no currently published packages at those exact four names, but npm scope ownership still needs to be confirmed before treating the names as available.
+
+Two reasonable alternatives are `@glyph-pipeline/*`, which is technically descriptive but less memorable, and a personal or existing organization scope, which is easiest to claim but less project-specific. A coined brand such as `@glyphstack/*` is more distinctive but explains less at first glance.
+
+## Package responsibilities
+
+### `@scope/font`
+
+**Purpose:** turn font bytes and Unicode text runs into reusable font facts, shaped glyphs, and outlines.
+
+**Owns:**
+
+- Font-format detection before HarfBuzz receives the bytes. V1 accepts normalized TTF and CFF/OTF bytes and explicitly rejects WOFF/WOFF2 pending a separate decoder evaluation.
+- Persistent HarfBuzz blob, face, font, and reusable shaping-buffer lifetime behind project-owned handles.
+- Normalized metrics and code-point coverage.
+- HarfBuzz-backed font-specific shaping: cmap lookup, OpenType/AAT substitutions and positioning, script/language features, variation coordinates, clusters, advances, and offsets.
+- Glyph IDs, advance/offset values, and outline extraction.
+- Lazy numeric outline extraction and in-memory caches scoped to an explicit font instance.
+
+**Inputs:** `ArrayBuffer` or `Uint8Array`, plus shaping text/options.
+
+**Outputs:** an opaque `FontHandle` plus `ShapedRun` and `GlyphOutline` values made only from JavaScript objects and typed arrays.
+
+**Does not own:** URL fetching, fallback-font policy, line wrapping, bidi paragraph layout, SDF encoding, workers, DOM APIs, or Three.js.
+
+The important correction from the old naming is that “font loading,” “font shaping,” and “outline access” are distinct public operations even though one internal HarfBuzz face supports all three. `FontHandle` is an operational handle, not a promise to expose HarfBuzz or a mutable JavaScript object graph of every font table. The name deliberately avoids collision with the browser’s global `FontFace` class. The implemented package accepts owned TTF/OTF bytes, shapes explicit directional/script runs, applies variations per operation, caches numeric outlines lazily, and disposes every owned HarfBuzz object deterministically.
+
+### `@scope/text-layout`
+
+**Purpose:** turn styled Unicode text into positioned glyphs and interaction geometry.
+
+**Owns:**
+
+- A `FontProvider` interface and optional browser URL-loading implementation.
+- Font caching, user-font selection, fallback resolution, language/style/weight runs.
+- Paragraph direction and bidirectional visual ordering.
+- Line breaking, wrapping, alignment, indentation, anchoring, line metrics, and per-range styles.
+- Positioned glyph instances, block/visible bounds, caret positions, selection rectangles, and point-to-caret hit testing.
+- Optional ESM worker entry points for moving layout off the main thread.
+
+**Inputs:** text and layout options plus a `FontProvider` returning `FontHandle` values.
+
+**Outputs:** a renderer-neutral `LayoutResult` containing glyph references, font identities, positions, sizes, bounds, and carets. Outlines are not embedded in the result; a `LayoutSession` resolves them lazily by glyph reference.
+
+**Does not own:** SDF resolution, atlas indices, textures, materials, scene objects, or renderer synchronization.
+
+This package is useful by itself for editors, DOM/canvas renderers, hit testing, measurement, server-side preprocessing, and non-SDF renderers.
+
+### `@scope/sdf`
+
+**Purpose:** convert arbitrary vector outlines into renderer-neutral signed-distance-field pixels.
+
+**Owns:**
+
+- A pure CPU SDF encoder with deterministic options and output.
+- A small `Outline` input contract based on path commands or normalized path data.
+- One-channel `Uint8Array` output and encoding metadata.
+- Optional ESM worker entry points for parallel generation.
+
+**Inputs:** an outline, view box, output dimensions, distance range, and exponent.
+
+**Outputs:** `SdfBitmap` data only; never an atlas, canvas, or GPU texture.
+
+**Does not own:** font parsing, glyph selection, text layout, DOM canvas, WebGL, WebGPU, or Three.js.
+
+The preserved `SDFGenerator.js` is mostly scheduling and WebGL/canvas integration. The actual CPU encoder comes from the MIT-licensed `webgl-sdf-generator`. The initial implementation will port the CPU encoder, preserve its copyright and MIT notice, document the derivation in `NOTICE.md`, and protect its behavior with golden fixtures. Only the CPU implementation is carried forward; the WebGL and canvas paths are excluded.
+
+### `@scope/three-webgpu-text`
+
+**Purpose:** compose layout and SDF data into a convenient Three.js `WebGPURenderer` text object.
+
+**Owns:**
+
+- The high-level `Text` mesh and promise-based synchronization lifecycle.
+- Layout/SDF orchestration and stale-result cancellation.
+- The complete atlas implementation: slot allocation, RGBA channel packing, byte storage, growth, dirty regions, glyph cache, residency/eviction policy, and lifecycle.
+- RGBA atlas upload into a Three `DataTexture`.
+- Instanced glyph geometry and bounds.
+- TSL node materials for placement, SDF decoding, antialiasing, fill, clipping, orientation, curvature, and later explicit lighting variants.
+- Raycasting and lifecycle-safe disposal.
+- Future batching, if profiling demonstrates a need.
+
+**Inputs:** public text properties, or lower-level precomputed `LayoutResult` and SDF/atlas data.
+
+**Outputs:** Three scene objects and GPU resources.
+
+**Does not own:** font table parsing algorithms, line layout algorithms, or the CPU SDF encoder.
+
+## Boundary contracts
+
+The exact TypeScript names are provisional; the separation is not.
+
+| Contract | Producer | Consumers | Contains | Explicitly excludes |
+|---|---|---|---|---|
+| `FontHandle` | `font` | `text-layout`, direct users | normalized metrics, coverage, shaping and lazy outline access | HarfBuzz pointers, network state, layout settings, atlas state |
+| `ShapedRun` | `font` | `text-layout`, direct users | glyph IDs, cluster/source indices, advances, offsets | line breaks, final x/y placement |
+| `LayoutResult` | `text-layout` | renderer, editors, direct users | positioned glyph references, font keys, bounds, line data, carets | outlines, SDF pixels, atlas indices, Three objects |
+| `GlyphOutline` | `font`, exposed lazily through `LayoutSession` | `sdf`, direct users | path commands and view box for one glyph reference | placement, SDF pixels, atlas state |
+| `Outline` | any producer | `sdf` | path commands and view box | font tables, text, placement |
+| `SdfBitmap` | `sdf` | renderer, direct users | one-channel pixels and encoding metadata | canvas and GPU handles |
+| `RendererAtlas` | renderer | renderer internals | RGBA bytes, slot metadata, dirty regions, cache and Three texture | public SDF API and parser details |
+| `TextRenderState` | renderer | renderer internals | geometry attributes, atlas bindings, material values | parser implementation details |
+
+### End-to-end composition
+
+```mermaid
+sequenceDiagram
+    participant App
+    participant Font as @scope/font
+    participant Layout as @scope/text-layout
+    participant SDF as @scope/sdf
+    participant Three as @scope/three-webgpu-text
+    participant GPU as Three WebGPURenderer
+
+    App->>Font: load(fontBytes)
+    Font-->>App: FontHandle
+    App->>Layout: layout(text, options, fontProvider)
+    Layout->>Font: shape each resolved run
+    Font-->>Layout: ShapedRun with glyph references
+    Layout-->>App: LayoutResult
+    App->>Layout: getGlyphOutline(glyphRef) on demand
+    Layout->>Font: resolve cached outline
+    Font-->>Layout: GlyphOutline
+    Layout-->>App: GlyphOutline
+    App->>SDF: generate(outline, options)
+    SDF-->>App: SdfBitmap
+    App->>Three: create/update from layout and bitmap data
+    Three->>Three: allocate and pack renderer-owned atlas
+    Three->>GPU: upload atlas and render TSL material
+```
+
+The high-level `Text` class performs those calls internally. Lower-level consumers can stop after any arrow.
+
+## Consumption examples
+
+### Parse and shape a font only
+
+```ts
+import { loadFont } from '@webgpu-text/font'
+
+const font = await loadFont(await fontBytes.arrayBuffer())
+const run = font.shape({
+  text: 'office',
+  direction: 'ltr',
+  script: 'Latn',
+  language: 'en',
+  features: ['liga=1']
+})
+const outline = font.getOutline(run.glyphs[0].glyphId)
+font.dispose()
+```
+
+### Lay out text without rendering it
+
+```ts
+import { createLayoutSession } from '@scope/text-layout'
+
+const layout = createLayoutSession({ defaultFont: '/fonts/inter.ttf' })
+const result = await layout.layoutText({
+  text: 'Hello مرحبا',
+  maxWidth: 480,
+  includeCarets: true
+})
+
+// Computed only if this consumer actually needs vector data:
+const outline = await layout.getGlyphOutline(result.glyphs[0].ref)
+```
+
+### Generate an SDF from an arbitrary outline
+
+```ts
+import { generateSdf } from '@scope/sdf'
+
+const bitmap = generateSdf({
+  outline,
+  width: 64,
+  height: 64,
+  distance: 8,
+  exponent: 9
+})
+```
+
+### Use the complete Three.js WebGPU layer
+
+```ts
+import { Text } from '@scope/three-webgpu-text'
+
+const text = new Text({
+  text: 'Hello',
+  font: '/fonts/inter.ttf',
+  fontSize: 0.1
+})
+
+await text.sync()
+scene.add(text)
+```
+
+## Proposed workspace structure
+
+```text
+.
+├── packages/
+│   ├── font/
+│   │   ├── src/
+│   │   └── test/
+│   ├── text-layout/
+│   │   ├── src/
+│   │   └── test/
+│   ├── sdf/
+│   │   ├── src/
+│   │   └── test/
+│   └── three-webgpu-text/
+│       ├── src/
+│       └── test/
+├── examples/
+│   ├── layout-only/
+│   ├── sdf-only/
+│   └── three-webgpu-basic/
+├── test-fixtures/
+│   ├── fonts/
+│   ├── shaping/
+│   ├── layout/
+│   ├── sdf/
+│   └── visual/
+├── openspec/
+├── ARCHITECTURE.md
+├── ROADMAP.md
+└── package.json
+```
+
+The workspace can publish four packages from one repository and version them together initially. Independent versioning is unnecessary until their release cadence actually diverges.
+
+## Source migration map
+
+| Preserved source | Destination | Migration treatment |
+|---|---|---|
+| `FontParser.js` metrics, coverage, and font-facing contracts | `font` | Preserve behavior as fixtures and reimplement the public operations over HarfBuzzjs rather than porting the parser mechanically |
+| `FontParser.js` GSUB/GPOS, joining, glyph mapping, and kerning | `font` shaping adapter | Replace with HarfBuzz shaping; retain representative old outputs only for comparison and intentional-difference review |
+| `FontParser.js` outline cache | `font` outline adapter | Preserve lazy/cache behavior with direct numeric HarfBuzz callbacks and a glyph/variation cache; never use its SVG round-trip |
+| `woff2otf.js`, generated Typr factory, and Typr sources | local reference only | Do not port into the production runtime. V1 accepts normalized TTF/OTF and rejects WOFF/WOFF2 explicitly; decoder evaluation is separate follow-up work |
+| `FontResolver.js` | `text-layout` font-provider modules | Separate pure selection policy from browser fetching and cache ownership |
+| `Typesetter.js` | `text-layout` | Split run shaping, line construction, bidi placement, result assembly, and interaction data while preserving fixtures |
+| `selectionUtils.js` | `text-layout` | Port as pure helpers over `LayoutResult` |
+| CPU behavior behind `SDFGenerator.js` | `sdf` | Port the MIT-licensed CPU encoder with its notice and golden fixtures; expose pure typed-array input/output; delete WebGL and canvas paths |
+| Atlas allocation currently in `TextBuilder.js` | `three-webgpu-text` | Own byte packing, cache policy, growth, dirty tracking, GPU residency, and texture lifecycle entirely in the renderer |
+| Layout invocation in `TextBuilder.js` | `three-webgpu-text` orchestration | Replace callbacks and globals with injected package APIs and promises |
+| Quad calculation in `TextBuilder.js` | `three-webgpu-text` | Derive render bounds from `LayoutResult` and atlas slots |
+| `GlyphsGeometry.js` | `three-webgpu-text` | Port instanced geometry and typed attributes |
+| `TextDerivedMaterial.js` | `three-webgpu-text` | Rewrite behavior in TSL; do not port GLSL injection machinery |
+| `Text.js` | `three-webgpu-text` | Redesign as the high-level façade with explicit ownership and disposal |
+| `BatchedText.js` | deferred renderer work | Revisit only after benchmarks establish the need |
+
+## Worker and environment rules
+
+Workers are execution adapters, not a fifth domain package:
+
+- `text-layout` may expose `@scope/text-layout/worker` while keeping the synchronous engine usable in Node.js and tests.
+- `sdf` may expose `@scope/sdf/worker` while keeping the pure encoder callable directly.
+- `three-webgpu-text` chooses whether to use those worker adapters and owns cancellation/coalescing across an object’s `sync()` calls.
+- Lower-level packages must not reference `window`, `document`, canvas, WebGL, WebGPU, or Three.js at module evaluation time.
+- Worker messages carry public typed contracts or transferable typed arrays, not private class instances.
+
+## Testing boundaries
+
+Each package gets tests at its own contract:
+
+- `font`: binary fixtures, metrics, coverage, Latin/Arabic/Indic/Khmer shaping clusters, advances, offsets, variation behavior, and numeric outlines; the spike also records WASM startup and repeated-shaping memory behavior.
+- `text-layout`: deterministic multilingual glyph placement, wrapping, bidi, bounds, carets, and selection fixtures.
+- `sdf`: golden pixel fixtures and encoding invariants, with no GPU required.
+- `three-webgpu-text`: atlas packing/growth invariants, browser-rendered visual fixtures, texture lifecycle tests, synchronization races, and disposal.
+
+Cross-package integration fixtures cover only the contracts between packages. This prevents renderer failures from being mistaken for parser failures and allows each lower layer to be validated without a GPU.
+
+## Architectural rules for future changes
+
+1. A lower-level package cannot import a higher-level package.
+2. Only `three-webgpu-text` may import `three`.
+3. Only `text-layout` decides line placement and caret geometry.
+4. Only `sdf` defines SDF encoding; only the renderer decodes it in TSL.
+5. URL loading and workers are adapters around pure operations, not prerequisites for them.
+6. Global mutable configuration and process-wide singleton atlases are prohibited.
+7. Every package must have at least one direct consumer example that imports no higher layer.
+8. A new package requires an independently useful public capability, not merely a convenient folder boundary.
+
+## Resolved decisions
+
+### Use HarfBuzzjs as the font and shaping engine
+
+Troika does not merely import a parser. It layers custom Arabic joining, selected GSUB/GPOS handling, kerning, cluster mapping, and outline behavior on top of a generated Typr build. Porting that code would make this project responsible for a partial OpenType shaping engine indefinitely. That cost is not justified when compatibility with Troika’s exact shaping output is explicitly out of scope.
+
+The first `font` implementation will therefore wrap [HarfBuzzjs](https://github.com/harfbuzz/harfbuzzjs) behind stable `FontHandle`, `ShapedRun`, and `GlyphOutline` contracts. HarfBuzz owns font-specific glyph substitution and positioning. `text-layout` continues to own font fallback, directional/script run orchestration, line breaking, wrapping, visual placement, carets, and selection geometry.
+
+HarfBuzzjs exposes the font facts needed by v1, so the project does not need a second general-purpose parser such as OpenType.js or Fontkit. The published 1.4.0 wrapper's public surface renders glyphs only through SVG-string convenience methods, but its packaged WASM already exports the required drawing functions. A general table-inspection or font-editing API remains a separate future capability, not a dependency of text rendering.
+
+The production package vendors the exact validated HarfBuzzjs runtime behind a narrow, non-exported bridge. Its adapter asks HarfBuzz to draw directly into project-owned typed numeric commands on demand, never calls `glyphToPath()` or `glyphToJson()`, and explicitly destroys the wrapper objects it owns. The bridge is intentionally replaceable by a future upstream public drawing and destruction API without changing the package contracts.
+
+```mermaid
+flowchart LR
+    Bytes[TTF or OTF bytes] --> Detect[Detect and reject unsupported containers]
+    Detect --> Blob[Persistent HarfBuzz Blob]
+    Blob --> Face[Persistent HarfBuzz Face and Font]
+    Run[Directional script run] --> Buffer[Reusable HarfBuzz Buffer]
+    Face --> Shape[HarfBuzz shape]
+    Buffer --> Shape
+    Shape --> Result[ShapedRun with UTF-16 clusters]
+    Result --> Miss[Glyph requested on atlas miss]
+    Face --> Draw[HarfBuzz glyph drawing callbacks]
+    Miss --> Draw
+    Draw --> Outline[Cached numeric GlyphOutline]
+```
+
+The published wrapper is ESM with TypeScript declarations, but it is not zero-allocation: it copies font bytes into WASM memory, creates temporary storage when adding text, and materializes JavaScript result objects. The validation spike measured a 474,766-byte raw / 179,099-byte gzip published runtime, approximately 11 μs per warm short-run shape on its reference machine, and stable sampled external memory during 5,000 shapes with one reused buffer. These figures are observations, not budgets.
+
+The published wrapper exposes GC fallback through `FinalizationRegistry` but no public explicit destruction. The internal bridge reuses those registered cleanup closures so `FontHandle.dispose()` deterministically releases its HarfBuzz buffer, font, face, and blob; worker termination remains the deterministic whole-engine boundary for the singleton WASM runtime itself.
+
+The validated input policy is TTF and CFF/OTF only. The tested WOFF and WOFF2 containers yielded no usable character map and must fail with a typed unsupported-format error before face construction. Decoder API, size, and licensing are bounded follow-up work rather than a hidden production dependency.
+
+### Resolve outlines lazily
+
+`LayoutResult` carries stable glyph references, not vector paths. A `LayoutSession` exposes asynchronous `getGlyphOutline(ref)` access and may proxy that request to its layout worker. The renderer requests an outline only when a glyph is missing from its atlas, then both the font backend and renderer cache the result.
+
+This keeps ordinary measurement, caret, and hit-testing use cases from paying outline computation, transfer, and memory costs. A future serialization helper may materialize all outlines, but v1 will not add an `includeOutlines` layout option.
+
+### Keep atlas ownership in the renderer
+
+`sdf` ends at `SdfBitmap`. `three-webgpu-text` owns allocation, channel packing, growth, dirty tracking, eviction, `DataTexture` upload, and disposal. This keeps the reusable SDF package small and lets renderer-specific performance work evolve without changing the SDF contract.
+
+### Use the proven TSL/WebGPU rendering kernel
+
+The private `prove-webgpu-rendering-seam` experiment validated Three.js 0.185.1 on an actual Apple Metal-backed WebGPU adapter. The viable production kernel is deliberately smaller than Troika's renderer layer:
+
+```mermaid
+flowchart LR
+    Input["Glyph bounds, flat atlas slot, color"] --> Geometry["Instanced unit quad"]
+    Bitmap["One-channel SdfBitmap"] --> Atlas["Renderer-owned RGBA atlas"]
+    Atlas --> Texture["DataTexture and dirty upload"]
+    Geometry --> Material["Unlit TSL material"]
+    Texture --> Material
+    Appearance["Opacity, clip, orientation, curvature"] --> Material
+    Material --> WebGPU["Three WebGPU backend"]
+
+    App["Application"] --> Renderer["Shared WebGPURenderer and canvas"]
+    Renderer --> WebGPU
+```
+
+The flat atlas slot is the renderer-neutral geometry value: `cell = floor(slot / 4)` and `channel = slot % 4`. The renderer derives cell UVs from atlas dimensions/cell size and selects the packed RGBA channel in TSL. `sdf` remains unaware of cells, channels, textures, and Three.js.
+
+Production ownership differs from the self-contained experiment harness. A text object owns its instanced geometry and node material and releases its atlas references. The renderer atlas owner owns packing, cache state, texture updates, and texture disposal. The application owns the shared `WebGPURenderer` and DOM canvas; creating a renderer per text object is prohibited.
+
+The experiment proved one-cell/four-channel rendering, semantic SDF coverage, opacity, clipping, orientation, cylindrical placement, in-place texture/attribute updates, and create-render-update-dispose reuse. It did not prove multi-cell atlas contents, growth, eviction, partial texture upload, real font SDFs, lighting, or batching. A multi-cell fixture is the bounded first follow-up before atlas allocation/growth is promoted.
+
+Three's renderer-backend identity and TSL surface remain revision-specific boundaries. The private validation may inspect `renderer.backend.isWebGPUBackend` for pinned actual-WebGPU evidence, but that diagnostic must not spread through the public API. The TSL implementation should remain behind a narrow local adapter: Three's complete fluent TSL declarations caused pathological TypeScript 7.0.2 memory growth during the spike. Every Three revision change must rerun the browser validation before the supported range changes.
+
+See [the complete validation report](docs/validation/webgpu-rendering-seam.md) for the recorded environment, evidence, limitations, and promotion contract.
+
+### Reuse MIT sources with explicit provenance
+
+The initial CPU SDF implementation may be derived from `webgl-sdf-generator`, whose [package](https://www.npmjs.com/package/webgl-sdf-generator) and [source license](https://github.com/lojjic/webgl-sdf-generator/blob/master/LICENSE.txt) identify it as MIT. Troika and Typr also declare MIT licenses, and HarfBuzzjs publishes an MIT license. The [MIT terms](https://opensource.org/license/mit) require the copyright and permission notice to remain in copies or substantial portions. The root `NOTICE.md` and package-local third-party notice record the vendored HarfBuzzjs/HarfBuzz revisions, hashes, license, local bridge changes, and font-fixture sources. Typr/Troika attribution remains relevant to future copied fixtures or adapted layout/SDF code even though Typr is not a production dependency. Every later import still requires a file-by-file audit rather than assuming every transitive source or generated asset shares one license.
+
+## Decisions still open
+
+- Whether to adopt the recommended `WebGPU Text` / `@webgpu-text/{font,layout,sdf,three}` naming scheme or choose one of the alternative scopes.

@@ -1,0 +1,27 @@
+{
+  "name": "@webgpu-text/harfbuzz-font-engine-experiment",
+  "version": "0.0.0-private",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "npm run build:browser",
+    "build:node": "tsc -p tsconfig.json",
+    "build:browser": "npm run build:node --silent && node dist/build-browser.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "verify:fixtures": "npm run build:node --silent && node dist/verify-fixtures.js",
+    "update:expected": "npm run build:node --silent && node dist/record-expected.js",
+    "benchmark": "npm run build --silent && node --expose-gc dist/benchmark.js",
+    "test:node": "npm run build --silent && node --test dist/*.test.js",
+    "test:browser": "npm run build --silent && node dist/browser-runner.js",
+    "validate": "npm run typecheck && npm run verify:fixtures && npm run test:node && npm run benchmark && npm run test:browser"
+  },
+  "dependencies": {
+    "harfbuzzjs": "1.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "26.1.1",
+    "esbuild": "0.28.1",
+    "puppeteer": "25.3.0",
+    "typescript": "6.0.2"
+  }
+}

@@ -1,0 +1,34 @@
+import { InvalidFontError, UnsupportedFontFormatError } from './errors.js'
+import type { FontSource } from './types.js'
+
+export type SupportedFontFormat = 'truetype' | 'cff'
+
+function signature(bytes: Uint8Array): string {
+  return String.fromCharCode(...bytes.subarray(0, 4))
+}
+
+export function copyAndClassifyFont(source: FontSource): {
+  readonly bytes: ArrayBuffer
+  readonly format: SupportedFontFormat
+} {
+  const view = source instanceof Uint8Array ? source : new Uint8Array(source)
+  const copy = new Uint8Array(view.byteLength)
+  copy.set(view)
+
+  if (copy.byteLength < 12) throw new InvalidFontError()
+  const marker = signature(copy)
+  if (marker === 'wOFF') throw new UnsupportedFontFormatError('woff')
+  if (marker === 'wOF2') throw new UnsupportedFontFormatError('woff2')
+  if (marker === 'ttcf') throw new InvalidFontError('Font collections are not supported')
+
+  const isTrueType =
+    (copy[0] === 0 && copy[1] === 1 && copy[2] === 0 && copy[3] === 0) ||
+    marker === 'true' ||
+    marker === 'typ1'
+  const format = marker === 'OTTO' ? 'cff' : isTrueType ? 'truetype' : undefined
+  if (!format) throw new InvalidFontError()
+
+  const tableCount = new DataView(copy.buffer).getUint16(4, false)
+  if (tableCount === 0 || 12 + tableCount * 16 > copy.byteLength) throw new InvalidFontError()
+  return { bytes: copy.buffer, format }
+}

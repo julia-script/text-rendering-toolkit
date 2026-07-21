@@ -1,0 +1,8 @@
+/old/
+**/node_modules/
+**/dist/
+/coverage/
+**/.turbo/
+**/.vitest-attachments/
+**/test/__screenshots__/
+.DS_Store

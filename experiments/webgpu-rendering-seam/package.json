@@ -1,0 +1,25 @@
+{
+  "name": "@webgpu-text/webgpu-rendering-seam-experiment",
+  "version": "0.0.0-private",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "browser:install": "playwright install chromium",
+    "test": "vitest run",
+    "test:browser": "vitest run --project browser",
+    "test:browser:headed": "vitest --project browser --browser.headless=false",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "three": "0.185.1"
+  },
+  "devDependencies": {
+    "@types/node": "26.1.1",
+    "@types/three": "0.185.1",
+    "@vitest/browser-playwright": "4.1.10",
+    "@webgpu/types": "0.1.71",
+    "playwright": "1.61.1",
+    "vitest": "4.1.10"
+  }
+}

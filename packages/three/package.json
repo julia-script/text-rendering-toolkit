@@ -1,0 +1,27 @@
+{
+  "name": "@webgpu-text/three",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@webgpu-text/layout": "workspace:^",
+    "@webgpu-text/sdf": "workspace:^"
+  },
+  "peerDependencies": {
+    "three": "^0.185.1"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "recordedAt": "2026-07-20T20:29:16Z",
+  "source": "npm registry metadata and packed published artifacts",
+  "candidates": [
+    {
+      "package": "fonteditor-core",
+      "version": "2.6.3",
+      "license": "MIT",
+      "packedBytes": 507219,
+      "unpackedBytes": 1616836,
+      "woff2WasmBytes": 727190,
+      "api": "ESM-capable full font parser/writer; WOFF needs an injected inflate function; WOFF2 needs async woff2.init() and a separately located WASM asset",
+      "decision": "reject for v1 because it duplicates font parsing and adds a second large WASM runtime"
+    },
+    {
+      "package": "wawoff2",
+      "version": "2.0.1",
+      "license": "MIT",
+      "packedBytes": 517646,
+      "unpackedBytes": 1278140,
+      "decompressBindingBytes": 322684,
+      "api": "CommonJS Node-oriented async decompress(Buffer|Uint8Array); package index eagerly exposes both compression and decompression modules",
+      "decision": "reject as the cross-runtime v1 boundary; reconsider only in a dedicated decoder evaluation"
+    },
+    {
+      "package": "woff2",
+      "version": "1.0.0",
+      "license": "MIT",
+      "unpackedBytes": 35374025,
+      "api": "Node native-addon wrapper around Google's woff2 utility",
+      "decision": "reject for browser use and excessive unpacked/native build footprint"
+    }
+  ]
+}

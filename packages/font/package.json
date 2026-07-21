@@ -1,0 +1,22 @@
+{
+  "name": "@webgpu-text/font",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "files": [
+    "dist",
+    "README.md",
+    "THIRD_PARTY_NOTICES.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node --input-type=module --eval \"import {cpSync} from 'node:fs'; cpSync('src/internal/vendor/harfbuzz.wasm', 'dist/internal/vendor/harfbuzz.wasm')\"",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  }
+}

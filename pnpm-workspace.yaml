@@ -1,0 +1,3 @@
+packages:
+  - packages/*
+  - experiments/webgpu-rendering-seam
