@@ -4,7 +4,10 @@
   "private": true,
   "type": "module",
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "THIRD_PARTY_NOTICES.md",
+    "LICENSE.webgl-sdf-generator.txt"
   ],
   "exports": {
     ".": {
@@ -16,5 +19,8 @@
     "build": "tsc -p tsconfig.json",
     "test": "vitest run --passWithNoTests",
     "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@webgpu-text/font": "workspace:^"
   }
 }

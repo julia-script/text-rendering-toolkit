@@ -54,7 +54,11 @@ importers:
         specifier: workspace:^
         version: link:../font
 
-  packages/sdf: {}
+  packages/sdf:
+    devDependencies:
+      '@webgpu-text/font':
+        specifier: workspace:^
+        version: link:../font
 
   packages/three:
     dependencies:

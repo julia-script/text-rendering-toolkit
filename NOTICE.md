@@ -20,6 +20,20 @@ direct numeric outline callbacks.
 The exact vendored-file hashes and modification notes are recorded in
 `packages/font/THIRD_PARTY_NOTICES.md`.
 
+## webgl-sdf-generator
+
+`packages/sdf/src/generate.ts` adapts only the CPU path-flattening and signed
+distance behavior from `webgl-sdf-generator@1.1.1`. SVG parsing, WebGL, canvas,
+framebuffer, and worker-oriented code are excluded.
+
+- Copyright: Copyright (c) 2021 Jason Johnston
+- npm shasum: `3e1b422b3d87cd3cc77f2602c9db63bc0f6accbd`
+- npm integrity: `sha512-9Z0JcMTFxeE+b2x1LJTdnaT8rT8aEp7MVxkNwoycNmJWwPdzoXzMh0BjJSh/AEFP+KPYZUli814h8bJZFIZ2jA==`
+- License: MIT; see `packages/sdf/LICENSE.webgl-sdf-generator.txt`
+
+Exact adapted behaviors and the intentional distance-clamping correction are
+recorded in `packages/sdf/THIRD_PARTY_NOTICES.md`.
+
 ## Font fixtures
 
 The validation fixtures under `test-fixtures/fonts/harfbuzz-validation/` come

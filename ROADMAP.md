@@ -284,6 +284,13 @@ text.dispose()
 - **Appetite:** worth about 1 focused week.
 - **Links:** OpenSpec change `implement-text-layout-core` · [package README](packages/layout/README.md) · [validation report](docs/validation/layout-policy.md)
 
+### Implement the standalone CPU SDF core
+- **Problem:** Public font outlines and resolved layout results could not yet become renderer-neutral distance pixels without returning to Troika's WebGL/canvas/worker wrapper.
+- **Outcome & done-when:** A dependency-free ESM API accepts typed numeric outlines, returns deterministic self-describing one-channel pixels, conforms to attributed synthetic golden fixtures, and accepts public font outlines directly.
+- **Status:** complete — `generateSdf()` implements validated numeric commands, fixed curve flattening, non-zero winding, texel-center sampling, exponential encoding, clean package installation, and exact synthetic conformance. This does not include workers, caching, atlas packing, GPU generation, or renderer orchestration.
+- **Appetite:** worth about 3–4 focused days.
+- **Links:** OpenSpec change `implement-cpu-sdf-core` · [package README](packages/sdf/README.md) · [fixtures](test-fixtures/sdf/README.md)
+
 ### Deliver the first ordinary-text package
 - **Problem:** The renderer spike and ported layout engine are only useful when integrated behind a small lifecycle-safe public API.
 - **Outcome & done-when:** Consumers can construct, synchronize, update, render, select within, and dispose ordinary multilingual text; browser visual fixtures cover the supported appearance features; a minimal example uses only public exports.
@@ -342,7 +349,7 @@ text.dispose()
 - **Font formats:** v1 accepts normalized TTF and CFF/OTF bytes. Detect and explicitly reject WOFF/WOFF2 until a separate decoder evaluation justifies their API and bundle cost.
 - **Cleanup:** `FontHandle.dispose()` deterministically destroys its owned HarfBuzz objects; worker termination remains the deterministic whole-engine boundary for the singleton WASM runtime.
 - **Worker model:** use ordinary ESM workers with serializable public contracts, not Troika’s generated worker-factory mechanism.
-- **SDF provenance:** port the MIT-licensed CPU implementation from `webgl-sdf-generator`, retain its copyright and permission notice, record derivation in `NOTICE.md`, and exclude its WebGL/canvas paths.
+- **SDF provenance:** the CPU implementation adapts `webgl-sdf-generator@1.1.1`, retains its copyright and full MIT notice, records exact npm provenance and local changes, and excludes SVG parsing, WebGL, canvas, framebuffer, and worker paths.
 - **Atlas ownership:** `@scope/sdf` returns only `SdfBitmap`; `@scope/three-webgpu-text` owns the complete atlas implementation and GPU lifecycle.
 - **Renderer kernel:** promote one instanced unit quad, typed bounds/flat-slot/color attributes, renderer-owned RGBA `DataTexture`, and an unlit TSL material for cell/channel addressing, SDF coverage, opacity, clipping, orientation, and curvature. Do not port shader rewriting.
 - **Renderer validation:** pin Three.js 0.185.1 for the first implementation and rerun the private actual-WebGPU experiment before widening or changing the revision. WebGL fallback is never passing evidence.
@@ -350,6 +357,7 @@ text.dispose()
 
 ## Changelog
 
+- 2026-07-21: Implemented dependency-free `@webgpu-text/sdf` with typed numeric outlines, deterministic CPU distance generation, exact synthetic golden conformance, public-font interoperability, independent package validation, and attributed `webgl-sdf-generator@1.1.1` provenance. Workers, caching, atlases, GPU generation, and renderer orchestration remain separate work.
 - 2026-07-21: Implemented the pure resolved-run layout core with exact synthetic conformance, public-font seam coverage, validated ESM/type packaging, and explicit caller ownership of font-byte acquisition. Automatic itemization/fallback, complete Unicode line breaking, reshaping, workers, and bidi affinity remain follow-ups.
 - 2026-07-21: Validated the renderer-neutral layout-policy boundary with nineteen deterministic synthetic fixtures, eleven public-font runs, complete preserve/change classification, and an `old/`-independent handoff. Automatic itemization and production layout remain the next separate change.
 - 2026-07-20: Implemented standalone `@webgpu-text/font` with owned TTF/OTF input, font facts and coverage, explicit-run HarfBuzz shaping, operation-scoped variations, cached numeric outlines, deterministic disposal, package-install validation, and attributed vendored runtime/fixtures. The next bounded slice is layout-policy fixture capture.

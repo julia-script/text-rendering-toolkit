@@ -22,16 +22,17 @@ The most important deliberate departure is font shaping. Troika’s custom Typr-
 ## Implementation status
 
 The greenfield pnpm/Turborepo/Biome/Vitest baseline and the production
-`@webgpu-text/font` and resolved `@webgpu-text/layout` cores are implemented and
-validated. Layout now accepts fully selected, itemized, shaped, and scaled runs
-and provides deterministic line construction, visual placement, bounds,
-carets, and selection rectangles. The accepted policy boundary and its evidence
-are documented in [`docs/validation/layout-policy.md`](docs/validation/layout-policy.md).
+`@webgpu-text/font`, resolved `@webgpu-text/layout`, and CPU
+`@webgpu-text/sdf` cores are implemented and validated. SDF generation now
+accepts typed numeric outlines directly, returns self-describing one-channel
+pixels, and is protected by synthetic golden fixtures and public-font seam
+tests without a runtime dependency.
 
 Automatic script/direction itemization, font selection and fallback, complete
 Unicode line breaking, reshaping around line boundaries, bidi caret affinity,
-and workers remain separate follow-ups. Font-byte acquisition is caller-owned:
-no core package accepts URLs or performs network fetching.
+workers, SDF caching, atlas ownership, and renderer orchestration remain
+separate follow-ups. Font-byte acquisition is caller-owned: no core package
+accepts URLs or performs network fetching.
 
 ## Current responsibility map
 
@@ -187,18 +188,19 @@ wrapping, alignment, caret, or selection policy.
 
 **Owns:**
 
-- A pure CPU SDF encoder with deterministic options and output.
-- A small `Outline` input contract based on path commands or normalized path data.
-- One-channel `Uint8Array` output and encoding metadata.
-- Optional ESM worker entry points for parallel generation.
+- The implemented pure CPU `generateSdf()` encoder with deterministic options and output.
+- A small typed numeric `SdfOutline` contract structurally compatible with public font outlines.
+- Self-describing one-channel `Uint8Array` output and encoding metadata.
+- Strict validation, fixed curve flattening, non-zero winding, and attributed golden conformance.
+- Future optional ESM worker adapters for parallel generation.
 
 **Inputs:** an outline, view box, output dimensions, distance range, and exponent.
 
 **Outputs:** `SdfBitmap` data only; never an atlas, canvas, or GPU texture.
 
-**Does not own:** font parsing, glyph selection, text layout, DOM canvas, WebGL, WebGPU, or Three.js.
+**Does not own:** font parsing, glyph selection, text layout, workers, caching, atlas policy, DOM canvas, WebGL, WebGPU, or Three.js.
 
-The preserved `SDFGenerator.js` is mostly scheduling and WebGL/canvas integration. The actual CPU encoder comes from the MIT-licensed `webgl-sdf-generator`. The initial implementation will port the CPU encoder, preserve its copyright and MIT notice, document the derivation in `NOTICE.md`, and protect its behavior with golden fixtures. Only the CPU implementation is carried forward; the WebGL and canvas paths are excluded.
+The preserved `SDFGenerator.js` is mostly scheduling and WebGL/canvas integration. The implemented CPU encoder adapts only the MIT-licensed `webgl-sdf-generator@1.1.1` numeric behavior, preserves its copyright and license, and records the derivation in package and root notices. SVG parsing, WebGL, canvas, framebuffer, and worker paths are excluded.
 
 ### `@scope/three-webgpu-text`
 
@@ -495,7 +497,7 @@ See [the complete validation report](docs/validation/webgpu-rendering-seam.md) f
 
 ### Reuse MIT sources with explicit provenance
 
-The initial CPU SDF implementation may be derived from `webgl-sdf-generator`, whose [package](https://www.npmjs.com/package/webgl-sdf-generator) and [source license](https://github.com/lojjic/webgl-sdf-generator/blob/master/LICENSE.txt) identify it as MIT. Troika and Typr also declare MIT licenses, and HarfBuzzjs publishes an MIT license. The [MIT terms](https://opensource.org/license/mit) require the copyright and permission notice to remain in copies or substantial portions. The root `NOTICE.md` and package-local third-party notice record the vendored HarfBuzzjs/HarfBuzz revisions, hashes, license, local bridge changes, and font-fixture sources. Typr/Troika attribution remains relevant to future copied fixtures or adapted layout/SDF code even though Typr is not a production dependency. Every later import still requires a file-by-file audit rather than assuming every transitive source or generated asset shares one license.
+The CPU SDF implementation is derived from `webgl-sdf-generator@1.1.1`, whose [package](https://www.npmjs.com/package/webgl-sdf-generator) and [source license](https://github.com/lojjic/webgl-sdf-generator/blob/master/LICENSE.txt) identify it as MIT. Its full terms, npm integrity, adapted functions, excluded paths, and one intentional distance-clamping correction are recorded in `packages/sdf/THIRD_PARTY_NOTICES.md` and the root `NOTICE.md`. Troika and Typr also declare MIT licenses, and HarfBuzzjs publishes an MIT license. Every later import still requires a file-by-file audit rather than assuming every transitive source or generated asset shares one license.
 
 ## Decisions still open
 

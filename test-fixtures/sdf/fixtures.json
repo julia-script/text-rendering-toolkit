@@ -1,0 +1,782 @@
+{
+  "schemaVersion": 1,
+  "reference": {
+    "package": "webgl-sdf-generator",
+    "version": "1.1.1",
+    "shasum": "3e1b422b3d87cd3cc77f2602c9db63bc0f6accbd",
+    "integrity": "sha512-9Z0JcMTFxeE+b2x1LJTdnaT8rT8aEp7MVxkNwoycNmJWwPdzoXzMh0BjJSh/AEFP+KPYZUli814h8bJZFIZ2jA==",
+    "license": "MIT",
+    "correction": "Clamp normalized distance before exponentiation to preserve documented saturation for every positive exponent."
+  },
+  "fixtures": [
+    {
+      "id": "open-line-distance",
+      "intent": "Pins unsigned distance around an open horizontal line.",
+      "outline": {
+        "commands": [
+          0,
+          1
+        ],
+        "coordinates": [
+          -0.75,
+          0,
+          0.75,
+          0
+        ]
+      },
+      "viewBox": {
+        "left": -1,
+        "bottom": -1,
+        "right": 1,
+        "top": 1
+      },
+      "width": 5,
+      "height": 5,
+      "distance": 1,
+      "exponent": 1,
+      "expected": {
+        "viewBox": {
+          "left": -1,
+          "bottom": -1,
+          "right": 1,
+          "top": 1
+        },
+        "width": 5,
+        "height": 5,
+        "distance": 1,
+        "exponent": 1,
+        "pixels": [
+          25,
+          25,
+          25,
+          25,
+          25,
+          76,
+          77,
+          77,
+          77,
+          76,
+          121,
+          128,
+          128,
+          128,
+          121,
+          76,
+          77,
+          77,
+          77,
+          76,
+          25,
+          25,
+          25,
+          25,
+          25
+        ]
+      }
+    },
+    {
+      "id": "quadratic-closed",
+      "intent": "Pins fixed quadratic flattening and a closed curved contour.",
+      "outline": {
+        "commands": [
+          0,
+          2,
+          4
+        ],
+        "coordinates": [
+          -0.8,
+          -0.6,
+          0,
+          1,
+          0.8,
+          -0.6
+        ]
+      },
+      "viewBox": {
+        "left": -1,
+        "bottom": -1,
+        "right": 1,
+        "top": 1
+      },
+      "width": 7,
+      "height": 7,
+      "distance": 0.8,
+      "exponent": 1,
+      "expected": {
+        "viewBox": {
+          "left": -1,
+          "bottom": -1,
+          "right": 1,
+          "top": 1
+        },
+        "width": 7,
+        "height": 7,
+        "distance": 0.8,
+        "exponent": 1,
+        "pixels": [
+          86,
+          87,
+          87,
+          87,
+          87,
+          87,
+          86,
+          117,
+          132,
+          132,
+          132,
+          132,
+          132,
+          117,
+          96,
+          134,
+          171,
+          178,
+          171,
+          134,
+          96,
+          71,
+          107,
+          139,
+          159,
+          139,
+          107,
+          71,
+          43,
+          75,
+          102,
+          113,
+          102,
+          75,
+          43,
+          11,
+          40,
+          60,
+          68,
+          60,
+          40,
+          11,
+          0,
+          0,
+          16,
+          22,
+          16,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "cubic-closed",
+      "intent": "Pins fixed cubic flattening and endpoint preservation.",
+      "outline": {
+        "commands": [
+          0,
+          3,
+          1,
+          4
+        ],
+        "coordinates": [
+          -0.8,
+          -0.7,
+          -0.8,
+          0.9,
+          0.8,
+          0.9,
+          0.8,
+          -0.7,
+          -0.8,
+          -0.7
+        ]
+      },
+      "viewBox": {
+        "left": -1,
+        "bottom": -1,
+        "right": 1,
+        "top": 1
+      },
+      "width": 7,
+      "height": 7,
+      "distance": 0.75,
+      "exponent": 1,
+      "expected": {
+        "viewBox": {
+          "left": -1,
+          "bottom": -1,
+          "right": 1,
+          "top": 1
+        },
+        "width": 7,
+        "height": 7,
+        "distance": 0.75,
+        "exponent": 1,
+        "pixels": [
+          99,
+          101,
+          101,
+          101,
+          101,
+          101,
+          99,
+          116,
+          149,
+          149,
+          149,
+          149,
+          149,
+          116,
+          110,
+          158,
+          198,
+          198,
+          198,
+          158,
+          110,
+          97,
+          142,
+          183,
+          212,
+          183,
+          142,
+          97,
+          75,
+          116,
+          148,
+          163,
+          148,
+          116,
+          75,
+          47,
+          80,
+          106,
+          114,
+          106,
+          80,
+          47,
+          12,
+          39,
+          59,
+          66,
+          59,
+          39,
+          12
+        ]
+      }
+    },
+    {
+      "id": "asymmetric-orientation",
+      "intent": "Makes bottom-row and row-major orientation observable.",
+      "outline": {
+        "commands": [
+          0,
+          1,
+          1,
+          4
+        ],
+        "coordinates": [
+          -0.9,
+          -0.8,
+          0.8,
+          -0.5,
+          -0.5,
+          0.9
+        ]
+      },
+      "viewBox": {
+        "left": -1,
+        "bottom": -1,
+        "right": 1,
+        "top": 1
+      },
+      "width": 4,
+      "height": 6,
+      "distance": 0.75,
+      "exponent": 1,
+      "expected": {
+        "viewBox": {
+          "left": -1,
+          "bottom": -1,
+          "right": 1,
+          "top": 1
+        },
+        "width": 4,
+        "height": 6,
+        "distance": 0.75,
+        "exponent": 1,
+        "pixels": [
+          117,
+          103,
+          88,
+          73,
+          141,
+          159,
+          144,
+          129,
+          128,
+          210,
+          157,
+          95,
+          115,
+          181,
+          119,
+          57,
+          102,
+          143,
+          80,
+          18,
+          89,
+          104,
+          42,
+          0
+        ]
+      }
+    },
+    {
+      "id": "multiple-contours-hole",
+      "intent": "Pins non-zero winding with a reversed inner contour.",
+      "outline": {
+        "commands": [
+          0,
+          1,
+          1,
+          1,
+          4,
+          0,
+          1,
+          1,
+          1,
+          4
+        ],
+        "coordinates": [
+          -0.9,
+          -0.9,
+          0.9,
+          -0.9,
+          0.9,
+          0.9,
+          -0.9,
+          0.9,
+          -0.4,
+          -0.4,
+          -0.4,
+          0.4,
+          0.4,
+          0.4,
+          0.4,
+          -0.4
+        ]
+      },
+      "viewBox": {
+        "left": -1,
+        "bottom": -1,
+        "right": 1,
+        "top": 1
+      },
+      "width": 7,
+      "height": 7,
+      "distance": 0.5,
+      "exponent": 1,
+      "expected": {
+        "viewBox": {
+          "left": -1,
+          "bottom": -1,
+          "right": 1,
+          "top": 1
+        },
+        "width": 7,
+        "height": 7,
+        "distance": 0.5,
+        "exponent": 1,
+        "pixels": [
+          138,
+          138,
+          138,
+          138,
+          138,
+          138,
+          138,
+          138,
+          189,
+          171,
+          171,
+          171,
+          189,
+          138,
+          138,
+          171,
+          98,
+          98,
+          98,
+          171,
+          138,
+          138,
+          171,
+          98,
+          25,
+          98,
+          171,
+          138,
+          138,
+          171,
+          98,
+          98,
+          98,
+          171,
+          138,
+          138,
+          189,
+          171,
+          171,
+          171,
+          189,
+          138,
+          138,
+          138,
+          138,
+          138,
+          138,
+          138,
+          138
+        ]
+      }
+    },
+    {
+      "id": "padded-rectangle",
+      "intent": "Pins explicit view-box padding around a simple contour.",
+      "outline": {
+        "commands": [
+          0,
+          1,
+          1,
+          1,
+          4
+        ],
+        "coordinates": [
+          -0.5,
+          -0.5,
+          0.5,
+          -0.5,
+          0.5,
+          0.5,
+          -0.5,
+          0.5
+        ]
+      },
+      "viewBox": {
+        "left": -1.5,
+        "bottom": -1,
+        "right": 1.5,
+        "top": 1
+      },
+      "width": 6,
+      "height": 4,
+      "distance": 1,
+      "exponent": 1,
+      "expected": {
+        "viewBox": {
+          "left": -1.5,
+          "bottom": -1,
+          "right": 1.5,
+          "top": 1
+        },
+        "width": 6,
+        "height": 4,
+        "distance": 1,
+        "exponent": 1,
+        "pixels": [
+          27,
+          82,
+          96,
+          96,
+          82,
+          27,
+          32,
+          96,
+          159,
+          159,
+          96,
+          32,
+          32,
+          96,
+          159,
+          159,
+          96,
+          32,
+          27,
+          82,
+          96,
+          96,
+          82,
+          27
+        ]
+      }
+    },
+    {
+      "id": "clipped-contour",
+      "intent": "Pins off-bitmap geometry contributions to distance and winding.",
+      "outline": {
+        "commands": [
+          0,
+          1,
+          1,
+          1,
+          4
+        ],
+        "coordinates": [
+          -2,
+          -0.7,
+          0.35,
+          -0.7,
+          0.35,
+          0.7,
+          -2,
+          0.7
+        ]
+      },
+      "viewBox": {
+        "left": -1,
+        "bottom": -1,
+        "right": 1,
+        "top": 1
+      },
+      "width": 6,
+      "height": 6,
+      "distance": 0.75,
+      "exponent": 1,
+      "expected": {
+        "viewBox": {
+          "left": -1,
+          "bottom": -1,
+          "right": 1,
+          "top": 1
+        },
+        "width": 6,
+        "height": 6,
+        "distance": 0.75,
+        "exponent": 1,
+        "pixels": [
+          105,
+          105,
+          105,
+          105,
+          93,
+          42,
+          161,
+          161,
+          161,
+          159,
+          102,
+          45,
+          218,
+          218,
+          215,
+          159,
+          102,
+          45,
+          218,
+          218,
+          215,
+          159,
+          102,
+          45,
+          161,
+          161,
+          161,
+          159,
+          102,
+          45,
+          105,
+          105,
+          105,
+          105,
+          93,
+          42
+        ]
+      }
+    },
+    {
+      "id": "empty-outline",
+      "intent": "Defines empty geometry as saturated outside pixels.",
+      "outline": {
+        "commands": [],
+        "coordinates": []
+      },
+      "viewBox": {
+        "left": -1,
+        "bottom": -1,
+        "right": 1,
+        "top": 1
+      },
+      "width": 3,
+      "height": 2,
+      "distance": 1,
+      "exponent": 1,
+      "expected": {
+        "viewBox": {
+          "left": -1,
+          "bottom": -1,
+          "right": 1,
+          "top": 1
+        },
+        "width": 3,
+        "height": 2,
+        "distance": 1,
+        "exponent": 1,
+        "pixels": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "degenerate-outline",
+      "intent": "Defines zero-length geometry as saturated outside pixels.",
+      "outline": {
+        "commands": [
+          0,
+          1,
+          4
+        ],
+        "coordinates": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "viewBox": {
+        "left": -1,
+        "bottom": -1,
+        "right": 1,
+        "top": 1
+      },
+      "width": 3,
+      "height": 3,
+      "distance": 1,
+      "exponent": 1,
+      "expected": {
+        "viewBox": {
+          "left": -1,
+          "bottom": -1,
+          "right": 1,
+          "top": 1
+        },
+        "width": 3,
+        "height": 3,
+        "distance": 1,
+        "exponent": 1,
+        "pixels": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "exponential-distance",
+      "intent": "Pins exponential precision and saturation for exponent nine.",
+      "outline": {
+        "commands": [
+          0,
+          1,
+          1,
+          1,
+          4
+        ],
+        "coordinates": [
+          -0.5,
+          -0.5,
+          0.5,
+          -0.5,
+          0.5,
+          0.5,
+          -0.5,
+          0.5
+        ]
+      },
+      "viewBox": {
+        "left": -1.5,
+        "bottom": -1.5,
+        "right": 1.5,
+        "top": 1.5
+      },
+      "width": 7,
+      "height": 7,
+      "distance": 1,
+      "exponent": 9,
+      "expected": {
+        "viewBox": {
+          "left": -1.5,
+          "bottom": -1.5,
+          "right": 1.5,
+          "top": 1.5
+        },
+        "width": 7,
+        "height": 7,
+        "distance": 1,
+        "exponent": 9,
+        "pixels": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          2,
+          2,
+          2,
+          0,
+          0,
+          0,
+          2,
+          190,
+          190,
+          190,
+          2,
+          0,
+          0,
+          2,
+          190,
+          255,
+          190,
+          2,
+          0,
+          0,
+          2,
+          190,
+          190,
+          190,
+          2,
+          0,
+          0,
+          0,
+          2,
+          2,
+          2,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    }
+  ]
+}
