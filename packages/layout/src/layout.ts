@@ -736,6 +736,84 @@ function decorationMetricRanges(input: ResolvedLayoutInput): LayoutDecorationMet
   return ranges
 }
 
+/**
+ * The pure layout core: turns already-shaped, already-scaled runs into
+ * positioned glyphs, lines, carets, and bounds.
+ *
+ * @remarks
+ * The expert entry point, and the function both raw-text paths ultimately call.
+ * It deliberately begins *after* font acquisition, fallback, itemization, and
+ * shaping — take it when you run your own shaping pipeline, or when you already
+ * hold exact glyph bounds and want a non-`null`
+ * {@link LayoutResult.visibleBounds}. Otherwise prefer {@link layoutText}.
+ *
+ * It applies no scaling. Every measurement in `input` must already share one
+ * layout-unit coordinate system, and each run's `fontUnitScale` must be the
+ * `fontSize / unitsPerEm` factor used to get there — layout preserves that
+ * value on each positioned glyph so a renderer can transform font-unit outlines
+ * without re-deriving it.
+ *
+ * The function is pure and non-mutating: it imports no font, requests no
+ * outline, and leaves `input` untouched.
+ *
+ * @param input - Fully resolved text, runs, metrics, and layout policy.
+ * @returns The renderer-neutral layout.
+ * @throws {@link InvalidLayoutInputError} for out-of-order or out-of-range
+ *   runs, bidi levels whose parity contradicts `direction`, non-finite
+ *   measurements, inconsistent glyph clusters, or break opportunities that
+ *   split a shaped cluster.
+ *
+ * @example
+ * Lay out two pre-shaped glyphs.
+ * ```typescript
+ * const metrics = {
+ *   ascender: 8,
+ *   descender: -2,
+ *   lineGap: 2,
+ *   decorationMetrics: {
+ *     underlinePosition: -1,
+ *     underlineThickness: 0.5,
+ *     strikethroughPosition: 3,
+ *     strikethroughThickness: 0.5,
+ *   },
+ * }
+ * const result = layoutResolvedText({
+ *   text: 'Hi',
+ *   paragraphLevel: 0,
+ *   defaultMetrics: metrics,
+ *   maxWidth: 80,
+ *   whiteSpace: 'normal',
+ *   overflowWrap: 'normal',
+ *   textAlign: 'left',
+ *   textIndent: 0,
+ *   letterSpacing: 0,
+ *   lineHeight: 'normal',
+ *   anchorX: 'left',
+ *   anchorY: 'top-baseline',
+ *   runs: [
+ *     {
+ *       start: 0,
+ *       end: 2,
+ *       direction: 'ltr',
+ *       bidiLevel: 0,
+ *       script: 'Latn',
+ *       language: 'en',
+ *       styleKey: 'body',
+ *       fontKey: 'inter',
+ *       fontSize: 10,
+ *       fontUnitScale: 10 / 1000,
+ *       metrics,
+ *       variations: {},
+ *       glyphs: [
+ *         { glyphId: 43, start: 0, end: 1, xAdvance: 7, yAdvance: 0, xOffset: 0, yOffset: 0, flags: 0, bounds: null },
+ *         { glyphId: 76, start: 1, end: 2, xAdvance: 3, yAdvance: 0, xOffset: 0, yOffset: 0, flags: 0, bounds: null },
+ *       ],
+ *     },
+ *   ],
+ * })
+ * result.lines.length // 1
+ * ```
+ */
 export function layoutResolvedText(input: ResolvedLayoutInput): LayoutResult {
   validateInput(input)
   const boundaries = graphemeBoundaries(input.text)

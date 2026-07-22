@@ -7,10 +7,25 @@ import { InvalidSdfInputError } from './errors.js'
 import type { GenerateSdfInput, SdfBitmap, SdfOutline } from './types.js'
 import { SdfCommand } from './types.js'
 
+/** Operands consumed by each {@link SdfCommand}, indexed by opcode. */
 const COORDINATE_COUNTS = [2, 2, 4, 6, 0] as const
+
+/**
+ * Points per flattened curve. Pinned: changing it changes every generated
+ * byte, so golden fixtures must be regenerated alongside it.
+ */
 const CURVE_POINTS = 16
+
+/** Allocation ceiling for `width * height`, guarding against absurd rasters. */
 const MAX_PIXELS = 0x7fffffff
 
+/**
+ * One flattened line segment with its cached bounding box.
+ *
+ * The bounds are precomputed because the distance and winding loops test them
+ * per texel; `ordinal` preserves original emission order so sorting stays
+ * stable and output deterministic.
+ */
 interface Segment {
   readonly x1: number
   readonly y1: number
@@ -20,6 +35,7 @@ interface Segment {
   readonly minY: number
   readonly maxX: number
   readonly maxY: number
+  /** Emission index, used only as a stable tiebreaker when sorting. */
   readonly ordinal: number
 }
 
@@ -31,6 +47,14 @@ function positiveFinite(value: number, field: string): void {
   if (!Number.isFinite(value) || value <= 0) fail(`${field} must be finite and greater than zero`)
 }
 
+/**
+ * Walks the command stream checking opcodes, contour state, and coordinate
+ * supply.
+ *
+ * Tracks `contourOpen` so a draw before its `MOVE_TO` or a stray `CLOSE_PATH`
+ * is rejected, and requires the coordinate array to be consumed exactly —
+ * leftover values signal a caller mismatch worth surfacing rather than ignoring.
+ */
 function validateOutline(outline: SdfOutline): void {
   if (!(outline.commands instanceof Uint8Array)) fail('outline.commands must be a Uint8Array')
   if (!(outline.coordinates instanceof Float32Array)) {
@@ -66,6 +90,11 @@ function validateOutline(outline: SdfOutline): void {
   }
 }
 
+/**
+ * Validates the whole request before anything is allocated.
+ *
+ * @returns The pixel count, so the caller allocates from an already-checked value.
+ */
 function validateInput(input: GenerateSdfInput): number {
   for (const field of ['width', 'height'] as const) {
     if (!Number.isSafeInteger(input[field]) || input[field] <= 0) {
@@ -87,6 +116,7 @@ function validateInput(input: GenerateSdfInput): number {
   return pixelCount
 }
 
+/** Evaluates a quadratic Bézier at `t` in `0`–`1`. */
 function quadratic(
   x0: number,
   y0: number,
@@ -103,6 +133,7 @@ function quadratic(
   ]
 }
 
+/** Evaluates a cubic Bézier at `t` in `0`–`1`. */
 function cubic(
   x0: number,
   y0: number,
@@ -121,6 +152,18 @@ function cubic(
   ]
 }
 
+/**
+ * Converts the command stream into line segments, subdividing curves at a fixed
+ * {@link CURVE_POINTS} resolution.
+ *
+ * Zero-length segments are dropped so they cannot skew winding counts. An
+ * unclosed contour is left open rather than implicitly closed, which is what
+ * lets an open path act as a stroke-like distance source.
+ *
+ * The result is sorted by `maxX` — not cosmetic, but the precondition for the
+ * early-exit scans in {@link isInside} and {@link signedDistance}, which walk
+ * from the end and stop once no remaining segment can be relevant.
+ */
 function flatten(outline: SdfOutline): Segment[] {
   const segments: Segment[] = []
   const coordinates = outline.coordinates
@@ -219,6 +262,13 @@ function flatten(outline: SdfOutline): Segment[] {
   return segments.sort((left, right) => left.maxX - right.maxX || left.ordinal - right.ordinal)
 }
 
+/**
+ * Squared distance from a point to a segment, clamping the projection to the
+ * segment's ends.
+ *
+ * Squared to keep the inner loop free of `Math.sqrt`; the root is taken only
+ * when a new closest segment is found.
+ */
 function squareDistanceToSegment(x: number, y: number, segment: Segment): number {
   const dx = segment.x2 - segment.x1
   const dy = segment.y2 - segment.y1
@@ -231,6 +281,13 @@ function squareDistanceToSegment(x: number, y: number, segment: Segment): number
   return (x - nearestX) ** 2 + (y - nearestY) ** 2
 }
 
+/**
+ * Non-zero winding test: casts a ray in +x and sums crossing directions.
+ *
+ * Non-zero rather than even-odd is what makes a reversed inner contour cut a
+ * hole while a same-wound one merges. Segments are sorted by `maxX`, so the
+ * reverse scan can stop as soon as one ends at or left of the sample point.
+ */
 function isInside(x: number, y: number, segments: readonly Segment[]): boolean {
   let winding = 0
   for (let index = segments.length - 1; index >= 0; index--) {
@@ -244,6 +301,15 @@ function isInside(x: number, y: number, segments: readonly Segment[]): boolean {
   return winding !== 0
 }
 
+/**
+ * Distance to the nearest segment, negated when the point is inside.
+ *
+ * The scan runs backwards over the `maxX`-sorted segments and prunes twice: it
+ * exits once even the best remaining segment cannot beat the current closest,
+ * and skips any whose bounding box, expanded by that closest distance, misses
+ * the sample. Both bounds tighten as better candidates are found, which is what
+ * keeps this affordable per texel.
+ */
 function signedDistance(x: number, y: number, segments: readonly Segment[]): number {
   let closestSquared = Number.POSITIVE_INFINITY
   let closest = Number.POSITIVE_INFINITY
@@ -261,12 +327,96 @@ function signedDistance(x: number, y: number, segments: readonly Segment[]): num
   return isInside(x, y, segments) ? -closest : closest
 }
 
+/**
+ * Maps a signed distance to a coverage byte.
+ *
+ * The magnitude falls from `0.5` at the edge to `0` at `maximum`, then inside
+ * points are mirrored to `1 - magnitude`. That puts the edge at `0.5` — byte
+ * 128 — with inside above and outside below, and saturates both directions
+ * beyond `maximum`.
+ */
 function encode(distance: number, maximum: number, exponent: number): number {
   const magnitude = Math.max(0, 1 - Math.abs(distance) / maximum) ** exponent / 2
   const alpha = distance < 0 ? 1 - magnitude : magnitude
   return Math.max(0, Math.min(255, Math.round(alpha * 255)))
 }
 
+/**
+ * Rasterizes vector geometry into a single-channel signed distance field.
+ *
+ * @remarks
+ * Pure and synchronous: it allocates a new bitmap, never mutates or retains the
+ * input arrays, and touches no global or browser state. Cost scales with
+ * `width * height` times the flattened segment count, so generating a whole
+ * sheet of glyphs is worth moving off the main thread — this package
+ * deliberately provides no scheduling of its own.
+ *
+ * Curves are flattened deterministically to line segments before sampling, so
+ * the same input always yields byte-identical output. Contours combine under
+ * the non-zero winding rule, which makes a reversed inner contour a hole.
+ *
+ * Each texel is sampled at its center and encoded so that **values above 128
+ * are inside** the shape and below 128 are outside; see {@link SdfBitmap} for
+ * the full encoding and row-order contract. Empty or fully degenerate geometry
+ * returns an all-zero bitmap rather than failing.
+ *
+ * All input is validated before the raster is allocated, so a bad request fails
+ * fast without doing the expensive work.
+ *
+ * @param input - Geometry, sampling region, raster size, and encoding
+ *   parameters.
+ * @returns A newly allocated bitmap carrying its own decoding parameters.
+ * @throws {@link InvalidSdfInputError} for a non-positive or non-integer
+ *   `width`/`height`, an allocation exceeding the safe pixel limit, a
+ *   zero-area or inverted `viewBox`, a non-positive `distance` or `exponent`,
+ *   wrong typed-array types, an unknown opcode, a draw before a `MOVE_TO`, a
+ *   `CLOSE_PATH` with no open contour, non-finite coordinates, or a coordinate
+ *   array that is too short or has unused trailing values.
+ *
+ * @example
+ * A centered square sampled into a 5×5 field, with a linear ramp.
+ * ```typescript
+ * const bitmap = generateSdf({
+ *   outline: {
+ *     commands: Uint8Array.from([
+ *       SdfCommand.MOVE_TO,
+ *       SdfCommand.LINE_TO,
+ *       SdfCommand.LINE_TO,
+ *       SdfCommand.LINE_TO,
+ *       SdfCommand.CLOSE_PATH,
+ *     ]),
+ *     coordinates: Float32Array.from([-0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, 0.5]),
+ *   },
+ *   viewBox: { left: -1, bottom: -1, right: 1, top: 1 },
+ *   width: 5,
+ *   height: 5,
+ *   distance: 1,
+ *   exponent: 1,
+ * })
+ * bitmap.pixels[2 * 5 + 2] // 191 — the center texel, inside (> 128)
+ * bitmap.pixels[0] // 73 — the bottom-left corner, outside (< 128)
+ * ```
+ *
+ * @example
+ * Rasterize a glyph outline, padding the view box so the ramp is not clipped.
+ * ```typescript
+ * const outline = font.getOutline(glyphId, variations)
+ * const padding = 8
+ * const bitmap = generateSdf({
+ *   outline,
+ *   viewBox: {
+ *     left: outline.bounds.xMin - padding,
+ *     bottom: outline.bounds.yMin - padding,
+ *     right: outline.bounds.xMax + padding,
+ *     top: outline.bounds.yMax + padding,
+ *   },
+ *   width: 64,
+ *   height: 64,
+ *   distance: padding,
+ *   exponent: 9,
+ * })
+ * ```
+ */
 export function generateSdf(input: GenerateSdfInput): SdfBitmap {
   const pixelCount = validateInput(input)
   const segments = flatten(input.outline)

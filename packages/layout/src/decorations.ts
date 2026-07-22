@@ -221,7 +221,56 @@ function boundsFor(segments: readonly DecorationSegment[]): DecorationBounds | n
   return bounds ? Object.freeze(bounds) : null
 }
 
-/** Derive appearance-only analytic text decorations from an existing layout. */
+/**
+ * Derives appearance-only analytic text decorations from an existing layout.
+ *
+ * @remarks
+ * A synchronous, pure post-layout step. It does not prepare, shape, reshape,
+ * fetch fonts, request outlines, tessellate paths, or import a renderer — which
+ * is what makes restyling cheap: changing color, style, skip-ink, or numeric
+ * metrics reuses the same {@link PreparedText} and {@link LayoutResult}.
+ *
+ * Output is analytic rather than tessellated. Each {@link DecorationSegment}
+ * describes a line fragment — position, thickness, and for patterned styles the
+ * amplitude, wavelength, and phase — leaving geometry generation to the
+ * renderer. A single span yields several segments where it crosses lines, bidi
+ * boundaries, or skip-ink gaps, with phase carried across the cuts so patterns
+ * stay continuous.
+ *
+ * Supported combinations are solid, dotted, and wavy underline plus solid
+ * strikethrough. Automatic thickness and offset use the first effective
+ * retained font metrics for the whole span, so a fallback font mid-span does
+ * not introduce a vertical step. These are default-instance metrics: MVAR
+ * adjustments are not applied, so use numeric overrides when a specific
+ * variable instance needs corrected placement.
+ *
+ * @param layout - The layout to decorate.
+ * @param spans - Independent source ranges; they may overlap and each resolves
+ *   on its own.
+ * @param options - Optional horizontal clip for viewport culling.
+ * @returns Frozen segments plus their aggregate bounds, or `null` bounds when
+ *   nothing was produced.
+ * @throws {@link InvalidLayoutInputError} for malformed spans — non-finite
+ *   numeric overrides, an unsupported kind/style pairing, or an invalid color.
+ *
+ * @example
+ * A wavy underline over the first word.
+ * ```typescript
+ * const decorations = deriveTextDecorations(result, [
+ *   {
+ *     start: 0,
+ *     end: 5,
+ *     kind: 'underline',
+ *     style: 'wavy',
+ *     color: { red: 30, green: 160, blue: 255, alpha: 255 },
+ *     skipInk: 'auto',
+ *   },
+ * ])
+ * decorations.segments[0]?.style // 'wavy'
+ * decorations.segments[0]?.y // negative — below the baseline
+ * decorations.segments[0]?.wavelength // thickness * 5
+ * ```
+ */
 export function deriveTextDecorations(
   layout: LayoutResult,
   spans: readonly DecorationSpan[],

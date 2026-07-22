@@ -299,6 +299,30 @@ function validateFixture(value: unknown, ids: Set<string>): void {
   rejectHigherLayers(fixture, id)
 }
 
+/**
+ * Asserts that an unknown parsed value is a well-formed
+ * {@link LayoutFixtureDocument}.
+ *
+ * @remarks
+ * A TypeScript assertion function: after it returns, `value` is narrowed to
+ * {@link LayoutFixtureDocument}, so parsed JSON can be used without a cast.
+ * Beyond shape it enforces the invariants the fixture corpus relies on —
+ * schema version 1, a numeric precision in `0`–`12`, unique fixture ids, a
+ * non-empty fixture list, and the absence of higher-layer renderer data that
+ * would break the package's layering.
+ *
+ * Part of the validation infrastructure, not the runtime layout API.
+ *
+ * @param value - Parsed JSON to validate.
+ * @throws `TypeError` naming the offending fixture and field.
+ *
+ * @example
+ * ```typescript
+ * const document: unknown = JSON.parse(await readFile(path, 'utf8'))
+ * validateLayoutFixtureDocument(document)
+ * document.fixtures.length // narrowed — no cast needed
+ * ```
+ */
 export function validateLayoutFixtureDocument(
   value: unknown,
 ): asserts value is LayoutFixtureDocument {
@@ -330,6 +354,23 @@ function canonical(value: unknown, precision: number): unknown {
   return value
 }
 
+/**
+ * Serializes a value to stable, diff-friendly JSON: keys sorted, numbers
+ * rounded, two-space indent, trailing newline.
+ *
+ * @remarks
+ * Written for fixture files that live in version control. Sorting keys makes
+ * output independent of property insertion order, and rounding absorbs the
+ * last-place floating-point noise that would otherwise make every regenerated
+ * fixture appear changed. `-0` is normalized to `0` for the same reason.
+ *
+ * @param value - Any JSON-serializable value.
+ * @param precision - Decimal places to round numbers to; an integer in `0`–`12`.
+ *   @defaultValue `6`
+ * @returns Canonical JSON text ending in a newline.
+ * @throws `RangeError` if `precision` is not an integer in `0`–`12`, or
+ *   `TypeError` if the value contains a non-finite number.
+ */
 export function canonicalFixtureJson(value: unknown, precision = 6): string {
   if (!Number.isInteger(precision) || precision < 0 || precision > 12) {
     throw new RangeError('precision must be an integer between 0 and 12')
@@ -337,7 +378,20 @@ export function canonicalFixtureJson(value: unknown, precision = 6): string {
   return `${JSON.stringify(canonical(value, precision), null, 2)}\n`
 }
 
-/** Compatibility name for validation consumers. */
+/**
+ * Compatibility name for validation consumers: {@link getSelectionRects} with
+ * `start` and `end` as positional arguments.
+ *
+ * @remarks
+ * Behaviorally identical, including the sorting and clamping. Prefer
+ * {@link getSelectionRects} in new code; this exists so the validation corpus
+ * and its recorded expectations keep working unchanged.
+ *
+ * @param result - A layout, or any object carrying `sourceLengthUtf16` and `carets`.
+ * @param start - One end of the selection.
+ * @param end - The other end; may be less than `start`.
+ * @returns Merged selection rectangles.
+ */
 export function deriveSelectionRects(
   result: Parameters<typeof getSelectionRects>[0],
   start: number,

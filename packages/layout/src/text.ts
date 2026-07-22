@@ -413,6 +413,43 @@ function defaultMetrics(
   return scaledMetrics(first.font, style.fontSize / first.font.facts.unitsPerEm)
 }
 
+/**
+ * Lays out an existing {@link PreparedText} against a font registry, selecting
+ * fonts, shaping, scaling, and wrapping.
+ *
+ * @remarks
+ * This is the font-dependent half of raw-text layout. Reach for it over
+ * {@link layoutText} when the same prepared text is laid out more than once —
+ * after a font swap, or when the preparation was cached, persisted, or
+ * transferred from a worker. Preparation is the expensive text analysis, so
+ * reusing it is the main performance lever this package offers.
+ *
+ * Font selection runs per grapheme down {@link TextStyle.fontKeys}, taking the
+ * first font that covers the whole grapheme. Lines are then measured against
+ * the prepared break opportunities and the exact chosen fragments are reshaped,
+ * so wrapped output reflects real shaped widths rather than a sum of unshaped
+ * parts.
+ *
+ * The registry is only read: no font is fetched, cached, mutated, or disposed,
+ * and no reference is retained after the call.
+ *
+ * @param prepared - Result of {@link prepareText}, or a structurally equivalent
+ *   parsed value; it is re-validated, so deserialized JSON is safe to pass.
+ * @param fonts - Caller-owned map from font key to loaded handle.
+ * @returns The renderer-neutral layout.
+ * @throws {@link TextPreparationError} with `code: 'invalid-input'` if the
+ *   prepared value fails validation, `'missing-font'` if a named key is absent
+ *   from the registry, or `'missing-coverage'` if no listed font covers a
+ *   grapheme.
+ *
+ * @example
+ * Prepare once, then lay out against two registries.
+ * ```typescript
+ * const prepared = prepareText(input)
+ * const draft = layoutPreparedText(prepared, draftFonts)
+ * const final = layoutPreparedText(prepared, productionFonts)
+ * ```
+ */
 export function layoutPreparedText(prepared: PreparedText, fonts: FontRegistry): LayoutResult {
   const validated = validatePreparedText(prepared)
   const fontRegistry = registry(fonts)
@@ -458,6 +495,36 @@ export function layoutPreparedText(prepared: PreparedText, fonts: FontRegistry):
   })
 }
 
+/**
+ * Lays out raw text in one call: prepares it, then lays out the result.
+ *
+ * @remarks
+ * The convenience path, and the right default when preparation will not be
+ * reused. It is exactly `layoutPreparedText(prepareText(input), fonts)`, so
+ * split it into those two calls when you want to cache, persist, or transfer
+ * the intermediate {@link PreparedText}.
+ *
+ * @param input - Text, style, and layout policy.
+ * @param fonts - Caller-owned map from font key to loaded handle.
+ * @returns The renderer-neutral layout.
+ * @throws {@link TextPreparationError} for invalid input, an unregistered font
+ *   key, or a grapheme no listed font covers.
+ *
+ * @example
+ * Wrap a sentence to a fixed width.
+ * ```typescript
+ * const result = layoutText(
+ *   {
+ *     text: 'the quick brown fox jumps over the lazy dog',
+ *     style: { key: 'body', fontKeys: ['latin'], fontSize: 16, language: 'en' },
+ *     layout: { maxWidth: 120 },
+ *   },
+ *   fonts,
+ * )
+ * result.lines.length // 4
+ * result.lines[0]?.breakAfter // 'soft'
+ * ```
+ */
 export function layoutText(input: PrepareTextInput, fonts: FontRegistry): LayoutResult {
   return layoutPreparedText(prepareText(input), fonts)
 }

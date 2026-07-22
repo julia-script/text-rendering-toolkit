@@ -12,7 +12,10 @@ import type {
   TextResourcesOptions,
 } from './types.js'
 
+/** SDF cell size used when the caller specifies none. */
 const DEFAULT_SDF_SIZE = 64
+
+/** Falloff exponent for generated fields; concentrates precision near the edge. */
 const SDF_EXPONENT = 9
 
 interface ResourceState {
@@ -41,6 +44,10 @@ export interface TextResourcePlan {
   readonly glyphs: readonly PlannedTextGlyph[]
 }
 
+/**
+ * Internal state, held outside the class so the public surface stays two
+ * members and disposal can be enforced on every access via {@link state}.
+ */
 const states = new WeakMap<TextResources, ResourceState>()
 
 function invalid(message: string, cause?: unknown): InvalidTextInputError {
@@ -53,12 +60,14 @@ function validateSdfSize(size: number): void {
   }
 }
 
+/** Reads live state, rejecting any use after disposal. */
 function state(resources: TextResources): ResourceState {
   const value = states.get(resources)
   if (!value || value.disposed) throw new DisposedTextResourcesError()
   return value
 }
 
+/** Serializes variation coordinates in sorted order, so key equality is order-independent. */
 function variationKey(variations: Readonly<Record<string, number>>): string {
   return Object.entries(variations)
     .sort(([left], [right]) => left.localeCompare(right))
@@ -66,10 +75,24 @@ function variationKey(variations: Readonly<Record<string, number>>): string {
     .join(',')
 }
 
+/**
+ * Whether an outline contains any line or curve, as opposed to only moves and
+ * closes. Blank glyphs such as spaces are skipped rather than given atlas slots.
+ */
 function hasDrawableCommand(commands: Uint8Array): boolean {
   return commands.some((command) => command === 1 || command === 2 || command === 3)
 }
 
+/**
+ * Generates one glyph's SDF, framed in a square view box with uniform padding.
+ *
+ * The glyph is fitted by its larger axis and centered, so cells stay square and
+ * comparable regardless of glyph aspect. Padding is reserved on all sides and
+ * used as the SDF distance range, which is what keeps the falloff from being
+ * clipped at the cell edge.
+ *
+ * @returns `null` for a blank or zero-extent glyph, which needs no atlas slot.
+ */
 function paddedBitmap(
   font: TextFont,
   glyphId: number,
@@ -110,6 +133,12 @@ function paddedBitmap(
   })
 }
 
+/**
+ * Assigns each font handle a stable small integer for cache keys.
+ *
+ * Keyed by handle identity through a `WeakMap`, which is why two handles over
+ * identical bytes do not share cache entries.
+ */
 function fontId(value: ResourceState, font: TextFont): number {
   let id = value.fontIds.get(font)
   if (id === undefined) {
@@ -119,10 +148,21 @@ function fontId(value: ResourceState, font: TextFont): number {
   return id
 }
 
+/** Whether a value is an integer in the 0-255 palette byte range. */
 function validByte(value: number): boolean {
   return Number.isInteger(value) && value >= 0 && value <= 255
 }
 
+/**
+ * Reads and validates a glyph's color layers, memoizing per font and glyph.
+ *
+ * Fonts are caller-supplied and may be any object satisfying {@link TextFont},
+ * so results are validated rather than trusted, and frozen before caching. Both
+ * hits and misses are cached, keeping repeated probes of ordinary glyphs cheap.
+ *
+ * @returns Frozen layers, or `null` when the font has no color data for this
+ *   glyph or exposes no lookup at all.
+ */
 function resolvedColorLayers(
   value: ResourceState,
   font: TextFont,
@@ -185,9 +225,48 @@ function resolvedColorLayers(
   return layers
 }
 
+/**
+ * A shareable glyph SDF cache and atlas texture, owned by the application.
+ *
+ * @remarks
+ * Inject one into several {@link Text} objects so they share generated glyph
+ * SDFs and a single growing atlas texture. Each `Text` still owns its geometry,
+ * material, and draw call — sharing saves SDF generation and texture memory,
+ * not draw calls.
+ *
+ * Cache identity is the font *handle* itself, plus glyph id, variation
+ * coordinates, and SDF size. Loading the same font bytes twice produces two
+ * handles and therefore two cache entries, so reuse the handle when reuse
+ * matters.
+ *
+ * Without injection, each `Text` silently creates and owns a private instance —
+ * which is the right default for a single object and wasteful for many.
+ *
+ * The cache only grows: there is no eviction, no partial upload, and no
+ * background scheduling.
+ *
+ * @example
+ * Share one atlas across labels, disposing borrowers before the owner.
+ * ```typescript
+ * const resources = new TextResources({ sdfSize: 64 })
+ * const title = new Text({ layout: titleLayout, fonts, resources })
+ * const label = new Text({ layout: labelLayout, fonts, resources })
+ * await Promise.all([title.sync(), label.sync()])
+ *
+ * title.dispose()
+ * label.dispose()
+ * resources.dispose()
+ * ```
+ */
 export class TextResources {
+  /** SDF cell size in texels; fixed for this instance's lifetime. */
   readonly sdfSize: number
 
+  /**
+   * @param options - Optional SDF cell size.
+   * @throws {@link InvalidTextInputError} if `sdfSize` is not a safe integer
+   *   from `16` through `512`.
+   */
   constructor(options: TextResourcesOptions = {}) {
     const sdfSize = options.sdfSize ?? DEFAULT_SDF_SIZE
     validateSdfSize(sdfSize)
@@ -202,6 +281,14 @@ export class TextResources {
     })
   }
 
+  /**
+   * Releases the atlas texture and cached glyph data.
+   *
+   * @remarks
+   * Idempotent. Dispose every borrowing {@link Text} first: afterwards any
+   * operation touching these resources — including constructing a new `Text`
+   * against them — throws {@link DisposedTextResourcesError}.
+   */
   dispose(): void {
     const value = states.get(this)
     if (!value || value.disposed) return
@@ -215,6 +302,20 @@ export function textResourceBinding(resources: TextResources): TextResourceBindi
   return { texture: value.atlas.texture, atlasGrid: value.atlasGrid }
 }
 
+/**
+ * Resolves every glyph the layout needs, generating missing SDFs, and returns a
+ * plan without mutating the shared state.
+ *
+ * Expanding color glyphs into per-layer entries happens here, so a color glyph
+ * contributes several planned entries sharing one source glyph. Blank glyphs
+ * resolve to a `null` slot and are dropped from the plan rather than occupying
+ * atlas space.
+ *
+ * Purity is the point: this is the failure-prone half (outline resolution, SDF
+ * generation, validation), and keeping it side-effect free is what lets a failed
+ * sync leave the atlas exactly as it was. {@link commitTextResources} performs
+ * the mutation afterwards.
+ */
 export function planTextResources(
   resources: TextResources,
   glyphs: readonly PositionedGlyph[],
@@ -249,6 +350,13 @@ export function planTextResources(
   return { atlas: value.atlas.plan(additions), glyphs: planned }
 }
 
+/**
+ * Applies a plan from {@link planTextResources} to the shared state, uploading
+ * atlas pixels and updating the grid size uniform.
+ *
+ * The mutating half of the pair; call it only once the caller is committed to
+ * the update.
+ */
 export function commitTextResources(resources: TextResources, plan: TextResourcePlan): void {
   const value = state(resources)
   value.atlas.commit(plan.atlas)

@@ -424,6 +424,14 @@ function normalizeBreakOpportunities(
   return Object.freeze(opportunities)
 }
 
+/**
+ * Re-validates a {@link PreparedText} and returns a frozen, normalized copy.
+ *
+ * Called by {@link layoutPreparedText} on every entry, which is what makes it
+ * safe to hand back a value that has been serialized, stored, and parsed: the
+ * schema version, UTF-16 well-formedness, segment ordering and coverage, and
+ * break-opportunity boundaries are all re-checked rather than trusted.
+ */
 export function validatePreparedText(value: PreparedText): PreparedText {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     invalid('prepared text must be an object')
@@ -468,6 +476,47 @@ export function validatePreparedText(value: PreparedText): PreparedText {
   })
 }
 
+/**
+ * Performs all font-independent text analysis: bidi resolution, grapheme
+ * segmentation, script itemization, style intersection, and Unicode
+ * line-breaking.
+ *
+ * @remarks
+ * This is the half of layout that depends only on the text, and it is the
+ * expensive half. The returned {@link PreparedText} is deeply frozen plain JSON,
+ * so it can be cached, stored, or transferred across a worker boundary and
+ * later reused by {@link layoutPreparedText} with any structurally equivalent
+ * font registry.
+ *
+ * No font is consulted here, which is exactly why the result survives a font
+ * swap. Note that layout policy *is* captured in the result, so changing
+ * `maxWidth` or alignment requires re-preparing.
+ *
+ * Break opportunities come from the Unicode line-breaking algorithm (Unicode 13
+ * data). That is not complete browser CSS behavior — dictionary segmentation
+ * for scripts such as Thai, automatic hyphenation, and CSS `line-break`
+ * tailoring are outside this package.
+ *
+ * @param input - Text, base direction, default style, optional style ranges,
+ *   and optional layout policy.
+ * @returns A frozen, serializable preparation record.
+ * @throws {@link TextPreparationError} with `code: 'invalid-input'` for
+ *   unpaired surrogates, style ranges that overlap or fall off grapheme
+ *   boundaries, or malformed policy values.
+ *
+ * @example
+ * Bidirectional text itemizes into per-direction segments.
+ * ```typescript
+ * const prepared = prepareText({
+ *   text: 'Hello مرحبا',
+ *   style: { key: 'body', fontKeys: ['latin', 'arabic'], fontSize: 24, language: 'und' },
+ *   layout: { maxWidth: 320 },
+ * })
+ * prepared.segments.length // 2 — Latn ltr [0,6), Arab rtl [6,11)
+ * prepared.schemaVersion // 2
+ * JSON.parse(JSON.stringify(prepared)) // round-trips for caching or transfer
+ * ```
+ */
 export function prepareText(input: PrepareTextInput): PreparedText {
   if (typeof input !== 'object' || input === null || typeof input.text !== 'string') {
     invalid('input.text must be a string')

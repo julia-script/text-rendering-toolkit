@@ -1,5 +1,12 @@
 import type { CaretStop, LayoutResult, SelectionQuery, SelectionRect } from './types.js'
 
+/**
+ * Sorts rectangles by line then x and coalesces touching or overlapping
+ * neighbours that share a line and vertical extent.
+ *
+ * Without this a selection emits one rectangle per caret gap, which a renderer
+ * would draw as visibly seamed boxes at every glyph boundary.
+ */
 function mergeRects(rects: SelectionRect[]): SelectionRect[] {
   rects.sort((left, right) => left.lineIndex - right.lineIndex || left.left - right.left)
   const merged: SelectionRect[] = []
@@ -20,6 +27,38 @@ function mergeRects(rects: SelectionRect[]): SelectionRect[] {
   return merged
 }
 
+/**
+ * Builds highlight rectangles covering a source range.
+ *
+ * @remarks
+ * Pure geometry derived from the layout's caret stops — it needs only
+ * `sourceLengthUtf16` and `carets`, so any structural subset of a
+ * {@link LayoutResult} works.
+ *
+ * The query is forgiving by design, which is what makes it safe to wire
+ * straight to a UI's anchor and focus offsets: `start` and `end` are sorted, so
+ * a backwards drag works, and both are clamped to the text, so out-of-range
+ * values are harmless. A collapsed range returns no rectangles.
+ *
+ * Multiple rectangles come back when the range spans lines or crosses a bidi
+ * direction change; within a line, adjacent rectangles are merged, so the
+ * result is the minimal covering set rather than one box per glyph.
+ *
+ * @param result - A layout, or any object carrying its `sourceLengthUtf16` and
+ *   `carets`.
+ * @param query - The source range to highlight, in any order.
+ * @returns Merged rectangles ordered by line then x; empty for a collapsed or
+ *   zero-length range.
+ *
+ * @example
+ * ```typescript
+ * getSelectionRects(result, { start: 0, end: 5 })
+ * // [{ lineIndex: 0, left: 0, right: 58.2, bottom: -7.03, top: 32.98 }]
+ *
+ * getSelectionRects(result, { start: 3, end: 3 }) // [] — collapsed
+ * getSelectionRects(result, { start: 5, end: 0 }) // same as 0..5
+ * ```
+ */
 export function getSelectionRects(
   result: Pick<LayoutResult, 'sourceLengthUtf16' | 'carets'>,
   query: SelectionQuery,

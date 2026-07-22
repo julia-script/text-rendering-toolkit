@@ -127,14 +127,74 @@ function quadBounds(
   ]
 }
 
+/**
+ * A Three.js mesh that renders a completed `LayoutResult` as instanced SDF
+ * glyph quads.
+ *
+ * @remarks
+ * An ordinary `Mesh`, so it goes into a scene, accepts transforms, and honors
+ * `castShadow` / `receiveShadow` like anything else. `frustumCulled` is
+ * disabled because glyph quads are positioned entirely on the GPU, leaving the
+ * mesh's own bounding volume unrepresentative of what it draws.
+ *
+ * The API deliberately starts *after* font loading, itemization, shaping, and
+ * layout: hand it a finished layout plus the fonts its keys refer to.
+ *
+ * Appearance and layout properties are plain mutable fields — assigning one
+ * changes nothing on screen until you call and await {@link Text.sync}. That
+ * two-step design is what allows several edits to batch into a single GPU
+ * update.
+ *
+ * Requires a Three.js `WebGPURenderer`; no legacy-renderer fallback is provided.
+ *
+ * @example
+ * Create, sync, and add to a scene.
+ * ```typescript
+ * const text = new Text({
+ *   layout: layoutResolvedText(input),
+ *   fonts: new Map([['body', font]]),
+ *   color: 0xffffff,
+ *   styleColors: { emphasis: 0xffcc33 },
+ * })
+ * await text.sync()
+ * scene.add(text)
+ * ```
+ *
+ * @example
+ * Update several properties with one GPU commit, then read back what rendered.
+ * ```typescript
+ * text.layout = layoutResolvedText(nextInput)
+ * text.opacity = 0.8
+ * await text.sync()
+ *
+ * const committed = text.layoutResult
+ * const selection = committed ? getSelectionRects(committed, { start: 0, end: 5 }) : []
+ * ```
+ *
+ * @see {@link TextResources} for sharing one atlas across several instances.
+ */
 export class Text extends Mesh<ReturnType<typeof createGlyphGeometry>, TextMaterial> {
+  /** Layout to render; assign a new one and call {@link Text.sync}. */
   layout: LayoutResult
+  /** Fonts backing the layout's font keys. Must cover every key it uses. */
   fonts: ReadonlyMap<string, TextFont>
+  /** Base text color for glyphs with no matching {@link Text.styleColors} entry. */
   color: ColorRepresentation
+  /** Per-style color overrides, keyed by the layout's style keys. */
   styleColors: Readonly<Record<string, ColorRepresentation>>
+  /** Uniform opacity from `0` through `1`. */
   opacity: number
+  /** Local rectangular clip in layout coordinates, or `null`. */
   clipRect: LayoutBounds | null
+  /** Whether this object uses the lit standard material. Fixed at construction. */
   readonly lit: boolean
+  /**
+   * SDF cell size in texels actually in effect.
+   *
+   * @remarks
+   * When resources were injected this is the owner's size, which may differ
+   * from any value passed at construction.
+   */
   readonly sdfSize: number
 
   readonly #resources: TextResources
@@ -146,6 +206,18 @@ export class Text extends Mesh<ReturnType<typeof createGlyphGeometry>, TextMater
   #layoutResult: LayoutResult | null = null
   #disposed = false
 
+  /**
+   * Builds the mesh, its geometry, and its material, but renders nothing until
+   * {@link Text.sync} is awaited.
+   *
+   * @param options - Layout, fonts, appearance, and either shared `resources`
+   *   or an owned `sdfSize`.
+   * @throws {@link InvalidTextInputError} if both `resources` and `sdfSize` are
+   *   given, if `resources` is not a {@link TextResources}, if `lit` is not a
+   *   boolean, or if `sdfSize` is outside `16`–`512`.
+   * @throws {@link DisposedTextResourcesError} if the injected resources have
+   *   already been disposed.
+   */
   constructor(options: TextOptions) {
     if (options.resources !== undefined && options.sdfSize !== undefined) {
       throw invalid('resources and sdfSize cannot be supplied together')
@@ -179,10 +251,28 @@ export class Text extends Mesh<ReturnType<typeof createGlyphGeometry>, TextMater
     this.frustumCulled = false
   }
 
+  /**
+   * The exact layout committed by the last successful {@link Text.sync}, or
+   * `null` before the first one.
+   *
+   * @remarks
+   * Not the same as {@link Text.layout}, which is whatever you assigned most
+   * recently and may not be on screen yet. Use this one for hit testing,
+   * selection, and measurement so geometry always matches what is rendered — a
+   * failed sync leaves the previous value intact rather than clearing it.
+   */
   get layoutResult(): LayoutResult | null {
     return this.#layoutResult
   }
 
+  /**
+   * The committed layout together with the number of instances drawn for it, or
+   * `null` before the first successful sync.
+   *
+   * @remarks
+   * `instanceCount` counts quads, not characters: a color glyph contributes one
+   * instance per layer, and blank glyphs such as spaces contribute none.
+   */
   get committedState(): {
     readonly layoutResult: LayoutResult
     readonly instanceCount: number
@@ -192,6 +282,45 @@ export class Text extends Mesh<ReturnType<typeof createGlyphGeometry>, TextMater
       : null
   }
 
+  /**
+   * Applies pending property changes: generates any missing glyph SDFs, grows
+   * the atlas, and updates geometry and material.
+   *
+   * @remarks
+   * Property assignments are inert until this runs, so a batch of edits costs
+   * one GPU update rather than one each.
+   *
+   * Calls made in the same microtask **share a single promise** and commit only
+   * the newest captured state; intermediate states are skipped rather than
+   * rendered in sequence. Calling it in a loop or on every frame is therefore
+   * safe and cheap.
+   *
+   * Current property values are snapshotted when `sync()` is called, not when
+   * the work runs — mutating a property immediately afterwards affects the
+   * *next* sync, not this one.
+   *
+   * Updates are atomic: a rejection leaves the last successfully rendered state
+   * untouched, including {@link Text.layoutResult}, so a failure never puts the
+   * object into a partially-updated state.
+   *
+   * @returns A promise resolving once the update has been committed.
+   * @throws {@link DisposedTextError} — as a rejection — if this object, or a
+   *   newer sync superseding this one, was disposed before the work ran.
+   * @throws {@link InvalidTextInputError} — as a rejection — for an invalid
+   *   opacity, clip rect, color, or layout, or a font key the registry does not
+   *   cover.
+   *
+   * @example
+   * Several edits coalesce into one commit.
+   * ```typescript
+   * text.opacity = 0.25
+   * const first = text.sync()
+   * text.opacity = 0.5
+   * const second = text.sync()
+   * first === second // true — one shared promise
+   * await second // commits opacity 0.5; 0.25 is never rendered
+   * ```
+   */
   sync(): Promise<void> {
     if (this.#disposed) return Promise.reject(new DisposedTextError())
     const revision = ++this.#revision
@@ -208,6 +337,18 @@ export class Text extends Mesh<ReturnType<typeof createGlyphGeometry>, TextMater
     return this.#pending
   }
 
+  /**
+   * Releases this object's geometry and material, and its resources if it owns
+   * them.
+   *
+   * @remarks
+   * Idempotent. Injected {@link TextResources} are left alone — the owner
+   * disposes those — so dispose every borrower before its owner. Remove the
+   * mesh from its scene separately; this does not detach it.
+   *
+   * Afterwards {@link Text.sync} rejects with {@link DisposedTextError}, and any
+   * in-flight sync is abandoned without committing.
+   */
   dispose(): void {
     if (this.#disposed) return
     this.#disposed = true
