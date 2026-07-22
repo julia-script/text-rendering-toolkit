@@ -2,7 +2,7 @@
 
 > Direction, not commitment — Now is committed; Next is planned; Later is exploration.
 > Only Now items may be promised. This document changes as we learn.
-> Last reviewed: 2026-07-21 · Review cadence: after each completed OpenSpec change
+> Last reviewed: 2026-07-22 · Review cadence: after each completed OpenSpec change
 > Scope: whole project
 
 ## Vision
@@ -12,6 +12,8 @@ Build a small, production-quality family of text-processing packages culminating
 The result is deliberately greenfield: strict TypeScript source, native ESM packages, explicit data contracts between layers, promise-based synchronization, TSL node materials, and no compatibility commitment to `troika-three-text`, `WebGLRenderer`, CommonJS, or UMD.
 
 **Current objective achieved:** representative multilingual text now renders through `WebGPURenderer` using a WebGL-free runtime, backed by deterministic layout/SDF tests, a real-font actual-WebGPU fixture, strict TypeScript checks, and a public-only consumer example. `LayoutResult` is the completed renderer-neutral handoff, so Three performs no shaping, line layout, caret, or selection policy. The Three package now ships both its default unlit material and an opt-in construction-fixed planar standard material with glyph-shaped cast and received shadows. `@webgpu-text/layout` now turns ordinary raw text into the same handoff through reusable serializable preparation, explicit caller-font fallback, and HarfBuzz shaping. Multiple independent `Text` objects can borrow one explicit `TextResources`, reusing same-handle glyph/SDF work and one growable atlas without coupling preparation to Three. COLR v0 palette-zero glyphs now flow lazily from caller-owned font bytes through ordered layer outlines and per-instance RGBA without changing preparation or layout identity. The four packages also assemble into one audited local release candidate whose tarballs pass an isolated external consumer check; public release work is intentionally paused while the packages are consumed locally.
+
+`@webgpu-text/layout` also owns a completed renderer-neutral decoration boundary: it derives immutable solid/dotted/wavy underline and solid strikethrough segments from independent UTF-16 spans after layout, with stable per-span automatic font metrics, numeric overrides, independent paint, deterministic phase, clipping, and optional bounds-only skip ink. The same output is consumed by package tests, a typed-array adapter, and the non-Three SVG documentation inspector, which refines automatic skipping against its already-owned outlines without reshaping text.
 
 ## Where we are starting
 
@@ -254,18 +256,9 @@ to the renderer package, while applications may explicitly share and own it.
 
 ## Now
 
-### Share renderer resources across independent text objects
-- **Problem:** Private per-text atlases repeated outline resolution, SDF generation, texture memory, and uploads when many labels used the same font glyphs.
-- **Outcome & done-when:** applications can explicitly own one resource object, lend it to independent lit or unlit texts, reuse same-handle glyph work and stable slots, grow the atlas from any borrower without resynchronizing existing texts, and dispose borrowers before the owner.
-- **Status:** complete — `TextResources` owns the shared cache and atlas while private resources remain the convenient default. Deterministic tests cover reuse, separation, failures, and lifetime; actual Apple Metal WebGPU evidence records a duplicate with no new outline calls and borrower growth through slot 43 with 0 changed pixels in the existing text.
-- **Links:** OpenSpec change `establish-shared-text-renderer-resources` · [renderer validation](docs/validation/three-webgpu-text-core.md)
-
-### Implement the first color-glyph format
-- **Problem:** The shipped monochrome SDF path cannot represent ordinary multicolor emoji.
-- **Outcome & done-when:** `@webgpu-text/font` lazily exposes validated COLR v0/CPAL layers, `@webgpu-text/three` composes those layers beside unchanged monochrome SDF glyphs with shared-resource reuse and atomic lifecycle, and layout/selection contracts remain unchanged.
-- **Status:** complete — the public font handle now lazily returns immutable palette-zero COLR v0 layers, and Three composes them as shared ordered outline instances with RGBA/current-foreground paint. Deterministic, clean-tarball, docs, and actual-WebGPU evidence cover the accepted emoji corpus, two sizes, unlit/lit materials, alpha, reuse, recovery, and lifecycle without changing layout identity.
-- **Scope:** COLR v0 solid layers, CPAL palette 0, current-foreground sentinel, explicit caller font order, and ordinary-outline fallback. No COLR v1 paint graph, embedded bitmap, SVG, font fetching, or automatic browser emoji preference.
-- **Links:** OpenSpec changes `validate-color-glyph-boundary` and `implement-colr-v0-color-glyphs` · [color-glyph validation](docs/validation/color-glyph-boundary.md)
+No delivery change is active after renderer-neutral text decorations completed.
+The next proposal should select one bounded **Next** item rather than combining
+renderer paint with remaining browser-grade line-breaking work.
 
 ## Next
 
@@ -277,12 +270,13 @@ to the renderer package, while applications may explicitly share and own it.
 - **Assumes:** the current preparation/resolution split remains the right place to compute reusable Unicode analysis before font-dependent shaping.
 - **Open questions:** Which Unicode line-breaking data or implementation should be adopted? Which browser fixtures define parity? Which scripts require reshaping around an accepted break?
 
-### Browser-like decoration and paint
-- **Problem:** Underline, strikethrough, stroke/outline, and drop shadow are common text presentation features that currently require application-specific geometry or materials.
-- **Hypothesis:** keep decoration geometry renderer-neutral where metrics and line fragments matter, then add a small dedicated Three paint surface for SDF stroke and shadow controls.
-- **Confidence:** medium
-- **Assumes:** these features remain explicit and composable rather than recreating Troika’s arbitrary shader-rewriting surface.
-- **Open questions:** Which package owns decoration segments? How should skip-ink and per-run styles behave? Can stroke and shadow share the existing SDF atlas without reducing quality?
+### Add Three SDF outline and one shadow
+- **Problem:** Browser-like glyph outline and drop shadow still require application-specific materials even though their distance information already exists in the glyph SDF.
+- **Hypothesis:** the unlit and planar-lit materials can decode one existing SDF and stable atlas slot for fill, independent-color outline, and one offset or softened shadow, rejecting paint whose extent exceeds atlas padding before state mutation.
+- **Confidence:** high — actual Apple Metal WebGPU reused one 64 × 64 texture across two borrowers and appearance updates; excessive paint preserved the previous state.
+- **Assumes:** ordinary SDF glyphs first, explicit appearance controls, expanded bounds, existing clipping, and no arbitrary shader rewriting.
+- **Open questions:** Which public names best distinguish outline width, shadow offset, and softness? COLR composed-silhouette outline/shadow remains a separately deferred semantic decision.
+- **Links:** OpenSpec change `validate-browser-text-decoration-boundary` · [validation report](docs/validation/browser-text-decoration-boundary.md)
 
 ## Later
 
@@ -336,9 +330,13 @@ to the renderer package, while applications may explicitly share and own it.
 - **Planar lit/shadow seam:** a standard node material can reuse instanced `positionNode`, RGBA `colorNode`, and antialiased `opacityNode`; add planar normals, a midpoint SDF `maskShadowNode`, and set `shadowSide` to the visible side for zero-thickness glyph quads. Do not add `castShadowNode`, transmitted shadows, duplicate shadow geometry, or private renderer hooks for the ordinary planar case.
 - **Production planar lighting:** `TextOptions.lit` is a construction-only boolean. The standard variant uses fixed metalness `0` and roughness `0.9`, shares all production glyph nodes and lifecycle state, and leaves `castShadow`, `receiveShadow`, lights, shadow maps, renderer, and scene ownership to ordinary Three.js callers. Runtime material switching and a physical-material option hierarchy remain deferred.
 - **First color-glyph direction:** COLR v0 + CPAL palette zero is shipped through a bounded lazy font operation and renderer-owned layer composition. `PreparedText`, `LayoutResult`, and SDF remain unchanged; caller font order is explicit; ordinary outlines remain the fallback; COLR v1, bitmap strikes, SVG, and implicit browser emoji preference stay deferred.
+- **Browser-text decoration boundary:** layout owns visual fragmentation of styled UTF-16 underline/strikethrough ranges and emits immutable analytic solid/dotted/wavy segments with independent color, compact automatic metrics, numeric overrides, per-fragment phase, and optional bounds-only skip ink. Three separately owns ordinary-glyph outline and one shadow as appearance-only decodings of the same SDF/atlas slot, rejecting extent beyond padding before commit. COLR composed-silhouette paint remains deferred.
+- **Production text decorations:** `FontFacts` exposes bounded default-instance underline/strikethrough facts and layout retains their scaled source-range context. `deriveTextDecorations()` is the single pure public operation; appearance remains outside `PreparedText`, automatic metrics resolve once per span so fallback fonts cannot shift one line, and layout skip ink uses positioned bounds only. MVAR remains deferred; renderers may refine automatic skipping from ink data they already own.
 
 ## Changelog
 
+- 2026-07-22: Implemented renderer-neutral text decorations. `@webgpu-text/font` now exposes deterministic bounded underline/strikethrough metrics, `LayoutResult` retains only their scaled range/default context, and `deriveTextDecorations()` returns immutable solid/dotted/wavy underline or solid strikethrough segments with independent RGBA/current foreground, numeric overrides, clipping, phase preservation, and optional bounds-only skip ink. Automatic metrics stay stable across fallback Arabic and color-emoji runs within one span, while the non-Three SVG inspector demonstrates renderer-owned exact outline skipping around descenders. Multilingual/mixed-metric fixtures, packed/browser ESM paths, a typed-array consumer, and COLR coexistence cover the boundary without changing preparation, glyph, line, caret, or selection identity. The completed card left **Now**; Three SDF outline/shadow and remaining browser-grade line breaking stay independent **Next** items.
+- 2026-07-22: Validated the browser-text decoration boundary. Selected two independent production changes: renderer-neutral layout segments for solid/dotted/wavy underline and strikethrough with independent color, and Three-only ordinary-glyph outline plus one shadow from an unchanged SDF/atlas slot. Actual Chrome 149 on Apple Metal reused one 64 × 64 texture across unlit/planar-lit borrowers and appearance updates, rejected excessive paint before mutation, and preserved COLR decoration coexistence while deferring composed-silhouette color-glyph paint. Completed shared-resource and COLR cards left **Now**; renderer-neutral decorations entered **Now**, with Three SDF paint in **Next**.
 - 2026-07-22: Shipped public COLR v0 color glyphs. `@webgpu-text/font` now owns lazy bounded palette-zero COLR/CPAL resolution with immutable RGBA/current-foreground layers, and `@webgpu-text/three` expands those layers after unchanged layout into shared ordinary SDF slots and RGBA instances. The accepted emoji corpus passes deterministic integration, clean packed consumption, docs build, and actual unlit/planar-lit WebGPU evidence with alpha, reuse, recovery, and lifecycle coverage; COLR v1, bitmap, SVG, and automatic emoji preference remain deferred.
 - 2026-07-21: Validated the color-glyph boundary across reproducibly derived COLR v0, COLR v1, sbix, and SVG fixtures. Selected COLR v0 (46/50) for the first production increment, measured a working universal HarfBuzz color bridge at +31,884 WASM bytes, preferred a bounded COLR/CPAL reader, preserved `LayoutResult`, and rendered mixed monochrome/color text through actual Three WebGPU with shared reuse and semantic pixels. Color glyphs remain unshipped pending the scoped production follow-up.
 - 2026-07-21: Integrated the bounded Unicode line-break opportunity slice. `PreparedText` schema version 2 now carries immutable UTF-16 opportunities from pinned `linebreak@1.1.0` Unicode 13 data; raw composition provisionally lays out, exactly measures adjacent candidates, memoizes fragment shapes per call, and reshapes final lines. The pure resolved core accepts optional explicit opportunities while omission retains legacy whitespace behavior. CJK, punctuation, emoji/ZWJ/RI, mandatory controls, mixed bidi, Arabic boundary reshaping, clean-package, browser-module, and bounded performance evidence are covered. Browser-grade line breaking remains in progress because CSS/locale tailoring, dictionary segmentation, hyphenation, newer Unicode data, and complete parity are excluded.

@@ -1,3 +1,4 @@
+export { deriveTextDecorations } from './decorations.js'
 export {
   InvalidLayoutInputError,
   TextPreparationError,
@@ -14,6 +15,15 @@ export { getSelectionRects } from './selection.js'
 export { layoutPreparedText, layoutText } from './text.js'
 export type {
   CaretStop,
+  DecorationBounds,
+  DecorationClip,
+  DecorationColor,
+  DecorationDerivationOptions,
+  DecorationKind,
+  DecorationSegment,
+  DecorationSkipInk,
+  DecorationSpan,
+  DecorationStyle,
   FixtureClassification,
   FixtureEvidence,
   FixtureEvidenceLayer,
@@ -21,6 +31,7 @@ export type {
   HorizontalAnchor,
   LayoutAlignment,
   LayoutBounds,
+  LayoutDecorationMetricRange,
   LayoutFixtureDocument,
   LayoutLine,
   LayoutOverflowWrap,
@@ -42,6 +53,7 @@ export type {
   ResolvedShapedRun,
   SelectionQuery,
   SelectionRect,
+  TextDecorationResult,
   TextStyle,
   TextStyleRange,
   Utf16Range,

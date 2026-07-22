@@ -104,6 +104,43 @@ importers:
         specifier: 0.185.1
         version: 0.185.1
 
+  experiments/browser-text-decoration-boundary:
+    dependencies:
+      '@webgpu-text/font':
+        specifier: workspace:^
+        version: link:../../packages/font
+      '@webgpu-text/layout':
+        specifier: workspace:^
+        version: link:../../packages/layout
+      '@webgpu-text/sdf':
+        specifier: workspace:^
+        version: link:../../packages/sdf
+      '@webgpu-text/three':
+        specifier: workspace:^
+        version: link:../../packages/three
+      three:
+        specifier: 0.185.1
+        version: 0.185.1
+    devDependencies:
+      '@types/node':
+        specifier: 26.1.1
+        version: 26.1.1
+      '@types/three':
+        specifier: 0.185.1
+        version: 0.185.1
+      '@vitest/browser-playwright':
+        specifier: 4.1.10
+        version: 4.1.10(playwright@1.61.1)(vite@8.1.5(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))(vitest@4.1.10)
+      '@webgpu/types':
+        specifier: 0.1.71
+        version: 0.1.71
+      playwright:
+        specifier: 1.61.1
+        version: 1.61.1
+      vitest:
+        specifier: 4.1.10
+        version: 4.1.10(@types/node@26.1.1)(@vitest/browser-playwright@4.1.10)(vite@8.1.5(@types/node@26.1.1)(esbuild@0.28.1)(jiti@2.7.0)(yaml@2.9.0))
+
   experiments/color-glyph-boundary:
     dependencies:
       '@webgpu-text/font':

@@ -54,6 +54,12 @@ export function resolvedInput(
   const fontKey = options.fontKey ?? 'font'
   const styleKey = options.styleKey ?? 'default'
   const glyphIds = options.glyphIds ?? [...text].map((_, index) => index + 1)
+  const decorationMetrics = {
+    underlinePosition: -0.1,
+    underlineThickness: 0.05,
+    strikethroughPosition: 0.3,
+    strikethroughThickness: 0.05,
+  }
   const runs: ResolvedShapedRun[] =
     text.length === 0
       ? []
@@ -69,7 +75,7 @@ export function resolvedInput(
             fontKey,
             fontSize: 1,
             fontUnitScale: 0.001,
-            metrics: { ascender: 0.8, descender: -0.2, lineGap: 0.1 },
+            metrics: { ascender: 0.8, descender: -0.2, lineGap: 0.1, decorationMetrics },
             variations: options.variations ?? {},
             glyphs: [...text].map((character, index) => ({
               start: index,
@@ -87,7 +93,7 @@ export function resolvedInput(
   return {
     text,
     paragraphLevel: 0,
-    defaultMetrics: { ascender: 0.8, descender: -0.2, lineGap: 0.1 },
+    defaultMetrics: { ascender: 0.8, descender: -0.2, lineGap: 0.1, decorationMetrics },
     maxWidth: null,
     whiteSpace: 'normal',
     overflowWrap: 'normal',

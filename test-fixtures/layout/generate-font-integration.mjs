@@ -113,6 +113,7 @@ try {
           ascender: handle.facts.ascender,
           descender: handle.facts.descender,
           lineGap: handle.facts.lineGap,
+          decorationMetrics: handle.facts.decorationMetrics,
         },
         variations: shaped.variations,
         glyphs: shaped.glyphs.map((glyph) => ({

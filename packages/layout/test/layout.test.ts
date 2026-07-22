@@ -27,7 +27,17 @@ function monospaceInput(
   text: string,
   overrides: Partial<ResolvedLayoutInput> = {},
 ): ResolvedLayoutInput {
-  const metrics = { ascender: 1, descender: 0, lineGap: 0 }
+  const metrics = {
+    ascender: 1,
+    descender: 0,
+    lineGap: 0,
+    decorationMetrics: {
+      underlinePosition: -0.1,
+      underlineThickness: 0.05,
+      strikethroughPosition: 0.3,
+      strikethroughThickness: 0.05,
+    },
+  }
   const glyphs = [...new Intl.Segmenter('und', { granularity: 'grapheme' }).segment(text)]
     .filter(({ segment }) => !/[\n\v\f\r\u0085\u2028\u2029]/u.test(segment))
     .map(({ index: start, segment }, glyphId) => ({
@@ -256,7 +266,17 @@ describe('explicit resolved line-break policy', () => {
 })
 
 test('reorders nested bidi fragments without reversing shaped glyph order twice', () => {
-  const metrics = { ascender: 1, descender: 0, lineGap: 0 }
+  const metrics = {
+    ascender: 1,
+    descender: 0,
+    lineGap: 0,
+    decorationMetrics: {
+      underlinePosition: -0.1,
+      underlineThickness: 0.05,
+      strikethroughPosition: 0.3,
+      strikethroughThickness: 0.05,
+    },
+  }
   const glyph = (glyphId: number, start: number) => ({
     glyphId,
     start,

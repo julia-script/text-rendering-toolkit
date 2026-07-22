@@ -1,4 +1,10 @@
-import type { FontHandle, TextDirection, VariationCoordinates } from '@webgpu-text/font'
+import type {
+  ColorGlyphPaint,
+  FontDecorationMetrics,
+  FontHandle,
+  TextDirection,
+  VariationCoordinates,
+} from '@webgpu-text/font'
 
 /** Half-open JavaScript UTF-16 source range. */
 export interface Utf16Range {
@@ -24,6 +30,7 @@ export interface ResolvedRunMetrics {
   readonly ascender: number
   readonly descender: number
   readonly lineGap: number
+  readonly decorationMetrics: FontDecorationMetrics
 }
 
 export interface ResolvedGlyph extends Utf16Range {
@@ -194,14 +201,70 @@ export interface SelectionRect extends LayoutBounds {
   readonly lineIndex: number
 }
 
+export interface LayoutDecorationMetricRange extends Utf16Range, FontDecorationMetrics {}
+
 export interface LayoutResult {
   readonly sourceLengthUtf16: number
   readonly fontKeys: readonly string[]
   readonly glyphs: readonly PositionedGlyph[]
   readonly lines: readonly LayoutLine[]
   readonly carets: readonly CaretStop[]
+  /** Decoration metrics for empty text or source gaps with no resolved run. */
+  readonly defaultDecorationMetrics: FontDecorationMetrics
+  readonly decorationMetrics: readonly LayoutDecorationMetricRange[]
   readonly blockBounds: LayoutBounds
   readonly visibleBounds: LayoutBounds | null
+}
+
+export type DecorationColor = ColorGlyphPaint
+export type DecorationKind = 'underline' | 'strikethrough'
+export type DecorationStyle = 'solid' | 'dotted' | 'wavy'
+export type DecorationSkipInk = 'none' | 'auto'
+
+/** Appearance-only source range applied after text preparation and layout. */
+export interface DecorationSpan extends Utf16Range {
+  readonly kind: DecorationKind
+  readonly style: DecorationStyle
+  readonly color: DecorationColor
+  readonly thickness?: number | 'auto'
+  readonly offset?: number | 'auto'
+  readonly skipInk?: DecorationSkipInk
+}
+
+/** Optional horizontal clip in layout coordinates. */
+export interface DecorationClip {
+  readonly left: number
+  readonly right: number
+}
+
+export interface DecorationDerivationOptions {
+  readonly clip?: DecorationClip
+}
+
+/** Renderer-neutral resolved line or pattern fragment. */
+export interface DecorationSegment {
+  readonly sourceStart: number
+  readonly sourceEnd: number
+  readonly lineIndex: number
+  readonly kind: DecorationKind
+  readonly style: DecorationStyle
+  readonly color: DecorationColor
+  readonly xStart: number
+  readonly xEnd: number
+  readonly y: number
+  readonly thickness: number
+  readonly amplitude: number
+  /** Dot-center spacing for dotted lines and wave period for wavy lines; zero for solid. */
+  readonly wavelength: number
+  readonly phase: number
+  readonly skipInk: DecorationSkipInk
+}
+
+export type DecorationBounds = LayoutBounds
+
+export interface TextDecorationResult {
+  readonly segments: readonly DecorationSegment[]
+  readonly bounds: DecorationBounds | null
 }
 
 export type FixtureClassification = 'preserve' | 'intentional-change' | 'defer'

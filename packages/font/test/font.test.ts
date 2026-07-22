@@ -62,6 +62,20 @@ function sfntTable(
   throw new Error(`Missing ${name} table`)
 }
 
+function sfntTableRecordOffset(bytes: Uint8Array, name: string): number {
+  const data = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
+  const count = data.getUint16(4, false)
+  for (let index = 0; index < count; index += 1) {
+    const record = 12 + index * 16
+    if (String.fromCharCode(...bytes.subarray(record, record + 4)) === name) return record
+  }
+  throw new Error(`Missing ${name} table`)
+}
+
+function hideSfntTable(bytes: Uint8Array, name: string): void {
+  bytes.set(new TextEncoder().encode('zzzz'), sfntTableRecordOffset(bytes, name))
+}
+
 function firstLayerPaletteOffset(bytes: Uint8Array, glyphId: number): number {
   const { offset } = sfntTable(bytes, 'COLR')
   const data = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
@@ -153,12 +167,95 @@ describe('font loading and facts', () => {
     }
 
     const variable = await open(fixtures.latin)
-    expect(variable.facts).toMatchObject({ ascender: 1069, descender: -293, lineGap: 0 })
+    expect(variable.facts).toMatchObject({
+      ascender: 1069,
+      descender: -293,
+      lineGap: 0,
+      decorationMetrics: {
+        underlinePosition: -100,
+        underlineThickness: 50,
+        strikethroughPosition: 322,
+        strikethroughThickness: 50,
+      },
+    })
+    expect(Object.isFrozen(variable.facts.decorationMetrics)).toBe(true)
     expect(variable.facts.axes).toEqual([
       { tag: 'wdth', min: 62.5, default: 100, max: 100 },
       { tag: 'wght', min: 100, default: 400, max: 900 },
     ])
     variable.dispose()
+  })
+
+  it('reads TTF, CFF, and COLR decoration metrics as stable font facts', async () => {
+    const expected = [
+      [fixtures.latin, -100, 50, 322, 50],
+      [fixtures.cff, -50, 50, 291, 50],
+    ] as const
+    for (const [
+      name,
+      underlinePosition,
+      underlineThickness,
+      strikethroughPosition,
+      strikethroughThickness,
+    ] of expected) {
+      const font = await open(name)
+      expect(font.facts.decorationMetrics).toEqual({
+        underlinePosition,
+        underlineThickness,
+        strikethroughPosition,
+        strikethroughThickness,
+      })
+      const reference = font.facts.decorationMetrics
+      font.shape({
+        text: 'A',
+        direction: 'ltr',
+        script: 'Latn',
+        language: 'en',
+        variations: name === fixtures.latin ? { wght: 900 } : undefined,
+      })
+      expect(font.facts.decorationMetrics).toBe(reference)
+      font.dispose()
+    }
+
+    const color = await loadFont(await colorFixture('colr-v0'))
+    expect(color.facts.decorationMetrics.underlineThickness).toBeGreaterThan(0)
+    color.dispose()
+  })
+
+  it('falls back deterministically and rejects truncated present metric tables', async () => {
+    const fallbackBytes = Uint8Array.from(await fixture(fixtures.latin))
+    hideSfntTable(fallbackBytes, 'post')
+    hideSfntTable(fallbackBytes, 'OS/2')
+    const fallback = await loadFont(fallbackBytes)
+    expect(fallback.facts.decorationMetrics).toEqual({
+      underlinePosition: -146,
+      underlineThickness: 63,
+      strikethroughPosition: 321,
+      strikethroughThickness: 63,
+    })
+    fallback.dispose()
+
+    const nonPositive = Uint8Array.from(await fixture(fixtures.latin))
+    const post = sfntTable(nonPositive, 'post')
+    const os2 = sfntTable(nonPositive, 'OS/2')
+    const data = new DataView(nonPositive.buffer, nonPositive.byteOffset, nonPositive.byteLength)
+    data.setInt16(post.offset + 10, 0, false)
+    data.setInt16(os2.offset + 26, 0, false)
+    const normalized = await loadFont(nonPositive)
+    expect(normalized.facts.decorationMetrics).toMatchObject({
+      underlineThickness: 63,
+      strikethroughThickness: 63,
+    })
+    normalized.dispose()
+
+    const truncated = Uint8Array.from(await fixture(fixtures.latin))
+    const postRecord = sfntTableRecordOffset(truncated, 'post')
+    new DataView(truncated.buffer).setUint32(postRecord + 12, 10, false)
+    await expect(loadFont(truncated)).rejects.toBeInstanceOf(InvalidFontError)
+
+    const valid = await open(fixtures.latin)
+    expect(valid.facts.decorationMetrics.underlinePosition).toBe(-100)
+    valid.dispose()
   })
 
   it('copies exactly a Uint8Array view and owns the loaded bytes', async () => {

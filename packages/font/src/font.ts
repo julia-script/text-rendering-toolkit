@@ -14,6 +14,7 @@ import {
   type HarfBuzzGlyph,
   type HarfBuzzGlyphExtents,
 } from './internal/harfbuzz.js'
+import { readFontDecorationMetrics } from './internal/metrics.js'
 import {
   type ColorGlyphLayer,
   type FontFacts,
@@ -29,6 +30,7 @@ import {
   type VariationCoordinates,
 } from './types.js'
 
+/** `hb_direction_t` enum values, which HarfBuzz numbers from 4. */
 const directionValues: Readonly<Record<TextDirection, number>> = {
   ltr: 4,
   rtl: 5,
@@ -39,6 +41,7 @@ const directionValues: Readonly<Record<TextDirection, number>> = {
 const EMPTY_VARIATIONS: VariationCoordinates = Object.freeze({})
 const ZERO_BOUNDS: GlyphBounds = Object.freeze({ xMin: 0, yMin: 0, xMax: 0, yMax: 0 })
 
+/** Unicode scalar value test: an integer in range, excluding the surrogate block. */
 function validCodePoint(value: number): boolean {
   return (
     Number.isInteger(value) &&
@@ -48,6 +51,10 @@ function validCodePoint(value: number): boolean {
   )
 }
 
+/**
+ * Validates feature strings as printable ASCII before HarfBuzz parses them, so
+ * bad input fails with our error type rather than a vendor `TypeError`.
+ */
 function normalizeFeatures(features: readonly string[] | undefined): readonly string[] {
   if (features === undefined) return []
   if (!Array.isArray(features)) throw new InvalidShapingInputError('features must be an array')
@@ -59,6 +66,13 @@ function normalizeFeatures(features: readonly string[] | undefined): readonly st
   })
 }
 
+/**
+ * Clamps coordinates to their axis ranges and sorts by tag, producing the
+ * canonical form used both for shaping and as the outline cache key.
+ *
+ * Unknown tags throw rather than being dropped, and `-0` is folded to `0` so it
+ * cannot produce a second cache entry for the same instance.
+ */
 function normalizeVariations(
   variations: VariationCoordinates | undefined,
   axes: ReadonlyMap<string, VariationAxis>,
@@ -87,6 +101,7 @@ function normalizeVariations(
   return Object.freeze(Object.fromEntries(entries))
 }
 
+/** Validates the run's text, direction, script, and language tags up front. */
 function validateShapeInput(input: ShapeInput): void {
   if (typeof input !== 'object' || input === null) {
     throw new InvalidShapingInputError('shape input must be an object')
@@ -103,6 +118,15 @@ function validateShapeInput(input: ShapeInput): void {
   }
 }
 
+/**
+ * Derives each cluster's exclusive end from the next distinct cluster start,
+ * with the string length closing the last one.
+ *
+ * HarfBuzz reports only starts, and reports them in visual order — hence the
+ * sort, which makes this correct for RTL runs too. A start that lands on a low
+ * surrogate would slice a code point in half when building `sourceText`, so it
+ * is rejected as font or shaper corruption rather than silently truncated.
+ */
 function clusterEnds(text: string, clusters: readonly number[]): ReadonlyMap<number, number> {
   const starts = [...new Set(clusters)].sort((left, right) => left - right)
   const ends = new Map<number, number>()
@@ -123,12 +147,21 @@ function clusterEnds(text: string, clusters: readonly number[]): ReadonlyMap<num
   return ends
 }
 
+/** Serializes canonical variations into the outline cache key suffix. */
 function variationKey(variations: VariationCoordinates): string {
   return Object.entries(variations)
     .map(([tag, value]) => `${tag}=${value}`)
     .join(',')
 }
 
+/**
+ * Unions HarfBuzz's reported glyph extents with every drawn coordinate,
+ * including control points, giving a conservative box.
+ *
+ * Extents arrive y-down (`yBearing` at the top, height growing downward) while
+ * we report y-up, hence the swaps. A glyph with neither usable extents nor
+ * finite coordinates collapses to {@link ZERO_BOUNDS} instead of an infinite box.
+ */
 function outlineBounds(
   extents: HarfBuzzGlyphExtents | undefined,
   coordinates: readonly number[],
@@ -155,6 +188,14 @@ function outlineBounds(
   return Object.freeze({ xMin, yMin, xMax, yMax })
 }
 
+/**
+ * The sole {@link FontHandle} implementation, owning the HarfBuzz object
+ * quartet plus the outline and color-layer caches.
+ *
+ * Not exported: callers construct it through {@link loadFont}, which guarantees
+ * the invariants the constructor assumes (positive upem, non-empty coverage,
+ * scale already set on the font).
+ */
 class FontHandleImplementation implements FontHandle {
   readonly #blob: HarfBuzzBlob
   readonly #face: HarfBuzzFace
@@ -315,6 +356,47 @@ class FontHandleImplementation implements FontHandle {
   }
 }
 
+/**
+ * Loads TTF or OTF bytes into a {@link FontHandle} ready for shaping, coverage
+ * queries, and outline extraction.
+ *
+ * @remarks
+ * This is the package's only entry point; everything else hangs off the handle
+ * it returns. The bytes are copied on the way in, so the caller may reuse or
+ * free the source buffer as soon as the promise settles, and the handle's view
+ * of the font can never be mutated out from under it.
+ *
+ * The returned handle owns WASM resources — always pair it with
+ * {@link FontHandle.dispose}.
+ *
+ * The promise rejects rather than returning a degraded handle: a font with no
+ * character coverage, a nonsensical units-per-em, or a truncated table
+ * directory is rejected at load time so failures surface here instead of at
+ * first render. Only already-decoded SFNT bytes are accepted — hand WOFF and
+ * WOFF2 to a decoder first.
+ *
+ * @param source - Decoded TTF or OTF bytes.
+ * @returns A handle over the loaded font.
+ * @throws {@link UnsupportedFontFormatError} if the bytes are a WOFF or WOFF2
+ *   container.
+ * @throws {@link InvalidFontError} if the bytes are a font collection (`ttcf`), are
+ *   not a recognizable SFNT, or are malformed, truncated, or without coverage.
+ *
+ * @example
+ * Load a font from disk, use it, then release it.
+ * ```typescript
+ * import { readFile } from 'node:fs/promises'
+ * import { loadFont } from '@webgpu-text/font'
+ *
+ * const font = await loadFont(await readFile('NotoSans.ttf'))
+ * try {
+ *   font.facts.unitsPerEm // 1000
+ *   font.facts.axes.map((axis) => axis.tag) // ['wdth', 'wght'] for a variable font
+ * } finally {
+ *   font.dispose()
+ * }
+ * ```
+ */
 export async function loadFont(source: FontSource): Promise<FontHandle> {
   const { bytes } = copyAndClassifyFont(source)
   let blob: HarfBuzzBlob | undefined
@@ -338,6 +420,11 @@ export async function loadFont(source: FontSource): Promise<FontHandle> {
       ascender: extents.ascender,
       descender: extents.descender,
       lineGap: extents.lineGap,
+      decorationMetrics: readFontDecorationMetrics(bytes, {
+        unitsPerEm: face.upem,
+        ascender: extents.ascender,
+        descender: extents.descender,
+      }),
       coverageCount,
       axes: Object.freeze(axes),
     })

@@ -24,7 +24,7 @@ test('ships an independent ESM and TypeScript package', () => {
       resolve(consumer, 'package.json'),
       JSON.stringify({ private: true, type: 'module' }, null, 2),
     )
-    execFileSync('npm', ['install', '--ignore-scripts', resolve(temporary, archive ?? '')], {
+    execFileSync('pnpm', ['add', '--ignore-scripts', resolve(temporary, archive ?? '')], {
       cwd: consumer,
       stdio: 'pipe',
     })

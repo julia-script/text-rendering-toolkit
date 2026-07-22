@@ -36,6 +36,10 @@ font.dispose()
 
 `loadFont` accepts an `ArrayBuffer` or a `Uint8Array`. It copies the provided bytes, so later changes to the source buffer cannot affect the loaded font.
 
+## Decoration metrics
+
+`font.facts.decorationMetrics` exposes underline position and thickness plus strikethrough position and thickness in font units. Declared values come from bounded `post` and OS/2 fields. Missing optional tables and non-positive thicknesses use deterministic values derived from units-per-em and existing vertical facts; malformed present tables reject the font. These facts describe the default font instance and do not apply MVAR variation-specific adjustments. Scale them by `fontSize / unitsPerEm` like the other font facts before supplying expert resolved layout input; ordinary `layoutText()` and `layoutPreparedText()` do this automatically.
+
 ## Input formats
 
 - TrueType-flavored SFNT fonts (`.ttf`)

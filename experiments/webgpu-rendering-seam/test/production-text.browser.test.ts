@@ -70,6 +70,12 @@ function resolvedRun(
       ascender: font.facts.ascender * scale,
       descender: font.facts.descender * scale,
       lineGap: font.facts.lineGap * scale,
+      decorationMetrics: {
+        underlinePosition: font.facts.decorationMetrics.underlinePosition * scale,
+        underlineThickness: font.facts.decorationMetrics.underlineThickness * scale,
+        strikethroughPosition: font.facts.decorationMetrics.strikethroughPosition * scale,
+        strikethroughThickness: font.facts.decorationMetrics.strikethroughThickness * scale,
+      },
     },
     variations: shaped.variations,
     glyphs: shaped.glyphs.map((glyph) => ({

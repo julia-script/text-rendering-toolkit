@@ -3,6 +3,7 @@ import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { loadFont } from '@webgpu-text/font'
 import {
+  deriveTextDecorations,
   getSelectionRects,
   layoutPreparedText,
   layoutResolvedText,
@@ -35,6 +36,12 @@ test('renders repeated public-font glyphs through one lazy outline/SDF insertion
         ascender: handle.facts.ascender * scale,
         descender: handle.facts.descender * scale,
         lineGap: handle.facts.lineGap * scale,
+        decorationMetrics: {
+          underlinePosition: handle.facts.decorationMetrics.underlinePosition * scale,
+          underlineThickness: handle.facts.decorationMetrics.underlineThickness * scale,
+          strikethroughPosition: handle.facts.decorationMetrics.strikethroughPosition * scale,
+          strikethroughThickness: handle.facts.decorationMetrics.strikethroughThickness * scale,
+        },
       },
       maxWidth: null,
       whiteSpace: 'normal',
@@ -61,6 +68,12 @@ test('renders repeated public-font glyphs through one lazy outline/SDF insertion
             ascender: handle.facts.ascender * scale,
             descender: handle.facts.descender * scale,
             lineGap: handle.facts.lineGap * scale,
+            decorationMetrics: {
+              underlinePosition: handle.facts.decorationMetrics.underlinePosition * scale,
+              underlineThickness: handle.facts.decorationMetrics.underlineThickness * scale,
+              strikethroughPosition: handle.facts.decorationMetrics.strikethroughPosition * scale,
+              strikethroughThickness: handle.facts.decorationMetrics.strikethroughThickness * scale,
+            },
           },
           variations: shaped.variations,
           glyphs: shaped.glyphs.map((glyph) => {
@@ -106,10 +119,16 @@ test('rejects a disposed public FontHandle without taking ownership', async () =
   const handle = await loadFont(
     new Uint8Array(await readFile(resolve(fixtures, 'NotoSans-wdth-wght.ttf'))),
   )
+  const decorationMetrics = {
+    underlinePosition: -0.1,
+    underlineThickness: 0.05,
+    strikethroughPosition: 0.3,
+    strikethroughThickness: 0.05,
+  }
   const input = {
     text: 'A',
     paragraphLevel: 0 as const,
-    defaultMetrics: { ascender: 0.8, descender: -0.2, lineGap: 0 },
+    defaultMetrics: { ascender: 0.8, descender: -0.2, lineGap: 0, decorationMetrics },
     maxWidth: null,
     whiteSpace: 'normal' as const,
     overflowWrap: 'normal' as const,
@@ -131,7 +150,7 @@ test('rejects a disposed public FontHandle without taking ownership', async () =
         fontKey: 'noto',
         fontSize: 1,
         fontUnitScale: 0.001,
-        metrics: { ascender: 0.8, descender: -0.2, lineGap: 0 },
+        metrics: { ascender: 0.8, descender: -0.2, lineGap: 0, decorationMetrics },
         variations: {},
         glyphs: [
           {
@@ -191,6 +210,15 @@ test('renders the accepted color corpus through unchanged public layouts at two 
         ],
       })
       const layout = layoutPreparedText(prepared, fontRegistry)
+      const decorations = deriveTextDecorations(layout, [
+        {
+          start: 1,
+          end: textValue.length - 1,
+          kind: 'underline',
+          style: 'wavy',
+          color: { red: 255, green: 120, blue: 0, alpha: 255 },
+        },
+      ])
       const rendererNeutralState = structuredClone({
         blockBounds: layout.blockBounds,
         visibleBounds: layout.visibleBounds,
@@ -198,6 +226,7 @@ test('renders the accepted color corpus through unchanged public layouts at two 
         carets: layout.carets,
         glyphs: layout.glyphs,
         selection: getSelectionRects(layout, { start: 1, end: textValue.length - 1 }),
+        decorations,
       })
       expect(layout.glyphs[0]?.fontKey).toBe('latin')
       expect(layout.glyphs.at(-1)?.fontKey).toBe('latin')
@@ -220,6 +249,15 @@ test('renders the accepted color corpus through unchanged public layouts at two 
         carets: layout.carets,
         glyphs: layout.glyphs,
         selection: getSelectionRects(layout, { start: 1, end: textValue.length - 1 }),
+        decorations: deriveTextDecorations(layout, [
+          {
+            start: 1,
+            end: textValue.length - 1,
+            kind: 'underline',
+            style: 'wavy',
+            color: { red: 255, green: 120, blue: 0, alpha: 255 },
+          },
+        ]),
       }).toEqual(rendererNeutralState)
       values.push({
         instanceCount: text.geometry.instanceCount,

@@ -110,6 +110,12 @@ function graphemeFont(shapeCalls: ShapeInput[] = []): FontHandle {
       ascender: 800,
       descender: -200,
       lineGap: 0,
+      decorationMetrics: {
+        underlinePosition: -100,
+        underlineThickness: 50,
+        strikethroughPosition: 300,
+        strikethroughThickness: 50,
+      },
       coverageCount: 1,
       axes: [],
     },

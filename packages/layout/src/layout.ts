@@ -4,6 +4,7 @@ import type {
   CaretStop,
   HorizontalAnchor,
   LayoutBounds,
+  LayoutDecorationMetricRange,
   LayoutLine,
   LayoutResult,
   PositionedGlyph,
@@ -74,6 +75,20 @@ function finite(value: number, label: string): void {
   if (!Number.isFinite(value)) invalid(`${label} must be finite`)
 }
 
+function validateDecorationMetrics(
+  metrics: ResolvedLayoutInput['defaultMetrics']['decorationMetrics'],
+  label: string,
+): void {
+  finite(metrics.underlinePosition, `${label}.underlinePosition`)
+  finite(metrics.underlineThickness, `${label}.underlineThickness`)
+  if (metrics.underlineThickness <= 0) invalid(`${label}.underlineThickness must be positive`)
+  finite(metrics.strikethroughPosition, `${label}.strikethroughPosition`)
+  finite(metrics.strikethroughThickness, `${label}.strikethroughThickness`)
+  if (metrics.strikethroughThickness <= 0) {
+    invalid(`${label}.strikethroughThickness must be positive`)
+  }
+}
+
 function utf16Boundary(text: string, offset: number): boolean {
   if (!Number.isInteger(offset) || offset < 0 || offset > text.length) return false
   if (offset === 0 || offset === text.length) return true
@@ -121,6 +136,10 @@ function validateInput(input: ResolvedLayoutInput): void {
   finite(input.defaultMetrics.ascender, 'defaultMetrics.ascender')
   finite(input.defaultMetrics.descender, 'defaultMetrics.descender')
   finite(input.defaultMetrics.lineGap, 'defaultMetrics.lineGap')
+  validateDecorationMetrics(
+    input.defaultMetrics.decorationMetrics,
+    'defaultMetrics.decorationMetrics',
+  )
   if (input.defaultMetrics.ascender < input.defaultMetrics.descender) {
     invalid('defaultMetrics are inverted')
   }
@@ -205,6 +224,10 @@ function validateInput(input: ResolvedLayoutInput): void {
     finite(run.metrics.ascender, `runs[${runIndex}].metrics.ascender`)
     finite(run.metrics.descender, `runs[${runIndex}].metrics.descender`)
     finite(run.metrics.lineGap, `runs[${runIndex}].metrics.lineGap`)
+    validateDecorationMetrics(
+      run.metrics.decorationMetrics,
+      `runs[${runIndex}].metrics.decorationMetrics`,
+    )
     if (run.metrics.ascender < run.metrics.descender) {
       invalid(`runs[${runIndex}].metrics are inverted`)
     }
@@ -692,6 +715,27 @@ function translateBounds(bounds: LayoutBounds, x: number, y: number): LayoutBoun
   }
 }
 
+function decorationMetricRanges(input: ResolvedLayoutInput): LayoutDecorationMetricRange[] {
+  const ranges: LayoutDecorationMetricRange[] = []
+  for (const run of input.runs) {
+    const current = { start: run.start, end: run.end, ...run.metrics.decorationMetrics }
+    const previous = ranges.at(-1)
+    if (
+      previous &&
+      previous.end === current.start &&
+      previous.underlinePosition === current.underlinePosition &&
+      previous.underlineThickness === current.underlineThickness &&
+      previous.strikethroughPosition === current.strikethroughPosition &&
+      previous.strikethroughThickness === current.strikethroughThickness
+    ) {
+      ranges[ranges.length - 1] = { ...previous, end: current.end }
+    } else {
+      ranges.push(current)
+    }
+  }
+  return ranges
+}
+
 export function layoutResolvedText(input: ResolvedLayoutInput): LayoutResult {
   validateInput(input)
   const boundaries = graphemeBoundaries(input.text)
@@ -778,6 +822,8 @@ export function layoutResolvedText(input: ResolvedLayoutInput): LayoutResult {
       bottom: caret.bottom + shiftY,
       top: caret.top + shiftY,
     })),
+    defaultDecorationMetrics: { ...input.defaultMetrics.decorationMetrics },
+    decorationMetrics: decorationMetricRanges(input),
     blockBounds: translateBounds(blockBounds, shiftX, shiftY),
     visibleBounds: visible ? translateBounds(visible, shiftX, shiftY) : null,
   }

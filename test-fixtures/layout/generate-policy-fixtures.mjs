@@ -9,6 +9,12 @@ const baseFont = {
   ascender: 8,
   descender: -2,
   lineGap: 2,
+  decorationMetrics: {
+    underlinePosition: -1,
+    underlineThickness: 0.5,
+    strikethroughPosition: 3,
+    strikethroughThickness: 0.5,
+  },
 }
 
 function glyph(glyphId, start, end, xAdvance = 10, bounds = { left: 0, bottom: -2, right: 8, top: 8 }) {
@@ -33,6 +39,7 @@ function run(text, glyphs, options = {}) {
       ascender: metrics.ascender,
       descender: metrics.descender,
       lineGap: metrics.lineGap,
+      decorationMetrics: metrics.decorationMetrics ?? baseFont.decorationMetrics,
     },
     variations: options.variations ?? {},
     glyphs: direction === 'rtl' ? [...glyphs].reverse() : glyphs,
@@ -82,6 +89,27 @@ function bounds(left, bottom, right, top) {
   return { left, bottom, right, top }
 }
 
+function decorationRanges(runs) {
+  const ranges = []
+  for (const { start, end, metrics } of runs) {
+    const current = { start, end, ...metrics.decorationMetrics }
+    const previous = ranges.at(-1)
+    if (
+      previous &&
+      previous.end === start &&
+      previous.underlinePosition === current.underlinePosition &&
+      previous.underlineThickness === current.underlineThickness &&
+      previous.strikethroughPosition === current.strikethroughPosition &&
+      previous.strikethroughThickness === current.strikethroughThickness
+    ) {
+      previous.end = end
+    } else {
+      ranges.push(current)
+    }
+  }
+  return ranges
+}
+
 function fixture({
   id,
   intent,
@@ -118,6 +146,7 @@ function fixture({
         ascender: baseFont.ascender,
         descender: baseFont.descender,
         lineGap: baseFont.lineGap,
+        decorationMetrics: baseFont.decorationMetrics,
       },
       maxWidth: null,
       whiteSpace: 'normal',
@@ -137,6 +166,8 @@ function fixture({
       glyphs,
       lines,
       carets,
+      defaultDecorationMetrics: baseFont.decorationMetrics,
+      decorationMetrics: decorationRanges(runs),
       blockBounds,
       visibleBounds,
     },
@@ -274,7 +305,18 @@ fixtures.push(
 
 {
   const text = 'AB'
-  const tallFont = { fontKey: 'synthetic/tall', ascender: 12, descender: -4, lineGap: 4 }
+  const tallFont = {
+    fontKey: 'synthetic/tall',
+    ascender: 12,
+    descender: -4,
+    lineGap: 4,
+    decorationMetrics: {
+      underlinePosition: -1.5,
+      underlineThickness: 0.75,
+      strikethroughPosition: 4,
+      strikethroughThickness: 0.75,
+    },
+  }
   const a = glyph(65, 0, 1, 12)
   const b = glyph(66, 1, 2, 16, { left: 0, bottom: -4, right: 14, top: 12 })
   fixtures.push(
@@ -391,7 +433,7 @@ for (const [id, align, x] of [
       intent: 'Split style, size, language, and variation values at valid UTF-16 boundaries.',
       tags: ['runs', 'style', 'size', 'language', 'variations'],
       text,
-      runs: [run(text, [a], { start: 0, end: 1 }), run(text, [b], { start: 1, end: 2, styleKey: 'emphasis', fontSize: 14, language: 'fr', variations: { wght: 700 }, metrics: { ascender: 12, descender: -2, lineGap: 0 } })],
+      runs: [run(text, [a], { start: 0, end: 1 }), run(text, [b], { start: 1, end: 2, styleKey: 'emphasis', fontSize: 14, language: 'fr', variations: { wght: 700 }, metrics: { ascender: 12, descender: -2, lineGap: 0, decorationMetrics: { underlinePosition: -1.4, underlineThickness: 0.7, strikethroughPosition: 4.2, strikethroughThickness: 0.7 } } })],
       glyphs: [placed(a, 0, 0, 0), placed(b, 10, 0, 0, { styleKey: 'emphasis', variations: { wght: 700 }, fontUnitScale: 0.014 })],
       lines: [line(0, 2, 0, 2, 0, 0, 22, 'none', 14)],
       carets: [caret(0, 0, 0, 0, 14), caret(1, 0, 10, 0, 14), caret(2, 0, 22, 0, 14)],
@@ -405,7 +447,18 @@ for (const [id, align, x] of [
 
 {
   const text = 'A😀'
-  const fallback = { fontKey: 'synthetic/symbols', ascender: 10, descender: -3, lineGap: 1 }
+  const fallback = {
+    fontKey: 'synthetic/symbols',
+    ascender: 10,
+    descender: -3,
+    lineGap: 1,
+    decorationMetrics: {
+      underlinePosition: -1.25,
+      underlineThickness: 0.6,
+      strikethroughPosition: 3.5,
+      strikethroughThickness: 0.6,
+    },
+  }
   const a = glyph(65, 0, 1)
   const emoji = glyph(128512, 1, 3, 12, { left: 0, bottom: -3, right: 12, top: 10 })
   fixtures.push(

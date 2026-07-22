@@ -1,12 +1,29 @@
 import { InvalidFontError, UnsupportedFontFormatError } from './errors.js'
 import type { FontSource } from './types.js'
 
+/** Glyph outline flavor of an accepted SFNT font. */
 export type SupportedFontFormat = 'truetype' | 'cff'
 
+/** The four-byte SFNT version tag at the head of the file. */
 function signature(bytes: Uint8Array): string {
   return String.fromCharCode(...bytes.subarray(0, 4))
 }
 
+/**
+ * Copies the caller's bytes and identifies the SFNT flavor, rejecting anything
+ * this package cannot load.
+ *
+ * The copy is the point as much as the classification: the handle keeps these
+ * bytes for its whole lifetime to read COLR and CPAL lazily, so it must own
+ * memory the caller cannot mutate afterwards. A `Uint8Array` view over part of a
+ * larger buffer is copied exactly, never widened to the whole buffer.
+ *
+ * Rejections are split by cause — WOFF and WOFF2 get
+ * {@link UnsupportedFontFormatError} because decoding them elsewhere makes them
+ * loadable, while collections and malformed files get {@link InvalidFontError}.
+ *
+ * @returns The owned copy and its outline flavor.
+ */
 export function copyAndClassifyFont(source: FontSource): {
   readonly bytes: ArrayBuffer
   readonly format: SupportedFontFormat

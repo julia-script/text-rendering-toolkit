@@ -4,6 +4,7 @@ export type {
   PrepareTextInput,
 } from '@webgpu-text/layout'
 export {
+  deriveTextDecorations,
   layoutPreparedText,
   layoutText,
   prepareText,

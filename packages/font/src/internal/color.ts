@@ -1,10 +1,6 @@
 import { InvalidFontError } from '../errors.js'
 import type { ColorGlyphLayer, RgbaColor } from '../types.js'
-
-interface TableRecord {
-  readonly offset: number
-  readonly length: number
-}
+import { assertSfntBounds, sfntTable, sfntTableRecords, sfntView } from './sfnt.js'
 
 interface ColrV0Data {
   readonly colr: DataView
@@ -19,58 +15,16 @@ function invalid(message: string): InvalidFontError {
   return new InvalidFontError(`Invalid color font data: ${message}`)
 }
 
-function assertBounds(bytes: Uint8Array, offset: number, size: number, label: string): void {
-  if (
-    !Number.isSafeInteger(offset) ||
-    !Number.isSafeInteger(size) ||
-    offset < 0 ||
-    size < 0 ||
-    offset + size > bytes.byteLength
-  ) {
-    throw invalid(`${label} exceeds its table`)
-  }
-}
-
-function dataView(bytes: Uint8Array): DataView {
-  return new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
-}
-
-function tableRecords(bytes: Uint8Array): ReadonlyMap<string, TableRecord> {
-  assertBounds(bytes, 0, 12, 'SFNT header')
-  const data = dataView(bytes)
-  const count = data.getUint16(4, false)
-  assertBounds(bytes, 12, count * 16, 'SFNT table directory')
-  const records = new Map<string, TableRecord>()
-  for (let index = 0; index < count; index += 1) {
-    const record = 12 + index * 16
-    const name = String.fromCharCode(
-      bytes[record] ?? 0,
-      bytes[record + 1] ?? 0,
-      bytes[record + 2] ?? 0,
-      bytes[record + 3] ?? 0,
-    )
-    records.set(name, {
-      offset: data.getUint32(record + 8, false),
-      length: data.getUint32(record + 12, false),
-    })
-  }
-  return records
-}
-
-function table(
-  bytes: Uint8Array,
-  records: ReadonlyMap<string, TableRecord>,
-  name: string,
-): Uint8Array | null {
-  const record = records.get(name)
-  if (!record) return null
-  assertBounds(bytes, record.offset, record.length, `${name} table`)
-  return bytes.subarray(record.offset, record.offset + record.length)
-}
-
+/**
+ * Reads palette zero out of CPAL.
+ *
+ * Color records are stored BGRA on disk, so the channel reads look transposed
+ * but are not. Only palette zero is exposed — picking among a font's alternate
+ * palettes is a policy decision left to callers of a future API.
+ */
 function paletteZero(cpal: Uint8Array): readonly RgbaColor[] {
-  assertBounds(cpal, 0, 12, 'CPAL header')
-  const data = dataView(cpal)
+  assertSfntBounds(cpal, 0, 12, 'CPAL header')
+  const data = sfntView(cpal)
   const version = data.getUint16(0, false)
   if (version > 1) throw invalid(`unsupported CPAL version ${version}`)
   const entryCount = data.getUint16(2, false)
@@ -78,8 +32,8 @@ function paletteZero(cpal: Uint8Array): readonly RgbaColor[] {
   const colorRecordCount = data.getUint16(6, false)
   const colorRecordsOffset = data.getUint32(8, false)
   if (paletteCount === 0) throw invalid('CPAL has no palettes')
-  assertBounds(cpal, 12, paletteCount * 2, 'CPAL palette indices')
-  assertBounds(cpal, colorRecordsOffset, colorRecordCount * 4, 'CPAL color records')
+  assertSfntBounds(cpal, 12, paletteCount * 2, 'CPAL palette indices')
+  assertSfntBounds(cpal, colorRecordsOffset, colorRecordCount * 4, 'CPAL color records')
   const firstColor = data.getUint16(12, false)
   if (firstColor + entryCount > colorRecordCount) {
     throw invalid('CPAL palette zero exceeds its color records')
@@ -97,21 +51,32 @@ function paletteZero(cpal: Uint8Array): readonly RgbaColor[] {
   )
 }
 
+/**
+ * Parses and fully validates the COLR/CPAL pair once, or returns `null` when
+ * the font has no COLR v0 data to read.
+ *
+ * `null` covers both "no COLR table" and "COLR version other than 0" — a COLR
+ * v1 font is a supported input that simply has no v0 layers, not an error.
+ * Validation is eager and total: base records must be strictly ascending (the
+ * binary search in {@link ColorLayerReader.get} depends on it), every layer
+ * range must fall inside the layer array, and every palette index must resolve.
+ * Paying that cost once means the per-glyph path can read without re-checking.
+ */
 function initialize(bytes: Uint8Array): ColrV0Data | null {
-  const records = tableRecords(bytes)
-  const colrBytes = table(bytes, records, 'COLR')
+  const records = sfntTableRecords(bytes)
+  const colrBytes = sfntTable(bytes, records, 'COLR')
   if (!colrBytes) return null
-  assertBounds(colrBytes, 0, 2, 'COLR header')
-  const colr = dataView(colrBytes)
+  assertSfntBounds(colrBytes, 0, 2, 'COLR header')
+  const colr = sfntView(colrBytes)
   if (colr.getUint16(0, false) !== 0) return null
 
-  assertBounds(colrBytes, 0, 14, 'COLR v0 header')
+  assertSfntBounds(colrBytes, 0, 14, 'COLR v0 header')
   const baseCount = colr.getUint16(2, false)
   const baseOffset = colr.getUint32(4, false)
   const layerOffset = colr.getUint32(8, false)
   const layerCount = colr.getUint16(12, false)
-  assertBounds(colrBytes, baseOffset, baseCount * 6, 'COLR base glyph records')
-  assertBounds(colrBytes, layerOffset, layerCount * 4, 'COLR layer records')
+  assertSfntBounds(colrBytes, baseOffset, baseCount * 6, 'COLR base glyph records')
+  assertSfntBounds(colrBytes, layerOffset, layerCount * 4, 'COLR layer records')
 
   let previousGlyphId = -1
   for (let index = 0; index < baseCount; index += 1) {
@@ -126,7 +91,7 @@ function initialize(bytes: Uint8Array): ColrV0Data | null {
     previousGlyphId = glyphId
   }
 
-  const cpalBytes = table(bytes, records, 'CPAL')
+  const cpalBytes = sfntTable(bytes, records, 'CPAL')
   if (!cpalBytes) throw invalid('COLR v0 requires a CPAL table')
   const palette = paletteZero(cpalBytes)
   for (let index = 0; index < layerCount; index += 1) {
@@ -139,6 +104,15 @@ function initialize(bytes: Uint8Array): ColrV0Data | null {
   return { colr, baseCount, baseOffset, layerOffset, layerCount, palette }
 }
 
+/**
+ * Lazily parses a font's COLR v0 and CPAL tables and resolves per-glyph layers,
+ * caching both the parse and every lookup.
+ *
+ * The tables are untouched until the first {@link ColorLayerReader.get} call, so
+ * an ordinary outline font never pays to parse tables it does not have. Misses
+ * are cached as `null` alongside hits, which keeps repeated probes of non-color
+ * glyphs — the common case during a render pass — down to a map lookup.
+ */
 export class ColorLayerReader {
   #bytes: Uint8Array | null
   #data: ColrV0Data | null = null
@@ -149,6 +123,12 @@ export class ColorLayerReader {
     this.#bytes = new Uint8Array(bytes)
   }
 
+  /**
+   * Resolves one glyph's layers in painting order, or `null` if it has none.
+   *
+   * Binary searches the COLR base records, which {@link initialize} has already
+   * verified are strictly ascending.
+   */
   get(glyphId: number): readonly ColorGlyphLayer[] | null {
     const cached = this.#cache.get(glyphId)
     if (cached !== undefined || this.#cache.has(glyphId)) return cached ?? null
@@ -195,6 +175,7 @@ export class ColorLayerReader {
     return null
   }
 
+  /** Drops the cache, the parsed tables, and the reference to the font bytes. */
   dispose(): void {
     this.#cache.clear()
     this.#data = null

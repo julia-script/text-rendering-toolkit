@@ -13,6 +13,7 @@ Applications acquire font bytes however they want and keep ownership of every
 ```ts
 import { loadFont } from '@webgpu-text/font'
 import {
+  deriveTextDecorations,
   getSelectionRects,
   layoutPreparedText,
   layoutText,
@@ -40,6 +41,16 @@ const input = {
 const prepared = prepareText(input)
 const result = layoutPreparedText(prepared, fonts)
 const selection = getSelectionRects(result, { start: 0, end: 5 })
+const decorations = deriveTextDecorations(result, [
+  {
+    start: 0,
+    end: input.text.length,
+    kind: 'underline',
+    style: 'wavy',
+    color: { red: 30, green: 160, blue: 255, alpha: 255 },
+    skipInk: 'auto',
+  },
+])
 
 // Equivalent convenience path when preparation will not be reused:
 const sameResult = layoutText(input, fonts)
@@ -76,7 +87,17 @@ import type { ResolvedLayoutInput } from '@webgpu-text/layout'
 const input: ResolvedLayoutInput = {
   text: 'Hi',
   paragraphLevel: 0,
-  defaultMetrics: { ascender: 8, descender: -2, lineGap: 2 },
+  defaultMetrics: {
+    ascender: 8,
+    descender: -2,
+    lineGap: 2,
+    decorationMetrics: {
+      underlinePosition: -1,
+      underlineThickness: 0.5,
+      strikethroughPosition: 3,
+      strikethroughThickness: 0.5,
+    },
+  },
   maxWidth: 80,
   whiteSpace: 'normal',
   overflowWrap: 'normal',
@@ -98,7 +119,17 @@ const input: ResolvedLayoutInput = {
       fontKey: 'inter',
       fontSize: 10,
       fontUnitScale: 10 / 1000,
-      metrics: { ascender: 8, descender: -2, lineGap: 2 },
+      metrics: {
+        ascender: 8,
+        descender: -2,
+        lineGap: 2,
+        decorationMetrics: {
+          underlinePosition: -1,
+          underlineThickness: 0.5,
+          strikethroughPosition: 3,
+          strikethroughThickness: 0.5,
+        },
+      },
       variations: {},
       glyphs: [
         { glyphId: 43, start: 0, end: 1, xAdvance: 7, yAdvance: 0, xOffset: 0, yOffset: 0, flags: 0, bounds: null },
@@ -141,6 +172,12 @@ const metrics = {
   ascender: font.facts.ascender * scale,
   descender: font.facts.descender * scale,
   lineGap: font.facts.lineGap * scale,
+  decorationMetrics: {
+    underlinePosition: font.facts.decorationMetrics.underlinePosition * scale,
+    underlineThickness: font.facts.decorationMetrics.underlineThickness * scale,
+    strikethroughPosition: font.facts.decorationMetrics.strikethroughPosition * scale,
+    strikethroughThickness: font.facts.decorationMetrics.strikethroughThickness * scale,
+  },
 }
 
 const glyphs = shaped.glyphs.map((glyph) => ({
@@ -172,6 +209,16 @@ glyph references, `fontUnitScale`, lines, bounds, carets, and stable font/style
 keys, but no outlines, SDF pixels, atlas slots, GPU resources, or renderer
 objects. Canvas, SVG, Three.js, or another renderer can consume the same result
 and resolve only the outlines it needs from the caller-owned font registry.
+
+## Post-layout text decorations
+
+`deriveTextDecorations(layout, spans, options?)` is a synchronous, pure appearance step. It accepts independent half-open UTF-16 spans and returns frozen analytic segments plus aggregate bounds. It does not prepare, shape, reshape, fetch fonts, request outlines, tessellate paths, or import a renderer. Changing decoration color, style, skip-ink, or numeric metrics therefore reuses the same `PreparedText` and `LayoutResult`.
+
+Supported combinations are solid, dotted, and wavy underline plus solid strikethrough. A span color is either an RGBA byte object or `"foreground"`, which the final renderer resolves against its current text color. Omitted/`"auto"` thickness and offset use the first effective retained font metrics for the complete decoration span, so fallback fonts such as color emoji do not introduce vertical steps. Adjacent spans resolve independently, and finite numeric values override automatic metrics directly in layout units. Dotted segments expose thickness as dot diameter and `wavelength` as dot-center spacing. Wavy segments expose amplitude, wavelength, thickness, and phase.
+
+Every new line, bidi interval, or adjacent span begins with phase zero. Horizontal clipping and `skipInk: "auto"` cuts preserve the phase that the removed portion would have consumed. Layout-level skip ink is opt-in and uses only already positioned glyph bounds with thickness-derived clearance; missing bounds leave the line continuous, and no outline is requested. A renderer that already owns outlines or SDF coverage may refine the retained `skipInk: "auto"` policy against exact ink, as the SVG documentation inspector does, without changing layout purity.
+
+The retained font facts describe the default variable-font instance: MVAR decoration adjustments are not applied. Use numeric span overrides when a specific variable instance needs corrected placement. The package deliberately exposes no decoration tessellator, DOM/CSS parser, Three object, SDF, atlas, or GPU resource.
 
 ## Supported policy
 

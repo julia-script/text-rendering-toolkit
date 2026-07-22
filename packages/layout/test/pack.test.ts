@@ -32,9 +32,24 @@ it('ships ESM runtime and type exports usable with the public font package', () 
     mkdirSync(consumer)
     writeFileSync(
       resolve(consumer, 'package.json'),
-      JSON.stringify({ private: true, type: 'module' }, null, 2),
+      JSON.stringify(
+        {
+          private: true,
+          type: 'module',
+          dependencies: {
+            '@webgpu-text/font': `file:${fontArchive}`,
+            '@webgpu-text/layout': `file:${layoutArchive}`,
+          },
+        },
+        null,
+        2,
+      ),
     )
-    execFileSync('npm', ['install', '--ignore-scripts', fontArchive, layoutArchive], {
+    writeFileSync(
+      resolve(consumer, 'pnpm-workspace.yaml'),
+      `packages:\n  - .\noverrides:\n  '@webgpu-text/font': file:${fontArchive}\n`,
+    )
+    execFileSync('pnpm', ['install', '--ignore-scripts'], {
       cwd: consumer,
       stdio: 'pipe',
     })
@@ -45,12 +60,12 @@ it('ships ESM runtime and type exports usable with the public font package', () 
     expect(existsSync(resolve(installed, 'THIRD_PARTY_NOTICES.md'))).toBe(true)
 
     const source = `
-      import { layoutResolvedText, layoutText, getSelectionRects, prepareText } from '@webgpu-text/layout'
+      import { deriveTextDecorations, layoutResolvedText, layoutText, getSelectionRects, prepareText } from '@webgpu-text/layout'
       import type { FontHandle } from '@webgpu-text/font'
-      import type { LineBreakOpportunity, PreparedText, ResolvedLayoutInput } from '@webgpu-text/layout'
+      import type { DecorationSpan, LineBreakOpportunity, PreparedText, ResolvedLayoutInput } from '@webgpu-text/layout'
 
       const input: ResolvedLayoutInput = {
-        text: '', paragraphLevel: 0, defaultMetrics: { ascender: 8, descender: -2, lineGap: 0 },
+        text: '', paragraphLevel: 0, defaultMetrics: { ascender: 8, descender: -2, lineGap: 0, decorationMetrics: { underlinePosition: -1, underlineThickness: 0.5, strikethroughPosition: 3, strikethroughThickness: 0.5 } },
         maxWidth: null, whiteSpace: 'normal', overflowWrap: 'normal', textAlign: 'left',
         textIndent: 0, letterSpacing: 0, lineHeight: 'normal', anchorX: 'left',
         anchorY: 'top-baseline', runs: [],
@@ -72,7 +87,7 @@ it('ships ESM runtime and type exports usable with the public font package', () 
 
       const segmenter = new Intl.Segmenter('und', { granularity: 'grapheme' })
       const font: FontHandle = {
-        facts: { unitsPerEm: 1000, ascender: 800, descender: -200, lineGap: 0, coverageCount: 1, axes: [] },
+        facts: { unitsPerEm: 1000, ascender: 800, descender: -200, lineGap: 0, decorationMetrics: { underlinePosition: -100, underlineThickness: 50, strikethroughPosition: 300, strikethroughThickness: 50 }, coverageCount: 1, axes: [] },
         supports: () => true,
         shape: (value) => ({
           glyphs: [...segmenter.segment(value.text)].map((segment, glyphId) => ({
@@ -93,6 +108,13 @@ it('ships ESM runtime and type exports usable with the public font package', () 
       }, new Map([['body', font]]))
       if (wrapped.lines.length !== 2 || wrapped.lines[0]?.end !== 2) {
         throw new Error('Packed Unicode wrapping failed')
+      }
+      const decorationSpan: DecorationSpan = {
+        start: 0, end: 4, kind: 'underline', style: 'wavy', color: 'foreground',
+      }
+      const decorations = deriveTextDecorations(wrapped, [decorationSpan])
+      if (decorations.segments.length !== 2 || decorations.bounds === null) {
+        throw new Error('Packed decoration derivation failed')
       }
     `
     writeFileSync(resolve(consumer, 'main.ts'), source)

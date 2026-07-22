@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises'
 import { type FontFacts, loadFont, type ShapedRun, type ShapeInput } from '@webgpu-text/font'
 import {
   canonicalFixtureJson,
+  deriveTextDecorations,
   layoutResolvedText,
   type ResolvedShapedRun,
 } from '@webgpu-text/layout'
@@ -65,6 +66,7 @@ function translate(run: IntegrationRun, facts: FontFacts, shaped: ShapedRun): Re
       ascender: facts.ascender,
       descender: facts.descender,
       lineGap: facts.lineGap,
+      decorationMetrics: facts.decorationMetrics,
     },
     variations: shaped.variations,
     glyphs: shaped.glyphs.map((glyph) => ({
@@ -151,6 +153,16 @@ describe('public font integration evidence', () => {
         anchorY: 0,
         runs,
       })
+      const before = structuredClone(result)
+      const decorations = deriveTextDecorations(result, [
+        {
+          start: 0,
+          end: plan.text.length,
+          kind: 'underline',
+          style: 'wavy',
+          color: 'foreground',
+        },
+      ])
       expect(result.sourceLengthUtf16, plan.id).toBe(plan.text.length)
       expect(result.glyphs.length, plan.id).toBeGreaterThan(0)
       expect(result.visibleBounds, plan.id).toBeNull()
@@ -159,6 +171,12 @@ describe('public font integration evidence', () => {
         result.glyphs.every((glyph) => glyph.fontUnitScale === 1),
         plan.id,
       ).toBe(true)
+      expect(decorations.segments.length, plan.id).toBeGreaterThan(0)
+      expect(
+        new Set(decorations.segments.map(({ y }) => y)).size,
+        `${plan.id} decoration height`,
+      ).toBe(1)
+      expect(result, plan.id).toEqual(before)
     }
   })
 

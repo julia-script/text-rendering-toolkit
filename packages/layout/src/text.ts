@@ -121,10 +121,17 @@ function selectedSegments(prepared: PreparedText, fonts: FontRegistry): readonly
 }
 
 function scaledMetrics(font: FontHandle, scale: number): ResolvedRunMetrics {
+  const decoration = font.facts.decorationMetrics
   return {
     ascender: font.facts.ascender * scale,
     descender: font.facts.descender * scale,
     lineGap: font.facts.lineGap * scale,
+    decorationMetrics: {
+      underlinePosition: decoration.underlinePosition * scale,
+      underlineThickness: decoration.underlineThickness * scale,
+      strikethroughPosition: decoration.strikethroughPosition * scale,
+      strikethroughThickness: decoration.strikethroughThickness * scale,
+    },
   }
 }
 

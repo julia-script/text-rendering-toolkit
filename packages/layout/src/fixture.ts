@@ -65,6 +65,18 @@ function bounds(value: unknown, caseId: string, label: string): void {
   if (left > right || bottom > top) fail(caseId, `${label} is inverted`)
 }
 
+function decorationMetrics(value: unknown, caseId: string, label: string): void {
+  const item = record(value, caseId, label)
+  for (const key of ['underlinePosition', 'strikethroughPosition'] as const) {
+    finite(item[key], caseId, `${label}.${key}`)
+  }
+  for (const key of ['underlineThickness', 'strikethroughThickness'] as const) {
+    if (finite(item[key], caseId, `${label}.${key}`) <= 0) {
+      fail(caseId, `${label}.${key} must be positive`)
+    }
+  }
+}
+
 function rejectHigherLayers(value: unknown, caseId: string): void {
   if (Array.isArray(value)) {
     for (const item of value) rejectHigherLayers(item, caseId)
@@ -146,6 +158,22 @@ function validateResult(value: unknown, text: string, fontKeys: Set<string>, cas
     }
   }
 
+  decorationMetrics(result.defaultDecorationMetrics, caseId, 'expected.defaultDecorationMetrics')
+  let previousMetricEnd = 0
+  for (const [index, value] of array(
+    result.decorationMetrics,
+    caseId,
+    'expected.decorationMetrics',
+  ).entries()) {
+    const item = record(value, caseId, `expected.decorationMetrics[${index}]`)
+    range(item, text, caseId, `expected.decorationMetrics[${index}]`)
+    const start = integer(item.start, caseId, `expected.decorationMetrics[${index}].start`)
+    const end = integer(item.end, caseId, `expected.decorationMetrics[${index}].end`)
+    if (start < previousMetricEnd) fail(caseId, 'decoration metric ranges must not overlap')
+    previousMetricEnd = end
+    decorationMetrics(item, caseId, `expected.decorationMetrics[${index}]`)
+  }
+
   bounds(result.blockBounds, caseId, 'expected.blockBounds')
   if (result.visibleBounds !== null) bounds(result.visibleBounds, caseId, 'expected.visibleBounds')
 }
@@ -181,6 +209,7 @@ function validateFixture(value: unknown, ids: Set<string>): void {
   for (const key of ['ascender', 'descender', 'lineGap'] as const) {
     finite(defaultMetrics[key], id, `input.defaultMetrics.${key}`)
   }
+  decorationMetrics(defaultMetrics.decorationMetrics, id, 'input.defaultMetrics.decorationMetrics')
   if (input.maxWidth !== null) finite(input.maxWidth, id, 'input.maxWidth')
   for (const key of ['textIndent', 'letterSpacing'] as const) {
     finite(input[key], id, `input.${key}`)
@@ -221,6 +250,11 @@ function validateFixture(value: unknown, ids: Set<string>): void {
     for (const key of ['ascender', 'descender', 'lineGap'] as const) {
       finite(metrics[key], id, `input.runs[${runIndex}].metrics.${key}`)
     }
+    decorationMetrics(
+      metrics.decorationMetrics,
+      id,
+      `input.runs[${runIndex}].metrics.decorationMetrics`,
+    )
     for (const [glyphIndex, glyphValue] of array(
       run.glyphs,
       id,

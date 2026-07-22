@@ -38,7 +38,13 @@
             "metrics": {
               "ascender": 1069,
               "descender": -293,
-              "lineGap": 0
+              "lineGap": 0,
+              "decorationMetrics": {
+                "underlinePosition": -100,
+                "underlineThickness": 50,
+                "strikethroughPosition": 322,
+                "strikethroughThickness": 50
+              }
             },
             "variations": {},
             "glyphs": [
@@ -175,7 +181,13 @@
             "metrics": {
               "ascender": 1069,
               "descender": -293,
-              "lineGap": 0
+              "lineGap": 0,
+              "decorationMetrics": {
+                "underlinePosition": -100,
+                "underlineThickness": 50,
+                "strikethroughPosition": 322,
+                "strikethroughThickness": 50
+              }
             },
             "variations": {},
             "glyphs": [
@@ -224,7 +236,13 @@
             "metrics": {
               "ascender": 1374,
               "descender": -738,
-              "lineGap": 0
+              "lineGap": 0,
+              "decorationMetrics": {
+                "underlinePosition": -100,
+                "underlineThickness": 50,
+                "strikethroughPosition": 322,
+                "strikethroughThickness": 50
+              }
             },
             "variations": {},
             "glyphs": [
@@ -504,7 +522,13 @@
             "metrics": {
               "ascender": 896,
               "descender": -408,
-              "lineGap": 0
+              "lineGap": 0,
+              "decorationMetrics": {
+                "underlinePosition": -100,
+                "underlineThickness": 50,
+                "strikethroughPosition": 322,
+                "strikethroughThickness": 50
+              }
             },
             "variations": {},
             "glyphs": [
@@ -663,7 +687,13 @@
             "metrics": {
               "ascender": 1069,
               "descender": -293,
-              "lineGap": 0
+              "lineGap": 0,
+              "decorationMetrics": {
+                "underlinePosition": -100,
+                "underlineThickness": 50,
+                "strikethroughPosition": 322,
+                "strikethroughThickness": 50
+              }
             },
             "variations": {},
             "glyphs": [
@@ -844,7 +874,13 @@
             "metrics": {
               "ascender": 1069,
               "descender": -630,
-              "lineGap": 0
+              "lineGap": 0,
+              "decorationMetrics": {
+                "underlinePosition": -100,
+                "underlineThickness": 50,
+                "strikethroughPosition": 322,
+                "strikethroughThickness": 50
+              }
             },
             "variations": {},
             "glyphs": [
@@ -893,7 +929,13 @@
             "metrics": {
               "ascender": 1069,
               "descender": -293,
-              "lineGap": 0
+              "lineGap": 0,
+              "decorationMetrics": {
+                "underlinePosition": -100,
+                "underlineThickness": 50,
+                "strikethroughPosition": 322,
+                "strikethroughThickness": 50
+              }
             },
             "variations": {},
             "glyphs": [
@@ -936,7 +978,13 @@
             "metrics": {
               "ascender": 1069,
               "descender": -630,
-              "lineGap": 0
+              "lineGap": 0,
+              "decorationMetrics": {
+                "underlinePosition": -100,
+                "underlineThickness": 50,
+                "strikethroughPosition": 322,
+                "strikethroughThickness": 50
+              }
             },
             "variations": {},
             "glyphs": [
@@ -989,7 +1037,13 @@
             "metrics": {
               "ascender": 1069,
               "descender": -293,
-              "lineGap": 0
+              "lineGap": 0,
+              "decorationMetrics": {
+                "underlinePosition": -100,
+                "underlineThickness": 50,
+                "strikethroughPosition": 322,
+                "strikethroughThickness": 50
+              }
             },
             "variations": {
               "wdth": 75,
@@ -1074,7 +1128,13 @@
             "metrics": {
               "ascender": 1069,
               "descender": -293,
-              "lineGap": 0
+              "lineGap": 0,
+              "decorationMetrics": {
+                "underlinePosition": -100,
+                "underlineThickness": 50,
+                "strikethroughPosition": 322,
+                "strikethroughThickness": 50
+              }
             },
             "variations": {},
             "glyphs": [
@@ -1183,7 +1243,13 @@
             "metrics": {
               "ascender": 1374,
               "descender": -738,
-              "lineGap": 0
+              "lineGap": 0,
+              "decorationMetrics": {
+                "underlinePosition": -100,
+                "underlineThickness": 50,
+                "strikethroughPosition": 322,
+                "strikethroughThickness": 50
+              }
             },
             "variations": {},
             "glyphs": [

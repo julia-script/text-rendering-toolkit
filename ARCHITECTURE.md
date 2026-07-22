@@ -55,6 +55,19 @@ slots, and carries paint as normalized instance RGBA. `PreparedText`,
 unchanged. COLR v1 paint graphs, embedded bitmaps, SVG documents, and implicit
 browser-style emoji font reordering remain unsupported.
 
+Renderer-neutral text decorations are now public layout behavior. Font handles
+expose bounded default-instance underline/strikethrough facts; the font-aware
+layout path scales those facts once, and `LayoutResult` retains only compact
+source ranges plus a default. `deriveTextDecorations()` maps independent styled
+UTF-16 ranges through wrapping, bidi placement, stable per-span automatic or
+numeric metrics, clipping, and optional bounds-only skip ink into immutable
+analytic segments. SVG, Canvas, native, or Three consumers can render those
+numbers without font access or reshaping, and a renderer that already owns
+outlines or SDF coverage may refine automatic skip ink against exact glyph ink.
+Glyph outline and one drop shadow remain a separate
+Three-only production follow-up; COLR composed-silhouette outline and shadow
+remain deferred.
+
 ## Current responsibility map
 
 ```mermaid
@@ -270,6 +283,7 @@ The exact TypeScript names are provisional; the separation is not.
 | `LayoutResult` | `text-layout` | renderers, editors, direct users | positioned glyph references, font keys, font-unit scales, bounds, line data, carets | outlines, font handles, SDF pixels, atlas indices, Three objects |
 | `GlyphOutline` | `font` | `sdf`, renderer orchestration, direct users | path commands and view box for one glyph reference | placement, SDF pixels, atlas state |
 | `ColorGlyphLayer` | `font` | renderer orchestration, direct users | ordered outline glyph IDs plus palette-zero RGBA or current foreground | placement, SDF pixels, COLR table offsets, renderer objects |
+| `DecorationSegment` | `text-layout` | renderers, editors, direct users | visual line interval, decoration kind/style/color, metric-resolved position, thickness and phase | shaping inputs, outlines, SDF pixels, renderer geometry |
 | `Outline` | any producer | `sdf` | path commands and view box | font tables, text, placement |
 | `SdfBitmap` | `sdf` | renderer, direct users | one-channel pixels and encoding metadata | canvas and GPU handles |
 | `RendererAtlas` | renderer | renderer internals | RGBA bytes, slot metadata, dirty regions, cache and Three texture | public SDF API and parser details |
@@ -473,7 +487,7 @@ support remain unproven.
 
 1. A lower-level package cannot import a higher-level package.
 2. Only `three-webgpu-text` may import `three`.
-3. Only `text-layout` decides line placement and caret geometry.
+3. Only `text-layout` decides line placement, caret geometry, and visual fragmentation of source-ranged line decorations.
 4. Only `sdf` defines SDF encoding; only the renderer decodes it in TSL.
 5. Applications own font-byte acquisition. Any future URL/cache helper and workers are optional adapters around pure operations, never prerequisites or core-package behavior.
 6. Global mutable configuration and process-wide singleton atlases are prohibited.
@@ -650,7 +664,7 @@ flowchart LR
     Resources --> Three["Three WebGPU composition"]
 ```
 
-The production follow-up should add one narrow lazy COLR v0/CPAL operation to
+Production adds one narrow lazy COLR v0/CPAL operation to
 the caller-owned font handle. The font package owns table validation and the
 foreground-color sentinel but does not expose arbitrary table bytes. Layout,
 measurement, carets, selection, and the SDF package stay unchanged. The Three
@@ -663,6 +677,53 @@ reports layer/palette presence, but enabling layer, paint, bitmap, and SVG
 operations adds 31,884 bytes to the current WASM. COLR v1, sbix, and SVG remain
 deliberately unsupported until their separate complexity is justified. See the
 [color-glyph boundary report](docs/validation/color-glyph-boundary.md).
+
+### Separate line decorations from glyph paint
+
+The browser-text decoration experiment validates two independent boundaries:
+
+```mermaid
+flowchart LR
+    Span["Styled UTF-16 decoration range"] --> Layout["layout: wrap, bidi, metrics"]
+    Layout --> Segment["immutable analytic line segments"]
+    Segment --> Any["Canvas / SVG / native / Three"]
+
+    Glyph["Lazy ordinary glyph outline"] --> SDF["one cached SDF and atlas slot"]
+    SDF --> Paint["Three fill + outline + one shadow"]
+```
+
+Underline and strikethrough are post-layout analytic results. The production
+contract resolves independent styled ranges after wrapping and bidi placement,
+retains compact underline/strikethrough metrics with numeric overrides, and
+emits solid, dotted, or wavy analytic segments. Decoration color is independent
+from shaping and glyph fill, with a current-foreground convenience. Pattern
+phase resets for each visual fragment and remains continuous across horizontal
+clipping and optional bounds-only ink cuts. Automatic metrics resolve once from
+the first effective range of each decoration span, preventing fallback fonts
+and color emoji from creating vertical steps. The only public operation is the
+pure synchronous `deriveTextDecorations()` helper; it returns frozen segments
+and aggregate bounds but no renderer tessellation. Exact outline-aware cutting
+remains renderer-owned—the SVG inspector demonstrates it from already-owned
+outlines—so default layout does not require eager glyph outlines. Default
+variable-font metrics do not apply MVAR adjustments; numeric spans are the
+explicit correction path.
+
+Glyph outline and shadow are instead renderer paint. For ordinary SDF glyphs,
+Three can reuse one SDF and stable atlas slot for fill, an outline distance
+band, and one offset or softened shadow. Paint colors and controls remain
+appearance-only. Synchronization must reject before commit when outline or
+shadow extent plus one antialias pixel exceeds encoded atlas padding; it must
+not silently clamp or create color-specific SDF resources. Bounds expand for
+accepted paint and the existing local clip applies to the composed result.
+
+Renderer-neutral decorations can cross COLR v0 glyphs unchanged. Outline and
+shadow over the composed silhouette of a layered color glyph are explicitly
+deferred because independently painting each layer can expose internal seams.
+The accepted contracts, actual Apple Metal WebGPU evidence, limits, and two
+production scopes are recorded in the
+[browser-text decoration report](docs/validation/browser-text-decoration-boundary.md).
+Production font/layout conformance is recorded in the
+[renderer-neutral decoration report](docs/validation/renderer-neutral-text-decorations.md).
 
 ### Reuse MIT sources with explicit provenance
 

@@ -9,6 +9,8 @@ const documents = [
   'docs/validation/unicode-line-breaking.md',
   'docs/validation/three-webgpu-text-core.md',
   'docs/validation/lit-text-shadow-seam.md',
+  'docs/validation/browser-text-decoration-boundary.md',
+  'docs/validation/renderer-neutral-text-decorations.md',
 ]
 const appRoot = resolve(import.meta.dirname, '..')
 const repositoryRoot = resolve(appRoot, '../..')

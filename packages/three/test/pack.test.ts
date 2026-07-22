@@ -31,16 +31,26 @@ function pack(root: string, destination: string): string {
 test('ships public ESM runtime and declarations to a clean consumer', () => {
   const temporary = mkdtempSync(resolve(tmpdir(), 'webgpu-text-three-pack-'))
   try {
-    const archives = ['font', 'layout', 'sdf', 'three'].map((name) =>
+    const packageNames = ['font', 'layout', 'sdf', 'three'] as const
+    const archives = packageNames.map((name) =>
       pack(resolve(workspaceRoot, 'packages', name), resolve(temporary, name)),
+    )
+    const dependencies = Object.fromEntries(
+      packageNames.map((name, index) => [`@webgpu-text/${name}`, `file:${archives[index]}`]),
     )
     const consumer = resolve(temporary, 'consumer')
     mkdirSync(consumer)
     writeFileSync(
       resolve(consumer, 'package.json'),
-      JSON.stringify({ private: true, type: 'module' }, null, 2),
+      JSON.stringify({ private: true, type: 'module', dependencies }, null, 2),
     )
-    execFileSync('npm', ['install', '--ignore-scripts', '--legacy-peer-deps', ...archives], {
+    writeFileSync(
+      resolve(consumer, 'pnpm-workspace.yaml'),
+      `packages:\n  - .\nautoInstallPeers: false\noverrides:\n${Object.entries(dependencies)
+        .map(([name, archive]) => `  '${name}': ${archive}`)
+        .join('\n')}\n`,
+    )
+    execFileSync('pnpm', ['install', '--ignore-scripts'], {
       cwd: consumer,
       stdio: 'pipe',
     })

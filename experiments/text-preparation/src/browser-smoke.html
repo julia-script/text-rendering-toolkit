@@ -8,7 +8,7 @@
   <body>
     <pre id="result">running</pre>
     <script type="module">
-      import { layoutText, prepareText } from './browser-entry.js'
+      import { deriveTextDecorations, layoutText, prepareText } from './browser-entry.js'
 
       const segmenter = new Intl.Segmenter('und', { granularity: 'grapheme' })
       const font = {
@@ -17,6 +17,12 @@
           ascender: 800,
           descender: -200,
           lineGap: 0,
+          decorationMetrics: {
+            underlinePosition: -100,
+            underlineThickness: 50,
+            strikethroughPosition: 300,
+            strikethroughThickness: 50,
+          },
           coverageCount: 1,
           axes: [],
         },
@@ -53,10 +59,20 @@
       }
       const prepared = prepareText(input)
       const layout = layoutText(input, new Map([['body', font]]))
+      const decorations = deriveTextDecorations(layout, [
+        {
+          start: 0,
+          end: input.text.length,
+          kind: 'underline',
+          style: 'wavy',
+          color: 'foreground',
+        },
+      ])
       const observation = {
         schemaVersion: prepared.schemaVersion,
         breakPositions: prepared.breakOpportunities.map(({ position }) => position),
         lineEnds: layout.lines.map(({ end }) => end),
+        decorationSegments: decorations.segments.length,
       }
       window.__webgpuTextLineBreakObservation = observation
       document.querySelector('#result').textContent = JSON.stringify(observation)

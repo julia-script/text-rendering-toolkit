@@ -31,7 +31,7 @@ it('ships a self-contained ESM package', () => {
       resolve(consumer, 'package.json'),
       JSON.stringify({ private: true, type: 'module' }, null, 2),
     )
-    execFileSync('npm', ['install', '--ignore-scripts', resolve(temporary, archive ?? '')], {
+    execFileSync('pnpm', ['add', '--ignore-scripts', resolve(temporary, archive ?? '')], {
       cwd: consumer,
       stdio: 'pipe',
     })
@@ -52,7 +52,13 @@ it('ships a self-contained ESM package', () => {
           const font = await loadFont(new Uint8Array(bytes.buffer, bytes.byteOffset, bytes.byteLength))
           const run = font.shape({ text: 'office', direction: 'ltr', script: 'Latn', language: 'en' })
           const outline = font.getOutline(run.glyphs[0].glyphId)
-          if (run.glyphs.length === 0 || outline.commands.length === 0) process.exit(1)
+          const metrics = font.facts.decorationMetrics
+          if (
+            run.glyphs.length === 0 ||
+            outline.commands.length === 0 ||
+            metrics.underlineThickness <= 0 ||
+            metrics.strikethroughThickness <= 0
+          ) process.exit(1)
           font.dispose()
 
           const colorBytes = await readFile(${JSON.stringify(colorFixture)})
@@ -68,7 +74,11 @@ it('ships a self-contained ESM package', () => {
             language: 'und',
           })
           const layers = colorFont.getColorLayers(colorRun.glyphs[0].glyphId)
-          if (!layers?.length || layers.some((layer) => colorFont.getOutline(layer.glyphId).commands.length === 0)) {
+          if (
+            !layers?.length ||
+            colorFont.facts.decorationMetrics.underlineThickness <= 0 ||
+            layers.some((layer) => colorFont.getOutline(layer.glyphId).commands.length === 0)
+          ) {
             process.exit(1)
           }
           colorFont.dispose()
