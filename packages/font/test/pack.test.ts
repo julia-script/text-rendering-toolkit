@@ -10,6 +10,10 @@ const fixture = resolve(
   packageRoot,
   '../../test-fixtures/fonts/harfbuzz-validation/NotoSans-wdth-wght.ttf',
 )
+const colorFixture = resolve(
+  packageRoot,
+  '../../test-fixtures/fonts/color-glyph-validation/noto-validation-colr-v0.ttf',
+)
 
 it('ships a self-contained ESM package', () => {
   const temporary = mkdtempSync(resolve(tmpdir(), 'webgpu-text-font-pack-'))
@@ -50,6 +54,24 @@ it('ships a self-contained ESM package', () => {
           const outline = font.getOutline(run.glyphs[0].glyphId)
           if (run.glyphs.length === 0 || outline.commands.length === 0) process.exit(1)
           font.dispose()
+
+          const colorBytes = await readFile(${JSON.stringify(colorFixture)})
+          const colorFont = await loadFont(new Uint8Array(
+            colorBytes.buffer,
+            colorBytes.byteOffset,
+            colorBytes.byteLength,
+          ))
+          const colorRun = colorFont.shape({
+            text: '😀',
+            direction: 'ltr',
+            script: 'Zyyy',
+            language: 'und',
+          })
+          const layers = colorFont.getColorLayers(colorRun.glyphs[0].glyphId)
+          if (!layers?.length || layers.some((layer) => colorFont.getOutline(layer.glyphId).commands.length === 0)) {
+            process.exit(1)
+          }
+          colorFont.dispose()
         `,
       ],
       { cwd: consumer, stdio: 'pipe' },

@@ -7,11 +7,14 @@ export {
 } from './errors.js'
 export { loadFont } from './font.js'
 export type {
+  ColorGlyphLayer,
+  ColorGlyphPaint,
   FontFacts,
   FontHandle,
   FontSource,
   GlyphBounds,
   GlyphOutline,
+  RgbaColor,
   ShapedGlyph,
   ShapedRun,
   ShapeInput,

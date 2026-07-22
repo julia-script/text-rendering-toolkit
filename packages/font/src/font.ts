@@ -5,6 +5,7 @@ import {
   InvalidShapingInputError,
 } from './errors.js'
 import { copyAndClassifyFont } from './input.js'
+import { ColorLayerReader } from './internal/color.js'
 import {
   HarfBuzzBlob,
   HarfBuzzBuffer,
@@ -14,6 +15,7 @@ import {
   type HarfBuzzGlyphExtents,
 } from './internal/harfbuzz.js'
 import {
+  type ColorGlyphLayer,
   type FontFacts,
   type FontHandle,
   type FontSource,
@@ -159,6 +161,7 @@ class FontHandleImplementation implements FontHandle {
   readonly #font: HarfBuzzFont
   readonly #buffer: HarfBuzzBuffer
   readonly #facts: FontFacts
+  readonly #colorLayers: ColorLayerReader
   readonly #axes: ReadonlyMap<string, VariationAxis>
   readonly #outlineCache = new Map<string, GlyphOutline>()
   #disposed = false
@@ -169,12 +172,14 @@ class FontHandleImplementation implements FontHandle {
     font: HarfBuzzFont,
     buffer: HarfBuzzBuffer,
     facts: FontFacts,
+    bytes: ArrayBuffer,
   ) {
     this.#blob = blob
     this.#face = face
     this.#font = font
     this.#buffer = buffer
     this.#facts = facts
+    this.#colorLayers = new ColorLayerReader(bytes)
     this.#axes = new Map(facts.axes.map((axis) => [axis.tag, axis]))
   }
 
@@ -286,10 +291,19 @@ class FontHandleImplementation implements FontHandle {
     return outline
   }
 
+  getColorLayers(glyphId: number): readonly ColorGlyphLayer[] | null {
+    this.#assertLive()
+    if (!Number.isInteger(glyphId) || glyphId < 0 || glyphId > 0xffffffff) {
+      throw new InvalidFontInputError('glyphId must be an unsigned 32-bit integer')
+    }
+    return this.#colorLayers.get(glyphId)
+  }
+
   dispose(): void {
     if (this.#disposed) return
     this.#disposed = true
     this.#outlineCache.clear()
+    this.#colorLayers.dispose()
     this.#buffer.destroy()
     this.#font.destroy()
     this.#face.destroy()
@@ -328,7 +342,7 @@ export async function loadFont(source: FontSource): Promise<FontHandle> {
       axes: Object.freeze(axes),
     })
     buffer = new HarfBuzzBuffer()
-    return new FontHandleImplementation(blob, face, font, buffer, facts)
+    return new FontHandleImplementation(blob, face, font, buffer, facts, bytes)
   } catch (error) {
     buffer?.destroy()
     font?.destroy()

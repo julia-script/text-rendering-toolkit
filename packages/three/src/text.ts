@@ -249,21 +249,23 @@ export class Text extends Mesh<ReturnType<typeof createGlyphGeometry>, TextMater
     const renderable = resources.glyphs
     const bounds = new Float32Array(renderable.length * 4)
     const slots = new Uint32Array(renderable.length)
-    const colors = new Uint8Array(renderable.length * 3)
+    const colors = new Uint8Array(renderable.length * 4)
     for (const [index, item] of renderable.entries()) {
       const cached = resources.atlas.glyphs.get(item.key)
       if (!cached || cached.slot === null || !cached.viewBox) {
-        throw invalid(`Atlas plan is missing glyph ${item.glyph.glyphId}`)
+        throw invalid(`Atlas plan is missing glyph ${item.outlineGlyphId}`)
       }
       bounds.set(quadBounds(item.glyph, cached.viewBox, item.glyph.fontUnitScale), index * 4)
       slots[index] = cached.slot
-      const color = styleColors.get(item.glyph.styleKey) ?? defaultColor
-      colors.set(
-        [color.r, color.g, color.b].map((component) =>
-          Math.round(Math.max(0, Math.min(1, component)) * 255),
-        ),
-        index * 3,
-      )
+      const foreground = styleColors.get(item.glyph.styleKey) ?? defaultColor
+      const color = item.paint === 'foreground' ? foreground : item.paint
+      const components =
+        color instanceof Color
+          ? [color.r, color.g, color.b].map((component) =>
+              Math.round(Math.max(0, Math.min(1, component)) * 255),
+            )
+          : [color.red, color.green, color.blue]
+      colors.set([...components, item.paint === 'foreground' ? 255 : item.paint.alpha], index * 4)
     }
     return {
       layout,

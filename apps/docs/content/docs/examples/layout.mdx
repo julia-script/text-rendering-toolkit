@@ -10,6 +10,10 @@ import { LayoutExample } from '@/components/examples/layout-example'
 This example fetches two font files in the application, gives their bytes to `loadFont()`, prepares
 the editable string, and supplies the resulting font registry to `layoutPreparedText()`.
 
-Nothing in this path imports Three.js or checks for WebGPU. Change the text and watch scripts,
-directions, fallback font keys, line assignments, and glyph positions update from the same public
-data a renderer would receive.
+Nothing in this path imports Three.js or checks for WebGPU. Change the text, width, or alignment and
+watch the line boxes, baselines, lazily requested outline bounds, scripts, directions, fallback font
+keys, and coordinates update from the same public data a renderer would receive.
+
+Try a narrow width with punctuation or Arabic text. Preparation remains font-neutral, while
+the later font-aware stage greedily selects the last exactly measured Unicode opportunity that fits
+and reshapes each accepted line fragment independently.

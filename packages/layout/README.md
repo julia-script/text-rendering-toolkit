@@ -45,13 +45,15 @@ const selection = getSelectionRects(result, { start: 0, end: 5 })
 const sameResult = layoutText(input, fonts)
 ```
 
-`prepareText()` performs only grapheme, bidi, script, style, and layout-policy
-analysis. Its deeply frozen `PreparedText` result contains JSON data, so it can
+`prepareText()` performs only grapheme, bidi, script, style, layout-policy, and
+default Unicode line-break analysis. Its schema-version-2, deeply frozen
+`PreparedText` result contains JSON data, including ordered UTF-16
+`breakOpportunities`, so it can
 be serialized, stored, or transferred and later reused with a structurally
 equivalent caller registry. `layoutPreparedText()` validates parsed values,
-selects the first registered font that covers each complete grapheme, shapes
-through HarfBuzz, scales font units once, and delegates to the same resolved
-layout core.
+selects the first registered font that covers each complete grapheme, measures
+the prepared opportunities, reshapes the exact fragments selected as lines,
+scales font units once, and delegates to the same resolved layout core.
 
 All named font keys must exist. Missing keys, missing grapheme coverage, invalid
 UTF-16/style boundaries, and invalid serialized values throw
@@ -59,9 +61,11 @@ UTF-16/style boundaries, and invalid serialized values throw
 where applicable. Neither operation fetches, discovers, caches globally,
 mutates, or disposes fonts.
 
-The first production policy pins `bidi-js@1.0.3` (Unicode 13.0.0 bidi data) and
-`unicode-script@1.2.0` (Unicode 17.0.0 Script/Script_Extensions data). Dependency
-upgrades require rerunning the canonical corpus.
+The production policy pins `bidi-js@1.0.3` (Unicode 13.0.0 bidi data),
+`unicode-script@1.2.0` (Unicode 17.0.0 Script/Script_Extensions data), and
+`linebreak@1.1.0` (Unicode 13.0.0 line-break data). The local adapter normalizes
+dependency output into project-owned immutable records. Dependency upgrades
+require rerunning the canonical corpus.
 
 ## Expert resolved-run usage
 
@@ -112,6 +116,13 @@ All source ranges are half-open JavaScript UTF-16 indices. Inputs are validated
 before layout and are never mutated. Invalid ranges, unresolved text, invalid
 bidi levels, non-finite measurements, and inconsistent glyph clusters throw
 `InvalidLayoutInputError`.
+
+Expert callers may add `breakOpportunities` using the exported structural
+`LineBreakOpportunity` type. When supplied, optional opportunities replace the
+legacy whitespace wrap candidates; required opportunities still split under
+`whiteSpace: 'nowrap'`. Omitting the field preserves the existing resolved-run
+whitespace policy. The resolved core remains pure and does not import
+`linebreak` or reshape fonts.
 
 ## Resolved-run boundary
 
@@ -164,8 +175,10 @@ and resolve only the outlines it needs from the caller-owned font registry.
 
 ## Supported policy
 
-- CRLF, CR, and LF hard breaks with original UTF-16 indices
-- normal whitespace wrapping, no-wrap overflow, and grapheme-safe
+- CRLF, CR, LF, NEL, vertical-tab, form-feed, line-separator, and
+  paragraph-separator hard breaks with original UTF-16 indices
+- default Unicode 13 line-break opportunities for raw text, exact reshaping at
+  selected boundaries, no-wrap overflow, and grapheme/cluster-safe
   `break-word` fallback
 - left, center, right, and eligible-whitespace justification
 - resolved bidi-level visual placement without reversing HarfBuzz's
@@ -184,11 +197,16 @@ glyph ID, variations, and `fontUnitScale`. Consequently `visibleBounds` may be
 available. Consumers that already own exact glyph bounds can supply them through
 `layoutResolvedText()`.
 
-Soft wrapping still uses the accepted whitespace policy rather than complete
-Unicode line breaking and does not reshape after a chosen break. Dictionary
-breaking, hyphenation, bidi caret affinity, incremental editing, worker
-adapters, font fetching, shared caches, and color-font policy remain follow-ups.
+The Unicode 13 algorithm is not complete browser CSS behavior. Dictionary
+segmentation for complex-context scripts, automatic hyphenation, locale and
+CSS `line-break`/`word-break` tailoring, newer Unicode line-break data, bidi
+caret affinity, incremental editing, worker adapters, font fetching, shared
+caches, and color-font policy remain follow-ups. Upstream documents roughly 50
+skipped cases among more than 7,600 conformance fixtures; see the third-party
+notice and validation record for the accepted evidence boundary.
 
 The normative layout and preparation evidence is documented in
 [`docs/validation/layout-policy.md`](../../docs/validation/layout-policy.md) and
-[`docs/validation/text-preparation-boundary.md`](../../docs/validation/text-preparation-boundary.md).
+[`docs/validation/text-preparation-boundary.md`](../../docs/validation/text-preparation-boundary.md),
+with Unicode opportunity and exact-composition evidence in
+[`docs/validation/unicode-line-breaking.md`](../../docs/validation/unicode-line-breaking.md).

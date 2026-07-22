@@ -37,3 +37,7 @@ Local modifications are confined to the non-exported compiled wrapper
 The HarfBuzz C/C++ source and WASM binary are unmodified. A future HarfBuzzjs
 release with equivalent direct-drawing and disposal APIs can replace this
 adapter behind the package's public conformance tests.
+
+## Noto Emoji validation fixtures
+
+The repository's color-font conformance tests use a pinned Noto Emoji SVG corpus from revision `b960563a023fbd1337227bf2a8a2d5a91889a333`, compiled reproducibly into small validation fonts. The source artwork is Apache-2.0 licensed. These fixtures are not included in the published package; their manifest, hashes, derivation, and license are recorded under `test-fixtures/fonts/color-glyph-validation/`.

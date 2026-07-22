@@ -30,6 +30,7 @@ export type {
   LayoutSelectionExpectation,
   LayoutWhiteSpace,
   LineBreakKind,
+  LineBreakOpportunity,
   ParagraphDirection,
   PositionedGlyph,
   PreparedSegment,

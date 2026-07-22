@@ -1,10 +1,12 @@
 import type { FontHandle } from '@webgpu-text/font'
 import { TextPreparationError } from './errors.js'
+import { isMandatoryBreakControl } from './internal/break-controls.js'
 import { layoutResolvedText } from './layout.js'
 import { prepareText, validatePreparedText } from './preparation.js'
 import type {
   FontRegistry,
   LayoutResult,
+  LineBreakOpportunity,
   PreparedSegment,
   PreparedText,
   PrepareTextInput,
@@ -21,6 +23,15 @@ interface SelectedSegment extends PreparedSegment {
   readonly fontKey: string
   readonly font: FontHandle
 }
+
+interface ContentSegment {
+  readonly start: number
+  readonly contentEnd: number
+  readonly end: number
+  readonly hard: boolean
+}
+
+type ShapeMemo = WeakMap<SelectedSegment, Map<string, ResolvedShapedRun>>
 
 function registry(fonts: FontRegistry): FontRegistry {
   if (!fonts || typeof fonts.get !== 'function') {
@@ -117,10 +128,15 @@ function scaledMetrics(font: FontHandle, scale: number): ResolvedRunMetrics {
   }
 }
 
-function shapeSegment(segment: SelectedSegment, text: string): ResolvedShapedRun {
+function shapeSegment(
+  segment: SelectedSegment,
+  text: string,
+  start = segment.start,
+  end = segment.end,
+): ResolvedShapedRun {
   const scale = segment.fontSize / segment.font.facts.unitsPerEm
   const shaped = segment.font.shape({
-    text: text.slice(segment.start, segment.end),
+    text: text.slice(start, end),
     direction: segment.direction,
     script: segment.script,
     language: segment.language,
@@ -129,8 +145,8 @@ function shapeSegment(segment: SelectedSegment, text: string): ResolvedShapedRun
   })
   const glyphs: ResolvedGlyph[] = shaped.glyphs.map((glyph) => ({
     glyphId: glyph.glyphId,
-    start: segment.start + glyph.clusterStart,
-    end: segment.start + glyph.clusterEnd,
+    start: start + glyph.clusterStart,
+    end: start + glyph.clusterEnd,
     xAdvance: glyph.xAdvance * scale,
     yAdvance: glyph.yAdvance * scale,
     xOffset: glyph.xOffset * scale,
@@ -139,8 +155,8 @@ function shapeSegment(segment: SelectedSegment, text: string): ResolvedShapedRun
     bounds: null,
   }))
   return {
-    start: segment.start,
-    end: segment.end,
+    start,
+    end,
     direction: segment.direction,
     bidiLevel: segment.bidiLevel,
     script: segment.script,
@@ -153,6 +169,231 @@ function shapeSegment(segment: SelectedSegment, text: string): ResolvedShapedRun
     variations: shaped.variations,
     glyphs,
   }
+}
+
+function memoizedShape(
+  segment: SelectedSegment,
+  text: string,
+  start: number,
+  end: number,
+  memo: ShapeMemo,
+): ResolvedShapedRun {
+  let fragments = memo.get(segment)
+  if (!fragments) {
+    fragments = new Map()
+    memo.set(segment, fragments)
+  }
+  const key = `${start}:${end}`
+  let shaped = fragments.get(key)
+  if (!shaped) {
+    shaped = shapeSegment(segment, text, start, end)
+    fragments.set(key, shaped)
+  }
+  return shaped
+}
+
+function shapeRange(
+  selected: readonly SelectedSegment[],
+  text: string,
+  start: number,
+  end: number,
+  memo: ShapeMemo,
+): readonly ResolvedShapedRun[] {
+  const runs: ResolvedShapedRun[] = []
+  for (const segment of selected) {
+    const fragmentStart = Math.max(start, segment.start)
+    const fragmentEnd = Math.min(end, segment.end)
+    if (fragmentStart < fragmentEnd) {
+      runs.push(memoizedShape(segment, text, fragmentStart, fragmentEnd, memo))
+    }
+  }
+  return runs
+}
+
+function contentSegments(text: string): readonly ContentSegment[] {
+  const segments: ContentSegment[] = []
+  let start = 0
+  for (let index = 0; index < text.length; index += 1) {
+    const character = text[index]
+    if (!character || !isMandatoryBreakControl(character)) continue
+    const length = character === '\r' && text[index + 1] === '\n' ? 2 : 1
+    segments.push({ start, contentEnd: index, end: index + length, hard: true })
+    index += length - 1
+    start = index + 1
+  }
+  segments.push({ start, contentEnd: text.length, end: text.length, hard: false })
+  return segments
+}
+
+function shapedBoundaries(text: string, runs: readonly ResolvedShapedRun[]): ReadonlySet<number> {
+  const boundaries = new Set<number>([0, text.length])
+  for (const run of runs) {
+    boundaries.add(run.start)
+    boundaries.add(run.end)
+    for (const glyph of run.glyphs) {
+      boundaries.add(glyph.start)
+      boundaries.add(glyph.end)
+    }
+  }
+  for (const segment of contentSegments(text)) {
+    boundaries.add(segment.start)
+    boundaries.add(segment.contentEnd)
+    boundaries.add(segment.end)
+  }
+  return boundaries
+}
+
+function exactContentWidth(
+  text: string,
+  runs: readonly ResolvedShapedRun[],
+  letterSpacing: number,
+): number {
+  const grouped = new Map<string, { start: number; end: number; advance: number }>()
+  for (const run of runs) {
+    for (const glyph of run.glyphs) {
+      const key = `${glyph.start}:${glyph.end}`
+      const cluster = grouped.get(key) ?? { start: glyph.start, end: glyph.end, advance: 0 }
+      cluster.advance += glyph.xAdvance
+      grouped.set(key, cluster)
+    }
+  }
+  const clusters = [...grouped.values()].sort(
+    (left, right) => left.start - right.start || left.end - right.end,
+  )
+  let contentEnd = clusters.length
+  while (
+    contentEnd > 0 &&
+    /^\s+$/u.test(text.slice(clusters[contentEnd - 1]?.start, clusters[contentEnd - 1]?.end))
+  ) {
+    contentEnd -= 1
+  }
+  return clusters
+    .slice(0, contentEnd)
+    .reduce(
+      (width, cluster, index) =>
+        width + cluster.advance + (index + 1 < contentEnd ? letterSpacing : 0),
+      0,
+    )
+}
+
+function finalRuns(
+  selected: readonly SelectedSegment[],
+  text: string,
+  breaks: ReadonlySet<number>,
+  memo: ShapeMemo,
+): readonly ResolvedShapedRun[] {
+  return selected.flatMap((segment) => {
+    const cuts = [
+      segment.start,
+      ...[...breaks].filter((position) => segment.start < position && position < segment.end),
+      segment.end,
+    ].sort((left, right) => left - right)
+    return cuts
+      .slice(0, -1)
+      .map((start, index) => memoizedShape(segment, text, start, cuts[index + 1] as number, memo))
+  })
+}
+
+function selectExactBreaks(
+  prepared: PreparedText,
+  selected: readonly SelectedSegment[],
+  provisionalRuns: readonly ResolvedShapedRun[],
+  provisionalLines: LayoutResult['lines'],
+  memo: ShapeMemo,
+): ReadonlySet<number> {
+  const selectedBreaks = new Set<number>()
+  if (prepared.layout.maxWidth === null || prepared.layout.whiteSpace === 'nowrap') {
+    return selectedBreaks
+  }
+
+  const fullShapeBoundaries = shapedBoundaries(prepared.text, provisionalRuns)
+  const graphemes = new Set<number>([0, prepared.text.length])
+  for (const grapheme of segmenter.segment(prepared.text)) {
+    graphemes.add(grapheme.index)
+    graphemes.add(grapheme.index + grapheme.segment.length)
+  }
+  const widthMemo = new Map<string, number>()
+  const fits = (start: number, end: number, lineIndex: number): boolean => {
+    const key = `${start}:${end}`
+    let width = widthMemo.get(key)
+    if (width === undefined) {
+      width = exactContentWidth(
+        prepared.text,
+        shapeRange(selected, prepared.text, start, end, memo),
+        prepared.layout.letterSpacing,
+      )
+      widthMemo.set(key, width)
+    }
+    const indent = lineIndex === 0 ? prepared.layout.textIndent : 0
+    return indent + width <= (prepared.layout.maxWidth as number)
+  }
+
+  let lineIndex = 0
+  for (const content of contentSegments(prepared.text)) {
+    let lineStart = content.start
+    while (lineStart < content.contentEnd) {
+      const candidates = prepared.breakOpportunities
+        .filter(
+          (opportunity) =>
+            !opportunity.required &&
+            opportunity.position > lineStart &&
+            opportunity.position <= content.contentEnd,
+        )
+        .map((opportunity) => opportunity.position)
+      if (candidates.at(-1) !== content.contentEnd) candidates.push(content.contentEnd)
+
+      const provisionalLine = provisionalLines.find((line) => line.start === lineStart)
+      let candidateIndex = provisionalLine
+        ? Math.max(
+            0,
+            candidates.findLastIndex((position) => position <= provisionalLine.end),
+          )
+        : 0
+      let accepted = -1
+      if (fits(lineStart, candidates[candidateIndex] as number, lineIndex)) {
+        accepted = candidateIndex
+        while (
+          accepted + 1 < candidates.length &&
+          fits(lineStart, candidates[accepted + 1] as number, lineIndex)
+        ) {
+          accepted += 1
+        }
+      } else {
+        while (candidateIndex >= 0) {
+          if (fits(lineStart, candidates[candidateIndex] as number, lineIndex)) {
+            accepted = candidateIndex
+            break
+          }
+          candidateIndex -= 1
+        }
+      }
+
+      let breakPosition = accepted >= 0 ? (candidates[accepted] as number) : content.contentEnd
+      if (accepted < 0 && prepared.layout.overflowWrap === 'break-word') {
+        const emergency = [...graphemes]
+          .filter(
+            (position) =>
+              position > lineStart &&
+              position < content.contentEnd &&
+              fullShapeBoundaries.has(position),
+          )
+          .sort((left, right) => left - right)
+        let emergencyFit = -1
+        for (const position of emergency) {
+          if (!fits(lineStart, position, lineIndex)) break
+          emergencyFit = position
+        }
+        breakPosition = emergencyFit >= 0 ? emergencyFit : (emergency[0] ?? content.contentEnd)
+      }
+
+      if (breakPosition >= content.contentEnd) break
+      selectedBreaks.add(breakPosition)
+      lineStart = breakPosition
+      lineIndex += 1
+    }
+    if (content.hard) lineIndex += 1
+  }
+  return selectedBreaks
 }
 
 function defaultMetrics(
@@ -168,16 +409,45 @@ function defaultMetrics(
 export function layoutPreparedText(prepared: PreparedText, fonts: FontRegistry): LayoutResult {
   const validated = validatePreparedText(prepared)
   const fontRegistry = registry(fonts)
-  const runs = selectedSegments(validated, fontRegistry).map((segment) =>
-    shapeSegment(segment, validated.text),
+  const selected = selectedSegments(validated, fontRegistry)
+  const memo: ShapeMemo = new WeakMap()
+  const provisionalRuns = selected.map((segment) =>
+    memoizedShape(segment, validated.text, segment.start, segment.end, memo),
   )
-  return layoutResolvedText({
+  const metrics = defaultMetrics(validated.defaultStyle, fontRegistry, validated.text.length)
+  const base = {
     text: validated.text,
     paragraphLevel:
       validated.segments[0]?.paragraphLevel ?? (validated.paragraphDirection === 'rtl' ? 1 : 0),
-    defaultMetrics: defaultMetrics(validated.defaultStyle, fontRegistry, validated.text.length),
+    defaultMetrics: metrics,
     ...validated.layout,
-    runs,
+  }
+  const provisionalBoundaries = shapedBoundaries(validated.text, provisionalRuns)
+  const provisionalOpportunities = validated.breakOpportunities.filter(
+    (opportunity) => opportunity.required || provisionalBoundaries.has(opportunity.position),
+  )
+  const provisional = layoutResolvedText({
+    ...base,
+    runs: provisionalRuns,
+    breakOpportunities: provisionalOpportunities,
+  })
+  const selectedBreaks = selectExactBreaks(
+    validated,
+    selected,
+    provisionalRuns,
+    provisional.lines,
+    memo,
+  )
+  const finalOpportunities: readonly LineBreakOpportunity[] = validated.breakOpportunities.filter(
+    (opportunity) =>
+      opportunity.required ||
+      opportunity.position === validated.text.length ||
+      selectedBreaks.has(opportunity.position),
+  )
+  return layoutResolvedText({
+    ...base,
+    runs: finalRuns(selected, validated.text, selectedBreaks, memo),
+    breakOpportunities: finalOpportunities,
   })
 }
 

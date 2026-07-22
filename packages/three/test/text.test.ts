@@ -51,7 +51,9 @@ describe('public Text lifecycle', () => {
     expect(text.layoutResult).toBe(latest)
     expect(text.geometry.instanceCount).toBe(2)
     expect(outline).toHaveBeenCalledTimes(1)
-    expect([...text.geometry.getAttribute('glyphColor').array].slice(0, 3)).toEqual([255, 0, 0])
+    expect([...text.geometry.getAttribute('glyphColor').array].slice(0, 4)).toEqual([
+      255, 0, 0, 255,
+    ])
 
     await text.sync()
     expect(outline).toHaveBeenCalledTimes(1)
@@ -59,10 +61,110 @@ describe('public Text lifecycle', () => {
     text.opacity = 0.25
     text.clipRect = null
     await text.sync()
-    expect([...text.geometry.getAttribute('glyphColor').array].slice(0, 3)).toEqual([0, 255, 0])
+    expect([...text.geometry.getAttribute('glyphColor').array].slice(0, 4)).toEqual([
+      0, 255, 0, 255,
+    ])
     text.layout = resolvedLayout('')
     await text.sync()
     expect(text.geometry.instanceCount).toBe(0)
+    text.dispose()
+  })
+
+  test('expands ordered color layers at the base placement with palette and foreground RGBA', async () => {
+    const outline = vi.fn()
+    const colorLayers = vi.fn()
+    const handle = font({
+      colorLayers: [
+        { glyphId: 10, color: { red: 12, green: 34, blue: 56, alpha: 128 } },
+        { glyphId: 11, color: 'foreground' },
+      ],
+      onOutline: outline,
+      onColorLayers: colorLayers,
+    })
+    const layout = resolvedLayout('A', { glyphIds: [7], styleKey: 'accent' })
+    const text = new Text({
+      layout,
+      fonts: new Map([['font', handle]]),
+      styleColors: { accent: 0x00ff00 },
+      sdfSize: 16,
+    })
+    await text.sync()
+
+    expect(text.layoutResult).toBe(layout)
+    expect(text.layoutResult?.glyphs).toHaveLength(1)
+    expect(text.geometry.instanceCount).toBe(2)
+    expect(outline.mock.calls.map(([glyphId]) => glyphId)).toEqual([10, 11])
+    expect(colorLayers).toHaveBeenCalledOnce()
+    const bounds = [...text.geometry.getAttribute('glyphBounds').array]
+    expect(bounds.slice(0, 4)).toEqual(bounds.slice(4, 8))
+    expect([...text.geometry.getAttribute('glyphColor').array].slice(0, 8)).toEqual([
+      12, 34, 56, 128, 0, 255, 0, 255,
+    ])
+
+    text.styleColors = { accent: 0x0000ff }
+    await text.sync()
+    expect(outline).toHaveBeenCalledTimes(2)
+    expect(colorLayers).toHaveBeenCalledOnce()
+    expect([...text.geometry.getAttribute('glyphColor').array].slice(0, 8)).toEqual([
+      12, 34, 56, 128, 0, 0, 255, 255,
+    ])
+    text.dispose()
+  })
+
+  test('shares layer lookup, outlines, and atlas slots across repeated color glyphs', async () => {
+    const outline = vi.fn()
+    const colorLayers = vi.fn()
+    const handle = font({
+      colorLayers: [
+        { glyphId: 10, color: { red: 255, green: 0, blue: 0, alpha: 255 } },
+        { glyphId: 11, color: { red: 0, green: 0, blue: 255, alpha: 255 } },
+      ],
+      onOutline: outline,
+      onColorLayers: colorLayers,
+    })
+    const resources = new TextResources({ sdfSize: 16 })
+    const fonts = new Map([['font', handle]])
+    const first = new Text({
+      layout: resolvedLayout('AA', { glyphIds: [7, 7] }),
+      fonts,
+      resources,
+    })
+    const second = new Text({ layout: resolvedLayout('A', { glyphIds: [7] }), fonts, resources })
+    await first.sync()
+    await second.sync()
+
+    expect(colorLayers).toHaveBeenCalledOnce()
+    expect(outline.mock.calls.map(([glyphId]) => glyphId)).toEqual([10, 11])
+    expect([...first.geometry.getAttribute('glyphSlot').array].slice(0, 4)).toEqual([0, 1, 0, 1])
+    expect([...second.geometry.getAttribute('glyphSlot').array].slice(0, 2)).toEqual([0, 1])
+    first.dispose()
+    second.dispose()
+    resources.dispose()
+  })
+
+  test('rejects malformed color layers atomically and permits recovery', async () => {
+    let malformed = false
+    const handle = {
+      getOutline: () => rectangleOutline,
+      getColorLayers(glyphId: number) {
+        if (glyphId === 2 && malformed) return []
+        return null
+      },
+    }
+    const initial = resolvedLayout('A', { glyphIds: [1] })
+    const text = new Text({ layout: initial, fonts: new Map([['font', handle]]), sdfSize: 16 })
+    await text.sync()
+    const priorBounds = [...text.geometry.getAttribute('glyphBounds').array]
+
+    malformed = true
+    text.layout = resolvedLayout('B', { glyphIds: [2] })
+    await expect(text.sync()).rejects.toThrow('non-empty array or null')
+    expect(text.layoutResult).toBe(initial)
+    expect([...text.geometry.getAttribute('glyphBounds').array]).toEqual(priorBounds)
+
+    malformed = false
+    await text.sync()
+    expect(text.layoutResult).toBe(text.layout)
     text.dispose()
   })
 
@@ -221,8 +323,12 @@ describe('public Text lifecycle', () => {
     expect(second.layoutResult).toBe(secondLayout)
     expect([...first.geometry.getAttribute('glyphSlot').array].slice(0, 2)).toEqual([0, 0])
     expect([...second.geometry.getAttribute('glyphSlot').array].slice(0, 1)).toEqual([0])
-    expect([...first.geometry.getAttribute('glyphColor').array].slice(0, 3)).toEqual([255, 0, 0])
-    expect([...second.geometry.getAttribute('glyphColor').array].slice(0, 3)).toEqual([0, 255, 0])
+    expect([...first.geometry.getAttribute('glyphColor').array].slice(0, 4)).toEqual([
+      255, 0, 0, 255,
+    ])
+    expect([...second.geometry.getAttribute('glyphColor').array].slice(0, 4)).toEqual([
+      0, 255, 0, 255,
+    ])
     first.dispose()
     second.dispose()
     resources.dispose()

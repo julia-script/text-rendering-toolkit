@@ -4,7 +4,7 @@ import {
   type ResolvedLayoutInput,
   type ResolvedShapedRun,
 } from '@webgpu-text/layout'
-import type { TextFont, TextGlyphOutline } from '../src/index.js'
+import type { TextColorGlyphLayer, TextFont, TextGlyphOutline } from '../src/index.js'
 
 export const rectangleOutline: TextGlyphOutline = {
   commands: Uint8Array.from([0, 1, 1, 1, 4]),
@@ -22,6 +22,8 @@ export function font(
   options: {
     readonly outline?: TextGlyphOutline
     readonly onOutline?: (glyphId: number) => void
+    readonly colorLayers?: readonly TextColorGlyphLayer[] | null
+    readonly onColorLayers?: (glyphId: number) => void
   } = {},
 ): TextFont {
   return {
@@ -29,6 +31,14 @@ export function font(
       options.onOutline?.(glyphId)
       return options.outline ?? rectangleOutline
     },
+    ...(options.colorLayers !== undefined
+      ? {
+          getColorLayers(glyphId: number) {
+            options.onColorLayers?.(glyphId)
+            return options.colorLayers ?? null
+          },
+        }
+      : {}),
   }
 }
 

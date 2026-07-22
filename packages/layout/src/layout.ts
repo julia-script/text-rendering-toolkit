@@ -1,4 +1,5 @@
 import { InvalidLayoutInputError } from './errors.js'
+import { isMandatoryBreakControl, mandatoryLineBreakBoundaries } from './internal/break-controls.js'
 import type {
   CaretStop,
   HorizontalAnchor,
@@ -141,6 +142,40 @@ function validateInput(input: ResolvedLayoutInput): void {
   validAnchor(input.anchorX, 'anchorX')
   validAnchor(input.anchorY, 'anchorY')
 
+  if (input.breakOpportunities !== undefined) {
+    if (!Array.isArray(input.breakOpportunities)) invalid('breakOpportunities must be an array')
+    const boundaries = graphemeBoundaries(input.text)
+    const required = mandatoryLineBreakBoundaries(input.text)
+    let previous = -1
+    for (const [index, opportunity] of input.breakOpportunities.entries()) {
+      if (
+        !opportunity ||
+        !Number.isInteger(opportunity.position) ||
+        !boundaries.has(opportunity.position)
+      ) {
+        invalid(`breakOpportunities[${index}].position must be a grapheme boundary`)
+      }
+      if (opportunity.position <= previous) {
+        invalid('breakOpportunities must be ordered and unique')
+      }
+      if (typeof opportunity.required !== 'boolean') {
+        invalid(`breakOpportunities[${index}].required must be boolean`)
+      }
+      if (opportunity.required !== required.has(opportunity.position)) {
+        invalid(`breakOpportunities[${index}].required does not match the source control`)
+      }
+      previous = opportunity.position
+    }
+    if (input.breakOpportunities.at(-1)?.position !== input.text.length) {
+      invalid('breakOpportunities must contain one terminal boundary')
+    }
+    for (const position of required) {
+      if (!input.breakOpportunities.some((opportunity) => opportunity.position === position)) {
+        invalid(`breakOpportunities are missing required boundary ${position}`)
+      }
+    }
+  }
+
   const covered = new Uint8Array(input.text.length)
   let previousRunEnd = 0
   for (const [runIndex, run] of input.runs.entries()) {
@@ -183,7 +218,7 @@ function validateInput(input: ResolvedLayoutInput): void {
       if (glyph.start === glyph.end || glyph.start < run.start || glyph.end > run.end) {
         invalid(`runs[${runIndex}].glyphs[${glyphIndex}] is outside its run`)
       }
-      if (/\r|\n/u.test(input.text.slice(glyph.start, glyph.end))) {
+      if ([...input.text.slice(glyph.start, glyph.end)].some(isMandatoryBreakControl)) {
         invalid(`runs[${runIndex}].glyphs[${glyphIndex}] crosses a hard break`)
       }
       if (!Number.isInteger(glyph.glyphId) || glyph.glyphId < 0) {
@@ -209,7 +244,7 @@ function validateInput(input: ResolvedLayoutInput): void {
 
   for (let index = 0; index < input.text.length; index++) {
     const character = input.text[index]
-    if (character !== '\r' && character !== '\n' && covered[index] === 0) {
+    if (character && !isMandatoryBreakControl(character) && covered[index] === 0) {
       invalid(`source offset ${index} is unresolved`)
     }
   }
@@ -277,9 +312,9 @@ function hardSegments(text: string): HardSegment[] {
   const segments: HardSegment[] = []
   let start = 0
   for (let index = 0; index < text.length; index++) {
-    const code = text.charCodeAt(index)
-    if (code !== 0x0a && code !== 0x0d) continue
-    const breakLength = code === 0x0d && text.charCodeAt(index + 1) === 0x0a ? 2 : 1
+    const character = text[index]
+    if (!character || !isMandatoryBreakControl(character)) continue
+    const breakLength = character === '\r' && text[index + 1] === '\n' ? 2 : 1
     segments.push({ start, contentEnd: index, end: index + breakLength, hard: true })
     index += breakLength - 1
     start = index + 1
@@ -353,6 +388,13 @@ function createLine(
 
 function constructLines(input: ResolvedLayoutInput, clusters: readonly Cluster[]): LineWork[] {
   const lines: LineWork[] = []
+  const explicit = input.breakOpportunities
+    ? new Set(
+        input.breakOpportunities
+          .filter((opportunity) => !opportunity.required)
+          .map((opportunity) => opportunity.position),
+      )
+    : undefined
   for (const segment of hardSegments(input.text)) {
     const segmentClusters = clusters.filter(
       (cluster) => cluster.start >= segment.start && cluster.end <= segment.contentEnd,
@@ -376,21 +418,30 @@ function constructLines(input: ResolvedLayoutInput, clusters: readonly Cluster[]
     while (cursor < segmentClusters.length) {
       const indent = lines.length === 0 ? input.textIndent : 0
       let runningWidth = indent
-      let lastWhitespaceBreak = -1
+      let lastAllowedBreak = -1
       let breakAt = -1
       for (let index = cursor; index < segmentClusters.length; index++) {
         if (index > cursor) runningWidth += input.letterSpacing
         const cluster = segmentClusters[index] as Cluster
         runningWidth += cluster.advance
-        if (cluster.whitespace) lastWhitespaceBreak = index + 1
+        const currentAllowed = explicit ? explicit.has(cluster.end) : cluster.whitespace
+        if (!explicit && currentAllowed) lastAllowedBreak = index + 1
         if (
           input.maxWidth !== null &&
           input.whiteSpace !== 'nowrap' &&
           runningWidth > input.maxWidth &&
           index > cursor
         ) {
-          if (lastWhitespaceBreak > cursor) breakAt = lastWhitespaceBreak
+          if (lastAllowedBreak > cursor) breakAt = lastAllowedBreak
           else if (
+            explicit &&
+            currentAllowed &&
+            indent +
+              widths(segmentClusters.slice(cursor, index + 1), input.letterSpacing).contentWidth <=
+              input.maxWidth
+          ) {
+            breakAt = index + 1
+          } else if (
             input.overflowWrap === 'break-word' &&
             cluster.caretOffsets.includes(cluster.start)
           ) {
@@ -398,6 +449,7 @@ function constructLines(input: ResolvedLayoutInput, clusters: readonly Cluster[]
           }
           if (breakAt > cursor) break
         }
+        if (explicit && currentAllowed) lastAllowedBreak = index + 1
       }
 
       if (breakAt > cursor) {
@@ -642,7 +694,25 @@ function translateBounds(bounds: LayoutBounds, x: number, y: number): LayoutBoun
 
 export function layoutResolvedText(input: ResolvedLayoutInput): LayoutResult {
   validateInput(input)
-  const clusters = buildClusters(input, graphemeBoundaries(input.text))
+  const boundaries = graphemeBoundaries(input.text)
+  const clusters = buildClusters(input, boundaries)
+  if (input.breakOpportunities) {
+    const clusterBoundaries = new Set<number>([0, input.text.length])
+    for (const cluster of clusters) {
+      clusterBoundaries.add(cluster.start)
+      clusterBoundaries.add(cluster.end)
+    }
+    for (const segment of hardSegments(input.text)) {
+      clusterBoundaries.add(segment.start)
+      clusterBoundaries.add(segment.contentEnd)
+      clusterBoundaries.add(segment.end)
+    }
+    for (const [index, opportunity] of input.breakOpportunities.entries()) {
+      if (!clusterBoundaries.has(opportunity.position)) {
+        invalid(`breakOpportunities[${index}].position splits a shaped cluster`)
+      }
+    }
+  }
   const lineWork = constructLines(input, clusters)
   const placement = placeLines(input, lineWork)
   const placed = placement.placed.sort(

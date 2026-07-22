@@ -1,0 +1,192 @@
+{
+  "schemaVersion": 1,
+  "generatedBy": "nanoemoji 0.15.0",
+  "sourceRevision": "googlefonts/noto-emoji@b960563a023fbd1337227bf2a8a2d5a91889a333",
+  "sourceLicense": "Apache-2.0",
+  "derivation": "Identical pinned SVG corpus compiled once per color format",
+  "sources": [
+    {
+      "path": "svg/emoji_u270d.svg",
+      "url": "https://raw.githubusercontent.com/googlefonts/noto-emoji/b960563a023fbd1337227bf2a8a2d5a91889a333/svg/emoji_u270d.svg",
+      "sha256": "2b98d32aa65058b6af142ca9018006682059ff55b5c6d466c56afa0d218f32aa"
+    },
+    {
+      "path": "svg/emoji_u270d_1f3fb.svg",
+      "url": "https://raw.githubusercontent.com/googlefonts/noto-emoji/b960563a023fbd1337227bf2a8a2d5a91889a333/svg/emoji_u270d_1f3fb.svg",
+      "sha256": "cd4709ed3492f5520fa6c92a431d65b0d4e1b65b23ecb038208af907cad77691"
+    },
+    {
+      "path": "svg/emoji_u270d_1f3fc.svg",
+      "url": "https://raw.githubusercontent.com/googlefonts/noto-emoji/b960563a023fbd1337227bf2a8a2d5a91889a333/svg/emoji_u270d_1f3fc.svg",
+      "sha256": "8bd15d61ae4ad570f3e51dc4b348a4400623cb036ee48932c9f29bb2eee708aa"
+    },
+    {
+      "path": "svg/emoji_u270d_1f3fd.svg",
+      "url": "https://raw.githubusercontent.com/googlefonts/noto-emoji/b960563a023fbd1337227bf2a8a2d5a91889a333/svg/emoji_u270d_1f3fd.svg",
+      "sha256": "18d9f742e65cd73741ca23732622f7a643bfdd53157d87a8fb2c459b3b726be2"
+    },
+    {
+      "path": "svg/emoji_u270d_1f3fe.svg",
+      "url": "https://raw.githubusercontent.com/googlefonts/noto-emoji/b960563a023fbd1337227bf2a8a2d5a91889a333/svg/emoji_u270d_1f3fe.svg",
+      "sha256": "1380a3a841aa464bf6a1a7ba3b98927ad81df252e17fd76d36ac16f9fc2e9d01"
+    },
+    {
+      "path": "svg/emoji_u270d_1f3ff.svg",
+      "url": "https://raw.githubusercontent.com/googlefonts/noto-emoji/b960563a023fbd1337227bf2a8a2d5a91889a333/svg/emoji_u270d_1f3ff.svg",
+      "sha256": "37db0e350870dac161ae92e949adcae4b96538012a25ce695103623ead584eea"
+    },
+    {
+      "path": "svg/emoji_u1f600.svg",
+      "url": "https://raw.githubusercontent.com/googlefonts/noto-emoji/b960563a023fbd1337227bf2a8a2d5a91889a333/svg/emoji_u1f600.svg",
+      "sha256": "3ad2cf9b2c32b722b593b0b71e6a2e171a24086da7a94b181532f3431e532e8e"
+    },
+    {
+      "path": "svg/emoji_u2764.svg",
+      "url": "https://raw.githubusercontent.com/googlefonts/noto-emoji/b960563a023fbd1337227bf2a8a2d5a91889a333/svg/emoji_u2764.svg",
+      "sha256": "280a633e0e72c7f45a0bdbc819d55d3de71dc47439d3024a0b9d3d7c76642023"
+    },
+    {
+      "path": "svg/emoji_u1f468_200d_1f469_200d_1f467.svg",
+      "url": "https://raw.githubusercontent.com/googlefonts/noto-emoji/b960563a023fbd1337227bf2a8a2d5a91889a333/svg/emoji_u1f468_200d_1f469_200d_1f467.svg",
+      "sha256": "02e50b72e23c48416da3e533731e83c9576bdf003477e712cc1e8946375df7b1"
+    },
+    {
+      "path": "svg/emoji_u1f469_200d_1f4bb.svg",
+      "url": "https://raw.githubusercontent.com/googlefonts/noto-emoji/b960563a023fbd1337227bf2a8a2d5a91889a333/svg/emoji_u1f469_200d_1f4bb.svg",
+      "sha256": "24d9f589153a0a2080676aa6b42dc3fd34931cff1afc408f0fa4bc8fc3903622"
+    },
+    {
+      "path": "third_party/region-flags/waved-svg/emoji_u1f1fa_1f1f8.svg",
+      "url": "https://raw.githubusercontent.com/googlefonts/noto-emoji/b960563a023fbd1337227bf2a8a2d5a91889a333/third_party/region-flags/waved-svg/emoji_u1f1fa_1f1f8.svg",
+      "sha256": "3ac9c0774556c0ea3da03a48f539ab8a9ae4c822b2254e4dd0e1894e155b1479"
+    }
+  ],
+  "fixtures": [
+    {
+      "format": "colr-v0",
+      "path": "test-fixtures/fonts/color-glyph-validation/noto-validation-colr-v0.ttf",
+      "sha256": "77b3c1b7b4ad1003c74720f7f9f2a64fd4f6c38de60dc4c482729d43f317cc03",
+      "bytes": 17200,
+      "tables": {
+        "cmap": 228,
+        "COLR": 880,
+        "CPAL": 298,
+        "glyf": 10334,
+        "GSUB": 168,
+        "head": 54,
+        "hhea": 36,
+        "hmtx": 378,
+        "loca": 350,
+        "maxp": 32,
+        "name": 348,
+        "OS/2": 96,
+        "post": 3765
+      },
+      "sequences": [
+        "✍",
+        "✍🏻",
+        "✍🏽",
+        "✍🏿",
+        "😀",
+        "❤",
+        "👨‍👩‍👧",
+        "👩‍💻",
+        "🇺🇸"
+      ]
+    },
+    {
+      "format": "colr-v1",
+      "path": "test-fixtures/fonts/color-glyph-validation/noto-validation-colr-v1.ttf",
+      "sha256": "10f97be0e9cfce40e55e60eb5b1964a2ecb9fe1d86619243ae21bddfbed17325",
+      "bytes": 17776,
+      "tables": {
+        "cmap": 228,
+        "COLR": 4485,
+        "CPAL": 286,
+        "glyf": 8916,
+        "GSUB": 168,
+        "head": 54,
+        "hhea": 36,
+        "hmtx": 256,
+        "loca": 228,
+        "maxp": 32,
+        "name": 348,
+        "OS/2": 96,
+        "post": 2415
+      },
+      "sequences": [
+        "✍",
+        "✍🏻",
+        "✍🏽",
+        "✍🏿",
+        "😀",
+        "❤",
+        "👨‍👩‍👧",
+        "👩‍💻",
+        "🇺🇸"
+      ]
+    },
+    {
+      "format": "sbix",
+      "path": "test-fixtures/fonts/color-glyph-validation/noto-validation-sbix.ttf",
+      "sha256": "132f8d89bded37c1f6a2dbf241f1b1af1983fe9f45ff8c78dc427ca971d9b664",
+      "bytes": 32712,
+      "tables": {
+        "cmap": 228,
+        "glyf": 42,
+        "GSUB": 168,
+        "head": 54,
+        "hhea": 36,
+        "hmtx": 80,
+        "loca": 52,
+        "maxp": 32,
+        "name": 348,
+        "OS/2": 96,
+        "post": 336,
+        "sbix": 31029
+      },
+      "sequences": [
+        "✍",
+        "✍🏻",
+        "✍🏽",
+        "✍🏿",
+        "😀",
+        "❤",
+        "👨‍👩‍👧",
+        "👩‍💻",
+        "🇺🇸"
+      ]
+    },
+    {
+      "format": "svg",
+      "path": "test-fixtures/fonts/color-glyph-validation/noto-validation-svg.ttf",
+      "sha256": "57b4e59eb7a8c506affbaeb4b4726a1a37c59bf8f067a47fb541a69c47a0b113",
+      "bytes": 61196,
+      "tables": {
+        "cmap": 228,
+        "glyf": 42,
+        "GSUB": 168,
+        "head": 54,
+        "hhea": 36,
+        "hmtx": 80,
+        "loca": 52,
+        "maxp": 32,
+        "name": 348,
+        "OS/2": 96,
+        "post": 336,
+        "SVG": 59514
+      },
+      "sequences": [
+        "✍",
+        "✍🏻",
+        "✍🏽",
+        "✍🏿",
+        "😀",
+        "❤",
+        "👨‍👩‍👧",
+        "👩‍💻",
+        "🇺🇸"
+      ]
+    }
+  ]
+}

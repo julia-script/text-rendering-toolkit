@@ -52,6 +52,12 @@ interaction tools. See
 [`examples/three-webgpu-basic`](../../examples/three-webgpu-basic/) for a complete
 single-run implementation.
 
+## COLR v0 color glyphs
+
+When a structural font also supplies `getColorLayers()`, the renderer expands a supported COLR v0 glyph into ordered outline instances after layout. Palette-zero RGBA stays in instance data while every layer reuses the ordinary SDF atlas. A layer marked `"foreground"` uses the base glyph's effective `styleColors` entry or `color` value.
+
+The supplied `LayoutResult` is never expanded or replaced: measurement, lines, carets, selections, and font order remain renderer-neutral. Fonts without supported layers—including ordinary fonts and COLR v1 fonts—continue through the single-outline path. The caller still decides which font wins by ordering `fontKeys` during layout; the renderer does not automatically prefer emoji fonts.
+
 Omit `lit` or set it to `false` for the default unlit material. `lit: true`
 selects one front-facing planar `MeshStandardNodeMaterial` with fixed
 non-metallic settings and glyph-shaped shadow coverage. That choice is fixed at
@@ -92,7 +98,7 @@ text.dispose()
 ```
 
 For multiple labels, inject one application-owned `TextResources`. It caches a
-font-handle/glyph/variation identity once and shares one growing atlas texture;
+font-handle/outline-glyph/variation identity once and shares one growing atlas texture;
 each text still owns its own geometry, material, appearance, and draw call.
 Dispose borrowers before their owner:
 
@@ -107,15 +113,13 @@ Reusing the same font bytes through separately loaded handles does not share a
 cache identity. Reuse the caller-owned handle itself when reuse matters. Passing
 both `resources` and `sdfSize` is an error because the owner fixes its SDF size.
 
-The first resource owner contains only the monochrome SDF cache and atlas. It
-does not provide color-glyph storage, eviction, partial uploads, workers, or
-batching, and sharing does not reduce draw calls. The application continues to
-own font handles, the `WebGPURenderer`, canvas, scene, and camera.
+Color layers use the same monochrome SDF cache and atlas; their palette or foreground RGBA does not duplicate SDF pixels. The resource owner does not provide eviction, partial uploads, workers, or batching, and sharing does not reduce draw calls. The application continues to own font handles, the `WebGPURenderer`, canvas, scene, and camera.
 
 ## Supported now
 
 - completed multilingual `LayoutResult` data from `@webgpu-text/layout`;
 - lazy numeric outlines from structurally compatible public font handles;
+- ordered COLR v0 palette-zero layers, CPAL alpha, current foreground, and ordinary fallback;
 - deterministic CPU SDF generation and private or explicitly shared RGBA atlas growth;
 - flat unlit fill by default or construction-fixed planar standard lighting;
 - glyph-shaped cast and received shadows through ordinary Three.js mesh flags;
@@ -124,7 +128,8 @@ own font handles, the `WebGPURenderer`, canvas, scene, and camera.
 - Three.js `0.185.1` `WebGPURenderer` through TSL.
 
 Not included: font fetching, automatic itemization or fallback, workers,
-eviction, partial texture upload, color glyphs, curvature, strokes/outlines, runtime
+eviction, partial texture upload, COLR v1, SVG or embedded-bitmap glyphs,
+automatic emoji preference, curvature, strokes/outlines, runtime
 material switching, configurable physical-material controls, curved or
 double-sided lighting, batching, WebGPU compute SDF generation, WebGL, CommonJS,
 UMD, or Troika API compatibility.
@@ -133,7 +138,7 @@ UMD, or Troika API compatibility.
 
 ```sh
 pnpm --filter @webgpu-text/three test
-pnpm --dir experiments/webgpu-rendering-seam test:browser
+pnpm --dir experiments/color-glyph-boundary test:browser
 ```
 
 The browser command requires an actual WebGPU adapter and rejects Three's WebGL

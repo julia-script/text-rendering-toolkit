@@ -16,7 +16,7 @@ test('updates instanced attributes with capacity growth and explicit bounds', ()
     {
       bounds: Float32Array.from([0, 0, 1, 1, 1, 0, 2, 1, 2, 0, 3, 1]),
       slots: Uint32Array.from([0, 1, 2]),
-      colors: Uint8Array.from([255, 0, 0, 0, 255, 0, 0, 0, 255]),
+      colors: Uint8Array.from([255, 0, 0, 255, 0, 255, 0, 128, 0, 0, 255, 0]),
       count: 3,
     },
     { left: 0, bottom: 0, right: 3, top: 1 },
@@ -35,7 +35,7 @@ test('updates instanced attributes with capacity growth and explicit bounds', ()
     {
       bounds: Float32Array.from([4, 0, 5, 1]),
       slots: Uint32Array.from([3]),
-      colors: Uint8Array.from([12, 34, 56]),
+      colors: Uint8Array.from([12, 34, 56, 78]),
       count: 1,
     },
     { left: 4, bottom: 0, right: 5, top: 1 },

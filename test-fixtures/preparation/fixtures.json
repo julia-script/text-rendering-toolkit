@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "unicodeVersion": "17.0.0",
   "bidiRevision": "bidi-js@1.0.3 / Unicode 13.0.0",
+  "lineBreakRevision": "linebreak@1.1.0 / Unicode 13.0.0",
   "fontManifest": {
     "file": "test-fixtures/fonts/harfbuzz-validation/fixtures.json",
     "sha256": "0e1d1e368fdd0454ef4af85ae34a61edda25ba1982b0a35472b77f315d83dddc"
@@ -34,6 +35,12 @@
       },
       "expected": {
         "preparedSegments": [],
+        "preparedBreakOpportunities": [
+          {
+            "position": 0,
+            "required": false
+          }
+        ],
         "resolved": {
           "fontKeys": [],
           "runRanges": []
@@ -94,6 +101,16 @@
               "liga=1"
             ],
             "variations": {}
+          }
+        ],
+        "preparedBreakOpportunities": [
+          {
+            "position": 7,
+            "required": false
+          },
+          {
+            "position": 11,
+            "required": false
           }
         ],
         "resolved": {
@@ -164,6 +181,16 @@
             "variations": {}
           }
         ],
+        "preparedBreakOpportunities": [
+          {
+            "position": 11,
+            "required": false
+          },
+          {
+            "position": 21,
+            "required": false
+          }
+        ],
         "resolved": {
           "fontKeys": [
             "arabic"
@@ -232,6 +259,16 @@
             "variations": {}
           }
         ],
+        "preparedBreakOpportunities": [
+          {
+            "position": 7,
+            "required": false
+          },
+          {
+            "position": 13,
+            "required": false
+          }
+        ],
         "resolved": {
           "fontKeys": [
             "devanagari"
@@ -298,6 +335,16 @@
             "language": "km",
             "features": [],
             "variations": {}
+          }
+        ],
+        "preparedBreakOpportunities": [
+          {
+            "position": 7,
+            "required": false
+          },
+          {
+            "position": 14,
+            "required": false
           }
         ],
         "resolved": {
@@ -385,6 +432,16 @@
             "language": "und",
             "features": [],
             "variations": {}
+          }
+        ],
+        "preparedBreakOpportunities": [
+          {
+            "position": 6,
+            "required": false
+          },
+          {
+            "position": 11,
+            "required": false
           }
         ],
         "resolved": {
@@ -483,6 +540,16 @@
             "variations": {}
           }
         ],
+        "preparedBreakOpportunities": [
+          {
+            "position": 4,
+            "required": false
+          },
+          {
+            "position": 9,
+            "required": false
+          }
+        ],
         "resolved": {
           "fontKeys": [
             "latin",
@@ -576,6 +643,12 @@
             "language": "und",
             "features": [],
             "variations": {}
+          }
+        ],
+        "preparedBreakOpportunities": [
+          {
+            "position": 3,
+            "required": false
           }
         ],
         "resolved": {
@@ -694,6 +767,12 @@
             }
           }
         ],
+        "preparedBreakOpportunities": [
+          {
+            "position": 5,
+            "required": false
+          }
+        ],
         "resolved": {
           "fontKeys": [
             "latin"
@@ -785,6 +864,16 @@
             "language": "und",
             "features": [],
             "variations": {}
+          }
+        ],
+        "preparedBreakOpportunities": [
+          {
+            "position": 6,
+            "required": true
+          },
+          {
+            "position": 11,
+            "required": false
           }
         ],
         "resolved": {
@@ -899,6 +988,12 @@
             "variations": {}
           }
         ],
+        "preparedBreakOpportunities": [
+          {
+            "position": 9,
+            "required": false
+          }
+        ],
         "resolved": {
           "fontKeys": [
             "latin",
@@ -986,6 +1081,12 @@
             "features": [],
             "variations": {}
           }
+        ],
+        "preparedBreakOpportunities": [
+          {
+            "position": 5,
+            "required": false
+          }
         ]
       }
     },
@@ -1016,6 +1117,12 @@
         }
       },
       "expected": {
+        "preparedBreakOpportunities": [
+          {
+            "position": 2,
+            "required": false
+          }
+        ],
         "error": {
           "code": "missing-coverage",
           "start": 0,
@@ -1052,6 +1159,12 @@
         }
       },
       "expected": {
+        "preparedBreakOpportunities": [
+          {
+            "position": 1,
+            "required": false
+          }
+        ],
         "error": {
           "code": "missing-font",
           "start": 0,

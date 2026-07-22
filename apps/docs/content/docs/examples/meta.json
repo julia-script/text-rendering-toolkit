@@ -1,4 +1,4 @@
 {
   "title": "Examples",
-  "pages": ["layout", "sdf", "three-webgpu"]
+  "pages": ["layout", "sdf", "three-webgpu", "color-glyphs"]
 }

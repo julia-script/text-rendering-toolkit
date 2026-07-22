@@ -12,9 +12,11 @@ const bytes = async (name: string): Promise<Uint8Array> => {
 
 const latin = await loadFont(await bytes('./NotoSans-wdth-wght.ttf'))
 const arabic = await loadFont(await bytes('./NotoSansArabic-wdth-wght.ttf'))
+const emoji = await loadFont(await bytes('./noto-validation-colr-v0.ttf'))
 const fonts = new Map<string, FontHandle>([
   ['latin', latin],
   ['arabic', arabic],
+  ['emoji', emoji],
 ])
 
 try {
@@ -26,12 +28,19 @@ try {
       fontSize: 24,
       language: 'und',
     },
+    layout: { maxWidth: 60 },
   })
+  if (prepared.schemaVersion !== 2 || prepared.breakOpportunities[0]?.position !== 6) {
+    throw new Error('Prepared text did not expose Unicode opportunities')
+  }
   if (!prepared.segments.some((segment) => segment.direction === 'rtl')) {
     throw new Error('Prepared text did not retain the right-to-left segment')
   }
 
   const layout = layoutPreparedText(prepared, fonts)
+  if (layout.lines.length !== 2 || layout.lines[0]?.breakAfter !== 'soft') {
+    throw new Error('Unicode-aware measured wrapping did not select the expected line')
+  }
   const glyph = layout.glyphs[0]
   if (!glyph) throw new Error('Layout did not produce glyphs')
   const font = fonts.get(glyph.fontKey)
@@ -68,6 +77,33 @@ try {
     if (repeated.committedState?.instanceCount !== text.committedState?.instanceCount) {
       throw new Error('Shared Three.js text committed inconsistent glyph instances')
     }
+
+    const colorPrepared = prepareText({
+      text: 'A😀✍🏽🇺🇸B',
+      style: {
+        key: 'color',
+        fontKeys: ['emoji', 'latin'],
+        fontSize: 24,
+        language: 'und',
+      },
+    })
+    const colorLayout = layoutPreparedText(colorPrepared, fonts)
+    const colorText = new Text({
+      layout: colorLayout,
+      fonts,
+      resources,
+      styleColors: { color: 0x00ff66 },
+    })
+    try {
+      await colorText.sync()
+      if ((colorText.committedState?.instanceCount ?? 0) <= colorLayout.glyphs.length) {
+        throw new Error('Packed Three.js path did not expand public COLR v0 layers')
+      }
+      colorText.styleColors = { color: 0xff00aa }
+      await colorText.sync()
+    } finally {
+      colorText.dispose()
+    }
   } finally {
     text.dispose()
     repeated.dispose()
@@ -76,4 +112,5 @@ try {
 } finally {
   latin.dispose()
   arabic.dispose()
+  emoji.dispose()
 }

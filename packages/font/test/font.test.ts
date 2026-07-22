@@ -14,6 +14,10 @@ import {
 } from '../src/index.js'
 
 const fixtureRoot = new URL('../../../test-fixtures/fonts/harfbuzz-validation/', import.meta.url)
+const colorFixtureRoot = new URL(
+  '../../../test-fixtures/fonts/color-glyph-validation/',
+  import.meta.url,
+)
 
 const fixtures = {
   latin: 'NotoSans-wdth-wght.ttf',
@@ -33,6 +37,52 @@ async function fixture(name: (typeof fixtures)[keyof typeof fixtures]): Promise<
 async function open(name: (typeof fixtures)[keyof typeof fixtures]): Promise<FontHandle> {
   const bytes = await fixture(name)
   return loadFont(new Uint8Array(bytes.buffer, bytes.byteOffset, bytes.byteLength))
+}
+
+async function colorFixture(name: 'colr-v0' | 'colr-v1'): Promise<Uint8Array> {
+  return readFile(new URL(`noto-validation-${name}.ttf`, colorFixtureRoot))
+}
+
+function sfntTable(
+  bytes: Uint8Array,
+  name: string,
+): { readonly offset: number; readonly length: number } {
+  const data = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
+  const count = data.getUint16(4, false)
+  for (let index = 0; index < count; index += 1) {
+    const record = 12 + index * 16
+    const tag = String.fromCharCode(...bytes.subarray(record, record + 4))
+    if (tag === name) {
+      return {
+        offset: data.getUint32(record + 8, false),
+        length: data.getUint32(record + 12, false),
+      }
+    }
+  }
+  throw new Error(`Missing ${name} table`)
+}
+
+function firstLayerPaletteOffset(bytes: Uint8Array, glyphId: number): number {
+  const { offset } = sfntTable(bytes, 'COLR')
+  const data = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
+  const baseCount = data.getUint16(offset + 2, false)
+  const baseOffset = offset + data.getUint32(offset + 4, false)
+  const layerOffset = offset + data.getUint32(offset + 8, false)
+  for (let index = 0; index < baseCount; index += 1) {
+    const record = baseOffset + index * 6
+    if (data.getUint16(record, false) === glyphId) {
+      return layerOffset + data.getUint16(record + 2, false) * 4 + 2
+    }
+  }
+  throw new Error(`Missing COLR base glyph ${glyphId}`)
+}
+
+function paletteColorAlphaOffset(bytes: Uint8Array, paletteIndex: number): number {
+  const { offset } = sfntTable(bytes, 'CPAL')
+  const data = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
+  const firstColor = data.getUint16(offset + 12, false)
+  const recordsOffset = data.getUint32(offset + 8, false)
+  return offset + recordsOffset + (firstColor + paletteIndex) * 4 + 3
 }
 
 const shapeCases: readonly {
@@ -284,6 +334,109 @@ describe('numeric outlines and variations', () => {
   })
 })
 
+describe('COLR v0 color layers', () => {
+  it('returns ordered immutable palette-zero layers for the accepted emoji corpus', async () => {
+    const font = await loadFont(await colorFixture('colr-v0'))
+    for (const text of ['✍', '✍🏻', '✍🏽', '✍🏿', '😀', '❤', '👨‍👩‍👧', '👩‍💻', '🇺🇸']) {
+      const run = font.shape({ text, direction: 'ltr', script: 'Zyyy', language: 'und' })
+      expect(run.glyphs).toHaveLength(1)
+      const glyphId = run.glyphs[0]?.glyphId ?? 0
+      const layers = font.getColorLayers(glyphId)
+      expect(layers?.length).toBeGreaterThan(0)
+      expect(Object.isFrozen(layers)).toBe(true)
+      for (const layer of layers ?? []) {
+        expect(Object.isFrozen(layer)).toBe(true)
+        expect(font.getOutline(layer.glyphId).commands.length).toBeGreaterThan(0)
+        if (layer.color !== 'foreground') {
+          expect(Object.isFrozen(layer.color)).toBe(true)
+          expect(Object.values(layer.color).every((value) => value >= 0 && value <= 255)).toBe(true)
+        }
+      }
+      expect(font.getColorLayers(glyphId)).toBe(layers)
+    }
+    font.dispose()
+  })
+
+  it('supports current foreground and CPAL alpha without changing public table semantics', async () => {
+    const bytes = await colorFixture('colr-v0')
+    const probe = await loadFont(bytes)
+    const glyphId =
+      probe.shape({ text: '😀', direction: 'ltr', script: 'Zyyy', language: 'und' }).glyphs[0]
+        ?.glyphId ?? 0
+    const originalLayers = probe.getColorLayers(glyphId)
+    const firstColor = originalLayers?.[0]?.color
+    expect(firstColor).not.toBe('foreground')
+    probe.dispose()
+
+    const foregroundBytes = Uint8Array.from(bytes)
+    new DataView(foregroundBytes.buffer).setUint16(
+      firstLayerPaletteOffset(foregroundBytes, glyphId),
+      0xffff,
+      false,
+    )
+    const foregroundFont = await loadFont(foregroundBytes)
+    expect(foregroundFont.getColorLayers(glyphId)?.[0]?.color).toBe('foreground')
+    foregroundFont.dispose()
+
+    if (firstColor === undefined || firstColor === 'foreground')
+      throw new Error('Expected palette color')
+    const alphaBytes = Uint8Array.from(bytes)
+    const paletteOffset = firstLayerPaletteOffset(alphaBytes, glyphId)
+    const paletteIndex = new DataView(alphaBytes.buffer).getUint16(paletteOffset, false)
+    alphaBytes[paletteColorAlphaOffset(alphaBytes, paletteIndex)] = 128
+    const alphaFont = await loadFont(alphaBytes)
+    expect(alphaFont.getColorLayers(glyphId)?.[0]?.color).toMatchObject({ alpha: 128 })
+    alphaFont.dispose()
+  })
+
+  it('returns null for ordinary and unsupported color formats and rejects malformed v0 data', async () => {
+    const ordinary = await open(fixtures.latin)
+    const ordinaryGlyph =
+      ordinary.shape({ text: 'A', direction: 'ltr', script: 'Latn', language: 'en' }).glyphs[0]
+        ?.glyphId ?? 0
+    expect(ordinary.getColorLayers(ordinaryGlyph)).toBeNull()
+    expect(ordinary.getColorLayers(ordinaryGlyph)).toBeNull()
+    ordinary.dispose()
+
+    const versionOne = await loadFont(await colorFixture('colr-v1'))
+    const colorGlyph =
+      versionOne.shape({ text: '😀', direction: 'ltr', script: 'Zyyy', language: 'und' }).glyphs[0]
+        ?.glyphId ?? 0
+    expect(versionOne.getColorLayers(colorGlyph)).toBeNull()
+    versionOne.dispose()
+
+    const malformed = await colorFixture('colr-v0')
+    const malformedProbe = await loadFont(malformed)
+    const malformedGlyph =
+      malformedProbe.shape({
+        text: '😀',
+        direction: 'ltr',
+        script: 'Zyyy',
+        language: 'und',
+      }).glyphs[0]?.glyphId ?? 0
+    malformedProbe.dispose()
+    new DataView(malformed.buffer, malformed.byteOffset, malformed.byteLength).setUint16(
+      firstLayerPaletteOffset(malformed, malformedGlyph),
+      0xfffe,
+      false,
+    )
+    const invalid = await loadFont(malformed)
+    expect(() => invalid.getColorLayers(malformedGlyph)).toThrow(InvalidFontError)
+    invalid.dispose()
+  })
+
+  it('owns the source bytes used by lazy color lookup', async () => {
+    const source = await colorFixture('colr-v0')
+    const font = await loadFont(source)
+    source.fill(0)
+    const glyphId =
+      font.shape({ text: '😀', direction: 'ltr', script: 'Zyyy', language: 'und' }).glyphs[0]
+        ?.glyphId ?? 0
+    expect(font.getColorLayers(glyphId)?.length).toBeGreaterThan(0)
+    font.dispose()
+  })
+})
+
 describe('lifecycle', () => {
   it('disposes idempotently and rejects every live-handle operation afterward', async () => {
     const font = await open(fixtures.latin)
@@ -302,6 +455,7 @@ describe('lifecycle', () => {
       font.shape({ text: 'A', direction: 'ltr', script: 'Latn', language: 'en' }),
     ).toThrow(DisposedFontHandleError)
     expect(() => font.getOutline(glyphId ?? 0)).toThrow(DisposedFontHandleError)
+    expect(() => font.getColorLayers(glyphId ?? 0)).toThrow(DisposedFontHandleError)
   })
 })
 

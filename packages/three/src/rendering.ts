@@ -40,6 +40,7 @@ interface Vec4Node extends Vec3Node {
   g: FloatNode
   b: FloatNode
   a: FloatNode
+  rgb: Vec3Node
   zw: Vec2Node
 }
 interface UniformNode<T> {
@@ -106,7 +107,7 @@ export function createGlyphGeometry(): InstancedBufferGeometry {
   )
   geometry.setAttribute('glyphBounds', new InstancedBufferAttribute(new Float32Array(4), 4))
   geometry.setAttribute('glyphSlot', new InstancedBufferAttribute(new Uint32Array(1), 1))
-  geometry.setAttribute('glyphColor', new InstancedBufferAttribute(new Uint8Array(3), 3, true))
+  geometry.setAttribute('glyphColor', new InstancedBufferAttribute(new Uint8Array(4), 4, true))
   geometry.instanceCount = 0
   return geometry
 }
@@ -134,7 +135,7 @@ export function updateGlyphGeometry(
     )
     geometry.setAttribute(
       'glyphColor',
-      new InstancedBufferAttribute(new Uint8Array(nextCapacity * 3), 3, true),
+      new InstancedBufferAttribute(new Uint8Array(nextCapacity * 4), 4, true),
     )
   }
   const bounds = geometry.getAttribute('glyphBounds') as InstancedBufferAttribute
@@ -160,7 +161,7 @@ function createGlyphNodeAssembly(atlas: DataTexture, sharedAtlasGrid = new Vecto
   const atlasGrid = tsl.uniform(sharedAtlasGrid)
   const bounds = tsl.attribute('glyphBounds', 'vec4')
   const slot = tsl.attribute('glyphSlot', 'uint')
-  const glyphColor = tsl.attribute('glyphColor', 'vec3')
+  const glyphColor = tsl.attribute('glyphColor', 'vec4')
   const glyphPosition = tsl.mix(bounds.xy, bounds.zw, tsl.positionLocal.xy)
   const fragmentGlyphPosition = tsl.varying(glyphPosition)
   const slotNumber = tsl.float(slot)
@@ -197,16 +198,16 @@ function createGlyphNodeAssembly(atlas: DataTexture, sharedAtlasGrid = new Vecto
   )
   const position = tsl.vec3(glyphPosition.x, glyphPosition.y, 0) as unknown as Node<'vec3'>
   const visibleOpacity = tsl.mul(
-    tsl.mul(sdfCoverage, clipCoverage),
-    opacity,
+    tsl.mul(tsl.mul(sdfCoverage, clipCoverage), opacity),
+    glyphColor.a,
   ) as unknown as Node<'float'>
   const shadowMask = tsl.greaterThanEqual(
-    tsl.mul(encodedDistance, clipCoverage),
+    tsl.mul(tsl.mul(encodedDistance, clipCoverage), tsl.step(1 / 255, glyphColor.a)),
     0.5,
   ) as unknown as Node<'bool'>
   return {
     controls: { opacity, clipRect, atlasGrid } satisfies GlyphMaterialControls,
-    glyphColor: glyphColor as unknown as Node<'vec3'>,
+    glyphColor: glyphColor.rgb as unknown as Node<'vec3'>,
     position,
     shadowMask,
     visibleOpacity,
@@ -227,7 +228,7 @@ export function createGlyphMaterial(
       transparent: true,
     })
     material.positionNode = nodes.position
-    material.colorNode = tsl.vec4(nodes.glyphColor, 1) as unknown as Node<'vec4'>
+    material.colorNode = nodes.glyphColor
     material.opacityNode = nodes.visibleOpacity
     material.maskShadowNode = nodes.shadowMask
     material.shadowSide = material.side

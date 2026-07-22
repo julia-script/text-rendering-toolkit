@@ -1,0 +1,2941 @@
+{
+  "schemaVersion": "1",
+  "kind": "color-format-probes",
+  "environment": {
+    "node": "v24.2.0",
+    "platform": "darwin-arm64"
+  },
+  "evidence": [
+    {
+      "source": "test-fixtures/fonts/color-glyph-validation/noto-validation-colr-v0.ttf",
+      "integrity": "77b3c1b7b4ad1003c74720f7f9f2a64fd4f6c38de60dc4c482729d43f317cc03"
+    },
+    {
+      "source": "test-fixtures/fonts/color-glyph-validation/noto-validation-colr-v1.ttf",
+      "integrity": "10f97be0e9cfce40e55e60eb5b1964a2ecb9fe1d86619243ae21bddfbed17325"
+    },
+    {
+      "source": "test-fixtures/fonts/color-glyph-validation/noto-validation-sbix.ttf",
+      "integrity": "132f8d89bded37c1f6a2dbf241f1b1af1983fe9f45ff8c78dc427ca971d9b664"
+    },
+    {
+      "source": "test-fixtures/fonts/color-glyph-validation/noto-validation-svg.ttf",
+      "integrity": "57b4e59eb7a8c506affbaeb4b4726a1a37c59bf8f067a47fb541a69c47a0b113"
+    }
+  ],
+  "probes": [
+    {
+      "format": "colr-v0",
+      "fixture": "test-fixtures/fonts/color-glyph-validation/noto-validation-colr-v0.ttf",
+      "sha256": "77b3c1b7b4ad1003c74720f7f9f2a64fd4f6c38de60dc4c482729d43f317cc03",
+      "bytes": 17200,
+      "tables": {
+        "cmap": 228,
+        "COLR": 880,
+        "CPAL": 298,
+        "glyf": 10334,
+        "GSUB": 168,
+        "head": 54,
+        "hhea": 36,
+        "hmtx": 378,
+        "loca": 350,
+        "maxp": 32,
+        "name": 348,
+        "OS/2": 96,
+        "post": 3765
+      },
+      "facts": {
+        "unitsPerEm": 1024,
+        "ascender": 950,
+        "descender": -250,
+        "lineGap": 0,
+        "coverageCount": 16,
+        "axes": []
+      },
+      "colrVersion": 0,
+      "palette": [
+        {
+          "blue": 0,
+          "green": 0,
+          "red": 0,
+          "alpha": 255
+        },
+        {
+          "blue": 167,
+          "green": 151,
+          "red": 0,
+          "alpha": 255
+        },
+        {
+          "blue": 137,
+          "green": 158,
+          "red": 0,
+          "alpha": 255
+        },
+        {
+          "blue": 212,
+          "green": 188,
+          "red": 0,
+          "alpha": 255
+        },
+        {
+          "blue": 165,
+          "green": 191,
+          "red": 0,
+          "alpha": 255
+        },
+        {
+          "blue": 19,
+          "green": 19,
+          "red": 19,
+          "alpha": 255
+        },
+        {
+          "blue": 229,
+          "green": 136,
+          "red": 30,
+          "alpha": 255
+        },
+        {
+          "blue": 33,
+          "green": 33,
+          "red": 33,
+          "alpha": 0
+        },
+        {
+          "blue": 33,
+          "green": 33,
+          "red": 33,
+          "alpha": 102
+        },
+        {
+          "blue": 243,
+          "green": 150,
+          "red": 33,
+          "alpha": 255
+        },
+        {
+          "blue": 53,
+          "green": 53,
+          "red": 53,
+          "alpha": 255
+        },
+        {
+          "blue": 110,
+          "green": 59,
+          "red": 60,
+          "alpha": 255
+        },
+        {
+          "blue": 64,
+          "green": 64,
+          "red": 64,
+          "alpha": 255
+        },
+        {
+          "blue": 13,
+          "green": 43,
+          "red": 66,
+          "alpha": 255
+        },
+        {
+          "blue": 66,
+          "green": 66,
+          "red": 66,
+          "alpha": 51
+        },
+        {
+          "blue": 66,
+          "green": 66,
+          "red": 66,
+          "alpha": 255
+        },
+        {
+          "blue": 39,
+          "green": 47,
+          "red": 74,
+          "alpha": 255
+        },
+        {
+          "blue": 225,
+          "green": 208,
+          "red": 77,
+          "alpha": 255
+        },
+        {
+          "blue": 235,
+          "green": 14,
+          "red": 83,
+          "alpha": 255
+        },
+        {
+          "blue": 48,
+          "green": 57,
+          "red": 84,
+          "alpha": 255
+        },
+        {
+          "blue": 55,
+          "green": 64,
+          "red": 92,
+          "alpha": 255
+        },
+        {
+          "blue": 97,
+          "green": 97,
+          "red": 97,
+          "alpha": 5
+        },
+        {
+          "blue": 246,
+          "green": 181,
+          "red": 100,
+          "alpha": 255
+        },
+        {
+          "blue": 255,
+          "green": 31,
+          "red": 101,
+          "alpha": 255
+        },
+        {
+          "blue": 65,
+          "green": 76,
+          "red": 109,
+          "alpha": 0
+        },
+        {
+          "blue": 65,
+          "green": 76,
+          "red": 109,
+          "alpha": 255
+        },
+        {
+          "blue": 74,
+          "green": 83,
+          "red": 112,
+          "alpha": 255
+        },
+        {
+          "blue": 179,
+          "green": 0,
+          "red": 118,
+          "alpha": 255
+        },
+        {
+          "blue": 3,
+          "green": 255,
+          "red": 118,
+          "alpha": 255
+        },
+        {
+          "blue": 72,
+          "green": 85,
+          "red": 121,
+          "alpha": 255
+        },
+        {
+          "blue": 52,
+          "green": 83,
+          "red": 135,
+          "alpha": 255
+        },
+        {
+          "blue": 36,
+          "green": 96,
+          "red": 137,
+          "alpha": 255
+        },
+        {
+          "blue": 56,
+          "green": 87,
+          "red": 141,
+          "alpha": 255
+        },
+        {
+          "blue": 77,
+          "green": 103,
+          "red": 145,
+          "alpha": 255
+        },
+        {
+          "blue": 224,
+          "green": 0,
+          "red": 149,
+          "alpha": 255
+        },
+        {
+          "blue": 61,
+          "green": 96,
+          "red": 152,
+          "alpha": 255
+        },
+        {
+          "blue": 66,
+          "green": 105,
+          "red": 162,
+          "alpha": 255
+        },
+        {
+          "blue": 98,
+          "green": 123,
+          "red": 164,
+          "alpha": 255
+        },
+        {
+          "blue": 67,
+          "green": 108,
+          "red": 165,
+          "alpha": 255
+        },
+        {
+          "blue": 255,
+          "green": 0,
+          "red": 170,
+          "alpha": 255
+        },
+        {
+          "blue": 100,
+          "green": 130,
+          "red": 173,
+          "alpha": 255
+        },
+        {
+          "blue": 52,
+          "green": 34,
+          "red": 178,
+          "alpha": 255
+        },
+        {
+          "blue": 103,
+          "green": 138,
+          "red": 183,
+          "alpha": 255
+        },
+        {
+          "blue": 104,
+          "green": 141,
+          "red": 186,
+          "alpha": 255
+        },
+        {
+          "blue": 99,
+          "green": 143,
+          "red": 186,
+          "alpha": 255
+        },
+        {
+          "blue": 190,
+          "green": 190,
+          "red": 191,
+          "alpha": 76
+        },
+        {
+          "blue": 51,
+          "green": 51,
+          "red": 204,
+          "alpha": 255
+        },
+        {
+          "blue": 122,
+          "green": 164,
+          "red": 204,
+          "alpha": 255
+        },
+        {
+          "blue": 136,
+          "green": 176,
+          "red": 214,
+          "alpha": 255
+        },
+        {
+          "blue": 146,
+          "green": 184,
+          "red": 222,
+          "alpha": 255
+        },
+        {
+          "blue": 149,
+          "green": 187,
+          "red": 224,
+          "alpha": 255
+        },
+        {
+          "blue": 231,
+          "green": 190,
+          "red": 225,
+          "alpha": 255
+        },
+        {
+          "blue": 0,
+          "green": 150,
+          "red": 229,
+          "alpha": 255
+        },
+        {
+          "blue": 126,
+          "green": 183,
+          "red": 230,
+          "alpha": 255
+        },
+        {
+          "blue": 0,
+          "green": 143,
+          "red": 235,
+          "alpha": 255
+        },
+        {
+          "blue": 112,
+          "green": 119,
+          "red": 237,
+          "alpha": 255
+        },
+        {
+          "blue": 0,
+          "green": 166,
+          "red": 237,
+          "alpha": 255
+        },
+        {
+          "blue": 145,
+          "green": 195,
+          "red": 237,
+          "alpha": 255
+        },
+        {
+          "blue": 158,
+          "green": 203,
+          "red": 240,
+          "alpha": 255
+        },
+        {
+          "blue": 54,
+          "green": 67,
+          "red": 244,
+          "alpha": 255
+        },
+        {
+          "blue": 35,
+          "green": 162,
+          "red": 244,
+          "alpha": 255
+        },
+        {
+          "blue": 175,
+          "green": 213,
+          "red": 245,
+          "alpha": 255
+        },
+        {
+          "blue": 43,
+          "green": 192,
+          "red": 247,
+          "alpha": 255
+        },
+        {
+          "blue": 186,
+          "green": 219,
+          "red": 248,
+          "alpha": 255
+        },
+        {
+          "blue": 189,
+          "green": 221,
+          "red": 249,
+          "alpha": 255
+        },
+        {
+          "blue": 48,
+          "green": 224,
+          "red": 253,
+          "alpha": 255
+        },
+        {
+          "blue": 128,
+          "green": 138,
+          "red": 255,
+          "alpha": 255
+        },
+        {
+          "blue": 0,
+          "green": 170,
+          "red": 255,
+          "alpha": 255
+        },
+        {
+          "blue": 0,
+          "green": 179,
+          "red": 255,
+          "alpha": 255
+        },
+        {
+          "blue": 40,
+          "green": 202,
+          "red": 255,
+          "alpha": 255
+        },
+        {
+          "blue": 255,
+          "green": 255,
+          "red": 255,
+          "alpha": 255
+        }
+      ],
+      "bitmapStrikes": [],
+      "svgDocuments": [],
+      "shapedCases": [
+        {
+          "text": "✍",
+          "glyphs": [
+            {
+              "glyphId": 18,
+              "clusterStart": 0,
+              "clusterEnd": 1,
+              "sourceText": "✍",
+              "xAdvance": 1275,
+              "yAdvance": 0,
+              "xOffset": 0,
+              "yOffset": 0,
+              "flags": 0
+            }
+          ],
+          "payloads": [
+            {
+              "kind": "colr-v0",
+              "available": true,
+              "layers": [
+                {
+                  "glyphId": 159,
+                  "paletteIndex": 69
+                },
+                {
+                  "glyphId": 160,
+                  "paletteIndex": 67
+                },
+                {
+                  "glyphId": 161,
+                  "paletteIndex": 56
+                },
+                {
+                  "glyphId": 162,
+                  "paletteIndex": 6
+                },
+                {
+                  "glyphId": 163,
+                  "paletteIndex": 56
+                },
+                {
+                  "glyphId": 162,
+                  "paletteIndex": 22
+                },
+                {
+                  "glyphId": 164,
+                  "paletteIndex": 14
+                },
+                {
+                  "glyphId": 165,
+                  "paletteIndex": 69
+                },
+                {
+                  "glyphId": 166,
+                  "paletteIndex": 56
+                }
+              ],
+              "paletteEntries": 71
+            }
+          ]
+        },
+        {
+          "text": "✍🏻",
+          "glyphs": [
+            {
+              "glyphId": 19,
+              "clusterStart": 0,
+              "clusterEnd": 3,
+              "sourceText": "✍🏻",
+              "xAdvance": 1275,
+              "yAdvance": 0,
+              "xOffset": 0,
+              "yOffset": 0,
+              "flags": 0
+            }
+          ],
+          "payloads": [
+            {
+              "kind": "colr-v0",
+              "available": true,
+              "layers": [
+                {
+                  "glyphId": 159,
+                  "paletteIndex": 64
+                },
+                {
+                  "glyphId": 160,
+                  "paletteIndex": 57
+                },
+                {
+                  "glyphId": 161,
+                  "paletteIndex": 53
+                },
+                {
+                  "glyphId": 162,
+                  "paletteIndex": 6
+                },
+                {
+                  "glyphId": 167,
+                  "paletteIndex": 53
+                },
+                {
+                  "glyphId": 162,
+                  "paletteIndex": 22
+                },
+                {
+                  "glyphId": 164,
+                  "paletteIndex": 14
+                },
+                {
+                  "glyphId": 165,
+                  "paletteIndex": 64
+                },
+                {
+                  "glyphId": 166,
+                  "paletteIndex": 53
+                }
+              ],
+              "paletteEntries": 71
+            }
+          ]
+        },
+        {
+          "text": "✍🏽",
+          "glyphs": [
+            {
+              "glyphId": 21,
+              "clusterStart": 0,
+              "clusterEnd": 3,
+              "sourceText": "✍🏽",
+              "xAdvance": 1275,
+              "yAdvance": 0,
+              "xOffset": 0,
+              "yOffset": 0,
+              "flags": 0
+            }
+          ],
+          "payloads": [
+            {
+              "kind": "colr-v0",
+              "available": true,
+              "layers": [
+                {
+                  "glyphId": 159,
+                  "paletteIndex": 43
+                },
+                {
+                  "glyphId": 160,
+                  "paletteIndex": 37
+                },
+                {
+                  "glyphId": 161,
+                  "paletteIndex": 33
+                },
+                {
+                  "glyphId": 162,
+                  "paletteIndex": 6
+                },
+                {
+                  "glyphId": 167,
+                  "paletteIndex": 33
+                },
+                {
+                  "glyphId": 162,
+                  "paletteIndex": 22
+                },
+                {
+                  "glyphId": 164,
+                  "paletteIndex": 14
+                },
+                {
+                  "glyphId": 165,
+                  "paletteIndex": 43
+                },
+                {
+                  "glyphId": 166,
+                  "paletteIndex": 33
+                }
+              ],
+              "paletteEntries": 71
+            }
+          ]
+        },
+        {
+          "text": "✍🏿",
+          "glyphs": [
+            {
+              "glyphId": 23,
+              "clusterStart": 0,
+              "clusterEnd": 3,
+              "sourceText": "✍🏿",
+              "xAdvance": 1275,
+              "yAdvance": 0,
+              "xOffset": 0,
+              "yOffset": 0,
+              "flags": 0
+            }
+          ],
+          "payloads": [
+            {
+              "kind": "colr-v0",
+              "available": true,
+              "layers": [
+                {
+                  "glyphId": 159,
+                  "paletteIndex": 26
+                },
+                {
+                  "glyphId": 160,
+                  "paletteIndex": 20
+                },
+                {
+                  "glyphId": 161,
+                  "paletteIndex": 16
+                },
+                {
+                  "glyphId": 162,
+                  "paletteIndex": 6
+                },
+                {
+                  "glyphId": 163,
+                  "paletteIndex": 16
+                },
+                {
+                  "glyphId": 162,
+                  "paletteIndex": 22
+                },
+                {
+                  "glyphId": 164,
+                  "paletteIndex": 14
+                },
+                {
+                  "glyphId": 165,
+                  "paletteIndex": 26
+                },
+                {
+                  "glyphId": 166,
+                  "paletteIndex": 16
+                }
+              ],
+              "paletteEntries": 71
+            }
+          ]
+        },
+        {
+          "text": "😀",
+          "glyphs": [
+            {
+              "glyphId": 17,
+              "clusterStart": 0,
+              "clusterEnd": 2,
+              "sourceText": "😀",
+              "xAdvance": 1275,
+              "yAdvance": 0,
+              "xOffset": 0,
+              "yOffset": 0,
+              "flags": 0
+            }
+          ],
+          "payloads": [
+            {
+              "kind": "colr-v0",
+              "available": true,
+              "layers": [
+                {
+                  "glyphId": 149,
+                  "paletteIndex": 65
+                },
+                {
+                  "glyphId": 150,
+                  "paletteIndex": 13
+                },
+                {
+                  "glyphId": 151,
+                  "paletteIndex": 31
+                },
+                {
+                  "glyphId": 152,
+                  "paletteIndex": 13
+                },
+                {
+                  "glyphId": 158,
+                  "paletteIndex": 31
+                },
+                {
+                  "glyphId": 153,
+                  "paletteIndex": 54
+                },
+                {
+                  "glyphId": 154,
+                  "paletteIndex": 13
+                },
+                {
+                  "glyphId": 155,
+                  "paletteIndex": 55
+                },
+                {
+                  "glyphId": 156,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 157,
+                  "paletteIndex": 54
+                }
+              ],
+              "paletteEntries": 71
+            }
+          ]
+        },
+        {
+          "text": "❤",
+          "glyphs": [
+            {
+              "glyphId": 24,
+              "clusterStart": 0,
+              "clusterEnd": 1,
+              "sourceText": "❤",
+              "xAdvance": 1275,
+              "yAdvance": 0,
+              "xOffset": 0,
+              "yOffset": 0,
+              "flags": 0
+            }
+          ],
+          "payloads": [
+            {
+              "kind": "colr-v0",
+              "available": true,
+              "layers": [
+                {
+                  "glyphId": 169,
+                  "paletteIndex": 59
+                },
+                {
+                  "glyphId": 170,
+                  "paletteIndex": 46
+                },
+                {
+                  "glyphId": 171,
+                  "paletteIndex": 46
+                },
+                {
+                  "glyphId": 172,
+                  "paletteIndex": 66
+                },
+                {
+                  "glyphId": 173,
+                  "paletteIndex": 66
+                }
+              ],
+              "paletteEntries": 71
+            }
+          ]
+        },
+        {
+          "text": "👨‍👩‍👧",
+          "glyphs": [
+            {
+              "glyphId": 15,
+              "clusterStart": 0,
+              "clusterEnd": 8,
+              "sourceText": "👨‍👩‍👧",
+              "xAdvance": 1275,
+              "yAdvance": 0,
+              "xOffset": 0,
+              "yOffset": 0,
+              "flags": 0
+            }
+          ],
+          "payloads": [
+            {
+              "kind": "colr-v0",
+              "available": true,
+              "layers": [
+                {
+                  "glyphId": 78,
+                  "paletteIndex": 2
+                },
+                {
+                  "glyphId": 79,
+                  "paletteIndex": 52
+                },
+                {
+                  "glyphId": 80,
+                  "paletteIndex": 69
+                },
+                {
+                  "glyphId": 81,
+                  "paletteIndex": 52
+                },
+                {
+                  "glyphId": 82,
+                  "paletteIndex": 69
+                },
+                {
+                  "glyphId": 83,
+                  "paletteIndex": 29
+                },
+                {
+                  "glyphId": 84,
+                  "paletteIndex": 52
+                },
+                {
+                  "glyphId": 85,
+                  "paletteIndex": 12
+                },
+                {
+                  "glyphId": 111,
+                  "paletteIndex": 12
+                },
+                {
+                  "glyphId": 86,
+                  "paletteIndex": 25
+                },
+                {
+                  "glyphId": 112,
+                  "paletteIndex": 25
+                },
+                {
+                  "glyphId": 87,
+                  "paletteIndex": 19
+                },
+                {
+                  "glyphId": 88,
+                  "paletteIndex": 24
+                },
+                {
+                  "glyphId": 89,
+                  "paletteIndex": 19
+                },
+                {
+                  "glyphId": 89,
+                  "paletteIndex": 24
+                },
+                {
+                  "glyphId": 90,
+                  "paletteIndex": 18
+                },
+                {
+                  "glyphId": 113,
+                  "paletteIndex": 52
+                },
+                {
+                  "glyphId": 91,
+                  "paletteIndex": 69
+                },
+                {
+                  "glyphId": 92,
+                  "paletteIndex": 69
+                },
+                {
+                  "glyphId": 93,
+                  "paletteIndex": 29
+                },
+                {
+                  "glyphId": 94,
+                  "paletteIndex": 52
+                },
+                {
+                  "glyphId": 114,
+                  "paletteIndex": 12
+                },
+                {
+                  "glyphId": 115,
+                  "paletteIndex": 12
+                },
+                {
+                  "glyphId": 95,
+                  "paletteIndex": 25
+                },
+                {
+                  "glyphId": 116,
+                  "paletteIndex": 25
+                },
+                {
+                  "glyphId": 96,
+                  "paletteIndex": 19
+                },
+                {
+                  "glyphId": 97,
+                  "paletteIndex": 24
+                },
+                {
+                  "glyphId": 98,
+                  "paletteIndex": 8
+                },
+                {
+                  "glyphId": 99,
+                  "paletteIndex": 51
+                },
+                {
+                  "glyphId": 100,
+                  "paletteIndex": 52
+                },
+                {
+                  "glyphId": 101,
+                  "paletteIndex": 19
+                },
+                {
+                  "glyphId": 102,
+                  "paletteIndex": 19
+                },
+                {
+                  "glyphId": 102,
+                  "paletteIndex": 24
+                },
+                {
+                  "glyphId": 117,
+                  "paletteIndex": 24
+                },
+                {
+                  "glyphId": 103,
+                  "paletteIndex": 52
+                },
+                {
+                  "glyphId": 104,
+                  "paletteIndex": 69
+                },
+                {
+                  "glyphId": 105,
+                  "paletteIndex": 29
+                },
+                {
+                  "glyphId": 106,
+                  "paletteIndex": 52
+                },
+                {
+                  "glyphId": 107,
+                  "paletteIndex": 12
+                },
+                {
+                  "glyphId": 118,
+                  "paletteIndex": 12
+                },
+                {
+                  "glyphId": 108,
+                  "paletteIndex": 25
+                },
+                {
+                  "glyphId": 109,
+                  "paletteIndex": 25
+                },
+                {
+                  "glyphId": 110,
+                  "paletteIndex": 19
+                },
+                {
+                  "glyphId": 110,
+                  "paletteIndex": 24
+                }
+              ],
+              "paletteEntries": 71
+            }
+          ]
+        },
+        {
+          "text": "👩‍💻",
+          "glyphs": [
+            {
+              "glyphId": 16,
+              "clusterStart": 0,
+              "clusterEnd": 5,
+              "sourceText": "👩‍💻",
+              "xAdvance": 1275,
+              "yAdvance": 0,
+              "xOffset": 0,
+              "yOffset": 0,
+              "flags": 0
+            }
+          ],
+          "payloads": [
+            {
+              "kind": "colr-v0",
+              "available": true,
+              "layers": [
+                {
+                  "glyphId": 119,
+                  "paletteIndex": 15
+                },
+                {
+                  "glyphId": 119,
+                  "paletteIndex": 45
+                },
+                {
+                  "glyphId": 135,
+                  "paletteIndex": 45
+                },
+                {
+                  "glyphId": 120,
+                  "paletteIndex": 28
+                },
+                {
+                  "glyphId": 136,
+                  "paletteIndex": 28
+                },
+                {
+                  "glyphId": 137,
+                  "paletteIndex": 28
+                },
+                {
+                  "glyphId": 138,
+                  "paletteIndex": 28
+                },
+                {
+                  "glyphId": 139,
+                  "paletteIndex": 28
+                },
+                {
+                  "glyphId": 140,
+                  "paletteIndex": 28
+                },
+                {
+                  "glyphId": 141,
+                  "paletteIndex": 28
+                },
+                {
+                  "glyphId": 142,
+                  "paletteIndex": 28
+                },
+                {
+                  "glyphId": 143,
+                  "paletteIndex": 28
+                },
+                {
+                  "glyphId": 144,
+                  "paletteIndex": 28
+                },
+                {
+                  "glyphId": 145,
+                  "paletteIndex": 28
+                },
+                {
+                  "glyphId": 121,
+                  "paletteIndex": 39
+                },
+                {
+                  "glyphId": 122,
+                  "paletteIndex": 27
+                },
+                {
+                  "glyphId": 123,
+                  "paletteIndex": 68
+                },
+                {
+                  "glyphId": 124,
+                  "paletteIndex": 39
+                },
+                {
+                  "glyphId": 125,
+                  "paletteIndex": 68
+                },
+                {
+                  "glyphId": 126,
+                  "paletteIndex": 56
+                },
+                {
+                  "glyphId": 127,
+                  "paletteIndex": 56
+                },
+                {
+                  "glyphId": 128,
+                  "paletteIndex": 19
+                },
+                {
+                  "glyphId": 128,
+                  "paletteIndex": 24
+                },
+                {
+                  "glyphId": 129,
+                  "paletteIndex": 69
+                },
+                {
+                  "glyphId": 130,
+                  "paletteIndex": 52
+                },
+                {
+                  "glyphId": 146,
+                  "paletteIndex": 12
+                },
+                {
+                  "glyphId": 147,
+                  "paletteIndex": 12
+                },
+                {
+                  "glyphId": 131,
+                  "paletteIndex": 25
+                },
+                {
+                  "glyphId": 148,
+                  "paletteIndex": 25
+                },
+                {
+                  "glyphId": 132,
+                  "paletteIndex": 17
+                },
+                {
+                  "glyphId": 133,
+                  "paletteIndex": 3
+                },
+                {
+                  "glyphId": 134,
+                  "paletteIndex": 19
+                },
+                {
+                  "glyphId": 134,
+                  "paletteIndex": 24
+                }
+              ],
+              "paletteEntries": 71
+            }
+          ]
+        },
+        {
+          "text": "🇺🇸",
+          "glyphs": [
+            {
+              "glyphId": 14,
+              "clusterStart": 0,
+              "clusterEnd": 4,
+              "sourceText": "🇺🇸",
+              "xAdvance": 1275,
+              "yAdvance": 0,
+              "xOffset": 0,
+              "yOffset": 0,
+              "flags": 0
+            }
+          ],
+          "payloads": [
+            {
+              "kind": "colr-v0",
+              "available": true,
+              "layers": [
+                {
+                  "glyphId": 25,
+                  "paletteIndex": 41
+                },
+                {
+                  "glyphId": 26,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 27,
+                  "paletteIndex": 11
+                },
+                {
+                  "glyphId": 28,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 40,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 41,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 42,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 43,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 29,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 44,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 45,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 46,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 30,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 47,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 48,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 49,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 50,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 31,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 51,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 32,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 52,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 33,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 53,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 54,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 55,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 56,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 34,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 57,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 58,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 59,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 35,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 60,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 61,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 62,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 63,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 36,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 64,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 65,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 66,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 37,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 67,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 68,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 69,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 70,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 38,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 71,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 72,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 73,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 39,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 74,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 75,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 76,
+                  "paletteIndex": 70
+                },
+                {
+                  "glyphId": 77,
+                  "paletteIndex": 70
+                }
+              ],
+              "paletteEntries": 71
+            }
+          ]
+        }
+      ],
+      "access": "bounded private SFNT table reader over the same caller-owned bytes"
+    },
+    {
+      "format": "colr-v1",
+      "fixture": "test-fixtures/fonts/color-glyph-validation/noto-validation-colr-v1.ttf",
+      "sha256": "10f97be0e9cfce40e55e60eb5b1964a2ecb9fe1d86619243ae21bddfbed17325",
+      "bytes": 17776,
+      "tables": {
+        "cmap": 228,
+        "COLR": 4485,
+        "CPAL": 286,
+        "glyf": 8916,
+        "GSUB": 168,
+        "head": 54,
+        "hhea": 36,
+        "hmtx": 256,
+        "loca": 228,
+        "maxp": 32,
+        "name": 348,
+        "OS/2": 96,
+        "post": 2415
+      },
+      "facts": {
+        "unitsPerEm": 1024,
+        "ascender": 950,
+        "descender": -250,
+        "lineGap": 0,
+        "coverageCount": 16,
+        "axes": []
+      },
+      "colrVersion": 1,
+      "palette": [
+        {
+          "blue": 0,
+          "green": 0,
+          "red": 0,
+          "alpha": 255
+        },
+        {
+          "blue": 167,
+          "green": 151,
+          "red": 0,
+          "alpha": 255
+        },
+        {
+          "blue": 137,
+          "green": 158,
+          "red": 0,
+          "alpha": 255
+        },
+        {
+          "blue": 212,
+          "green": 188,
+          "red": 0,
+          "alpha": 255
+        },
+        {
+          "blue": 165,
+          "green": 191,
+          "red": 0,
+          "alpha": 255
+        },
+        {
+          "blue": 19,
+          "green": 19,
+          "red": 19,
+          "alpha": 255
+        },
+        {
+          "blue": 229,
+          "green": 136,
+          "red": 30,
+          "alpha": 255
+        },
+        {
+          "blue": 33,
+          "green": 33,
+          "red": 33,
+          "alpha": 255
+        },
+        {
+          "blue": 243,
+          "green": 150,
+          "red": 33,
+          "alpha": 255
+        },
+        {
+          "blue": 53,
+          "green": 53,
+          "red": 53,
+          "alpha": 255
+        },
+        {
+          "blue": 110,
+          "green": 59,
+          "red": 60,
+          "alpha": 255
+        },
+        {
+          "blue": 64,
+          "green": 64,
+          "red": 64,
+          "alpha": 255
+        },
+        {
+          "blue": 13,
+          "green": 43,
+          "red": 66,
+          "alpha": 255
+        },
+        {
+          "blue": 66,
+          "green": 66,
+          "red": 66,
+          "alpha": 255
+        },
+        {
+          "blue": 39,
+          "green": 47,
+          "red": 74,
+          "alpha": 255
+        },
+        {
+          "blue": 225,
+          "green": 208,
+          "red": 77,
+          "alpha": 255
+        },
+        {
+          "blue": 235,
+          "green": 14,
+          "red": 83,
+          "alpha": 255
+        },
+        {
+          "blue": 48,
+          "green": 57,
+          "red": 84,
+          "alpha": 255
+        },
+        {
+          "blue": 55,
+          "green": 64,
+          "red": 92,
+          "alpha": 255
+        },
+        {
+          "blue": 97,
+          "green": 97,
+          "red": 97,
+          "alpha": 255
+        },
+        {
+          "blue": 246,
+          "green": 181,
+          "red": 100,
+          "alpha": 255
+        },
+        {
+          "blue": 255,
+          "green": 31,
+          "red": 101,
+          "alpha": 255
+        },
+        {
+          "blue": 65,
+          "green": 76,
+          "red": 109,
+          "alpha": 255
+        },
+        {
+          "blue": 74,
+          "green": 83,
+          "red": 112,
+          "alpha": 255
+        },
+        {
+          "blue": 179,
+          "green": 0,
+          "red": 118,
+          "alpha": 255
+        },
+        {
+          "blue": 3,
+          "green": 255,
+          "red": 118,
+          "alpha": 255
+        },
+        {
+          "blue": 72,
+          "green": 85,
+          "red": 121,
+          "alpha": 255
+        },
+        {
+          "blue": 52,
+          "green": 83,
+          "red": 135,
+          "alpha": 255
+        },
+        {
+          "blue": 36,
+          "green": 96,
+          "red": 137,
+          "alpha": 255
+        },
+        {
+          "blue": 56,
+          "green": 87,
+          "red": 141,
+          "alpha": 255
+        },
+        {
+          "blue": 77,
+          "green": 103,
+          "red": 145,
+          "alpha": 255
+        },
+        {
+          "blue": 224,
+          "green": 0,
+          "red": 149,
+          "alpha": 255
+        },
+        {
+          "blue": 61,
+          "green": 96,
+          "red": 152,
+          "alpha": 255
+        },
+        {
+          "blue": 66,
+          "green": 105,
+          "red": 162,
+          "alpha": 255
+        },
+        {
+          "blue": 98,
+          "green": 123,
+          "red": 164,
+          "alpha": 255
+        },
+        {
+          "blue": 67,
+          "green": 108,
+          "red": 165,
+          "alpha": 255
+        },
+        {
+          "blue": 255,
+          "green": 0,
+          "red": 170,
+          "alpha": 255
+        },
+        {
+          "blue": 100,
+          "green": 130,
+          "red": 173,
+          "alpha": 255
+        },
+        {
+          "blue": 52,
+          "green": 34,
+          "red": 178,
+          "alpha": 255
+        },
+        {
+          "blue": 103,
+          "green": 138,
+          "red": 183,
+          "alpha": 255
+        },
+        {
+          "blue": 104,
+          "green": 141,
+          "red": 186,
+          "alpha": 255
+        },
+        {
+          "blue": 99,
+          "green": 143,
+          "red": 186,
+          "alpha": 255
+        },
+        {
+          "blue": 190,
+          "green": 190,
+          "red": 191,
+          "alpha": 255
+        },
+        {
+          "blue": 51,
+          "green": 51,
+          "red": 204,
+          "alpha": 255
+        },
+        {
+          "blue": 122,
+          "green": 164,
+          "red": 204,
+          "alpha": 255
+        },
+        {
+          "blue": 136,
+          "green": 176,
+          "red": 214,
+          "alpha": 255
+        },
+        {
+          "blue": 146,
+          "green": 184,
+          "red": 222,
+          "alpha": 255
+        },
+        {
+          "blue": 149,
+          "green": 187,
+          "red": 224,
+          "alpha": 255
+        },
+        {
+          "blue": 231,
+          "green": 190,
+          "red": 225,
+          "alpha": 255
+        },
+        {
+          "blue": 0,
+          "green": 150,
+          "red": 229,
+          "alpha": 255
+        },
+        {
+          "blue": 126,
+          "green": 183,
+          "red": 230,
+          "alpha": 255
+        },
+        {
+          "blue": 0,
+          "green": 143,
+          "red": 235,
+          "alpha": 255
+        },
+        {
+          "blue": 112,
+          "green": 119,
+          "red": 237,
+          "alpha": 255
+        },
+        {
+          "blue": 0,
+          "green": 166,
+          "red": 237,
+          "alpha": 255
+        },
+        {
+          "blue": 145,
+          "green": 195,
+          "red": 237,
+          "alpha": 255
+        },
+        {
+          "blue": 158,
+          "green": 203,
+          "red": 240,
+          "alpha": 255
+        },
+        {
+          "blue": 54,
+          "green": 67,
+          "red": 244,
+          "alpha": 255
+        },
+        {
+          "blue": 35,
+          "green": 162,
+          "red": 244,
+          "alpha": 255
+        },
+        {
+          "blue": 175,
+          "green": 213,
+          "red": 245,
+          "alpha": 255
+        },
+        {
+          "blue": 43,
+          "green": 192,
+          "red": 247,
+          "alpha": 255
+        },
+        {
+          "blue": 186,
+          "green": 219,
+          "red": 248,
+          "alpha": 255
+        },
+        {
+          "blue": 189,
+          "green": 221,
+          "red": 249,
+          "alpha": 255
+        },
+        {
+          "blue": 48,
+          "green": 224,
+          "red": 253,
+          "alpha": 255
+        },
+        {
+          "blue": 128,
+          "green": 138,
+          "red": 255,
+          "alpha": 255
+        },
+        {
+          "blue": 0,
+          "green": 170,
+          "red": 255,
+          "alpha": 255
+        },
+        {
+          "blue": 0,
+          "green": 179,
+          "red": 255,
+          "alpha": 255
+        },
+        {
+          "blue": 40,
+          "green": 202,
+          "red": 255,
+          "alpha": 255
+        },
+        {
+          "blue": 255,
+          "green": 255,
+          "red": 255,
+          "alpha": 255
+        }
+      ],
+      "bitmapStrikes": [],
+      "svgDocuments": [],
+      "shapedCases": [
+        {
+          "text": "✍",
+          "glyphs": [
+            {
+              "glyphId": 18,
+              "clusterStart": 0,
+              "clusterEnd": 1,
+              "sourceText": "✍",
+              "xAdvance": 1275,
+              "yAdvance": 0,
+              "xOffset": 0,
+              "yOffset": 0,
+              "flags": 0
+            }
+          ],
+          "payloads": [
+            {
+              "kind": "colr-v1",
+              "available": true,
+              "paintGraph": "present-unparsed"
+            }
+          ]
+        },
+        {
+          "text": "✍🏻",
+          "glyphs": [
+            {
+              "glyphId": 19,
+              "clusterStart": 0,
+              "clusterEnd": 3,
+              "sourceText": "✍🏻",
+              "xAdvance": 1275,
+              "yAdvance": 0,
+              "xOffset": 0,
+              "yOffset": 0,
+              "flags": 0
+            }
+          ],
+          "payloads": [
+            {
+              "kind": "colr-v1",
+              "available": true,
+              "paintGraph": "present-unparsed"
+            }
+          ]
+        },
+        {
+          "text": "✍🏽",
+          "glyphs": [
+            {
+              "glyphId": 21,
+              "clusterStart": 0,
+              "clusterEnd": 3,
+              "sourceText": "✍🏽",
+              "xAdvance": 1275,
+              "yAdvance": 0,
+              "xOffset": 0,
+              "yOffset": 0,
+              "flags": 0
+            }
+          ],
+          "payloads": [
+            {
+              "kind": "colr-v1",
+              "available": true,
+              "paintGraph": "present-unparsed"
+            }
+          ]
+        },
+        {
+          "text": "✍🏿",
+          "glyphs": [
+            {
+              "glyphId": 23,
+              "clusterStart": 0,
+              "clusterEnd": 3,
+              "sourceText": "✍🏿",
+              "xAdvance": 1275,
+              "yAdvance": 0,
+              "xOffset": 0,
+              "yOffset": 0,
+              "flags": 0
+            }
+          ],
+          "payloads": [
+            {
+              "kind": "colr-v1",
+              "available": true,
+              "paintGraph": "present-unparsed"
+            }
+          ]
+        },
+        {
+          "text": "😀",
+          "glyphs": [
+            {
+              "glyphId": 17,
+              "clusterStart": 0,
+              "clusterEnd": 2,
+              "sourceText": "😀",
+              "xAdvance": 1275,
+              "yAdvance": 0,
+              "xOffset": 0,
+              "yOffset": 0,
+              "flags": 0
+            }
+          ],
+          "payloads": [
+            {
+              "kind": "colr-v1",
+              "available": true,
+              "paintGraph": "present-unparsed"
+            }
+          ]
+        },
+        {
+          "text": "❤",
+          "glyphs": [
+            {
+              "glyphId": 24,
+              "clusterStart": 0,
+              "clusterEnd": 1,
+              "sourceText": "❤",
+              "xAdvance": 1275,
+              "yAdvance": 0,
+              "xOffset": 0,
+              "yOffset": 0,
+              "flags": 0
+            }
+          ],
+          "payloads": [
+            {
+              "kind": "colr-v1",
+              "available": true,
+              "paintGraph": "present-unparsed"
+            }
+          ]
+        },
+        {
+          "text": "👨‍👩‍👧",
+          "glyphs": [
+            {
+              "glyphId": 15,
+              "clusterStart": 0,
+              "clusterEnd": 8,
+              "sourceText": "👨‍👩‍👧",
+              "xAdvance": 1275,
+              "yAdvance": 0,
+              "xOffset": 0,
+              "yOffset": 0,
+              "flags": 0
+            }
+          ],
+          "payloads": [
+            {
+              "kind": "colr-v1",
+              "available": true,
+              "paintGraph": "present-unparsed"
+            }
+          ]
+        },
+        {
+          "text": "👩‍💻",
+          "glyphs": [
+            {
+              "glyphId": 16,
+              "clusterStart": 0,
+              "clusterEnd": 5,
+              "sourceText": "👩‍💻",
+              "xAdvance": 1275,
+              "yAdvance": 0,
+              "xOffset": 0,
+              "yOffset": 0,
+              "flags": 0
+            }
+          ],
+          "payloads": [
+            {
+              "kind": "colr-v1",
+              "available": true,
+              "paintGraph": "present-unparsed"
+            }
+          ]
+        },
+        {
+          "text": "🇺🇸",
+          "glyphs": [
+            {
+              "glyphId": 14,
+              "clusterStart": 0,
+              "clusterEnd": 4,
+              "sourceText": "🇺🇸",
+              "xAdvance": 1275,
+              "yAdvance": 0,
+              "xOffset": 0,
+              "yOffset": 0,
+              "flags": 0
+            }
+          ],
+          "payloads": [
+            {
+              "kind": "colr-v1",
+              "available": true,
+              "paintGraph": "present-unparsed"
+            }
+          ]
+        }
+      ],
+      "access": "bounded private SFNT table reader over the same caller-owned bytes"
+    },
+    {
+      "format": "sbix",
+      "fixture": "test-fixtures/fonts/color-glyph-validation/noto-validation-sbix.ttf",
+      "sha256": "132f8d89bded37c1f6a2dbf241f1b1af1983fe9f45ff8c78dc427ca971d9b664",
+      "bytes": 32712,
+      "tables": {
+        "cmap": 228,
+        "glyf": 42,
+        "GSUB": 168,
+        "head": 54,
+        "hhea": 36,
+        "hmtx": 80,
+        "loca": 52,
+        "maxp": 32,
+        "name": 348,
+        "OS/2": 96,
+        "post": 336,
+        "sbix": 31029
+      },
+      "facts": {
+        "unitsPerEm": 1024,
+        "ascender": 950,
+        "descender": -250,
+        "lineGap": 0,
+        "coverageCount": 16,
+        "axes": []
+      },
+      "colrVersion": null,
+      "palette": null,
+      "bitmapStrikes": [
+        {
+          "ppem": 109,
+          "resolution": 72
+        }
+      ],
+      "svgDocuments": [],
+      "shapedCases": [
+        {
+          "text": "✍",
+          "glyphs": [
+            {
+              "glyphId": 18,
+              "clusterStart": 0,
+              "clusterEnd": 1,
+              "sourceText": "✍",
+              "xAdvance": 1275,
+              "yAdvance": 0,
+              "xOffset": 0,
+              "yOffset": 0,
+              "flags": 0
+            }
+          ],
+          "payloads": [
+            {
+              "kind": "sbix",
+              "available": true,
+              "strikes": [
+                {
+                  "ppem": 109,
+                  "resolution": 72
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "text": "✍🏻",
+          "glyphs": [
+            {
+              "glyphId": 19,
+              "clusterStart": 0,
+              "clusterEnd": 3,
+              "sourceText": "✍🏻",
+              "xAdvance": 1275,
+              "yAdvance": 0,
+              "xOffset": 0,
+              "yOffset": 0,
+              "flags": 0
+            }
+          ],
+          "payloads": [
+            {
+              "kind": "sbix",
+              "available": true,
+              "strikes": [
+                {
+                  "ppem": 109,
+                  "resolution": 72
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "text": "✍🏽",
+          "glyphs": [
+            {
+              "glyphId": 21,
+              "clusterStart": 0,
+              "clusterEnd": 3,
+              "sourceText": "✍🏽",
+              "xAdvance": 1275,
+              "yAdvance": 0,
+              "xOffset": 0,
+              "yOffset": 0,
+              "flags": 0
+            }
+          ],
+          "payloads": [
+            {
+              "kind": "sbix",
+              "available": true,
+              "strikes": [
+                {
+                  "ppem": 109,
+                  "resolution": 72
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "text": "✍🏿",
+          "glyphs": [
+            {
+              "glyphId": 23,
+              "clusterStart": 0,
+              "clusterEnd": 3,
+              "sourceText": "✍🏿",
+              "xAdvance": 1275,
+              "yAdvance": 0,
+              "xOffset": 0,
+              "yOffset": 0,
+              "flags": 0
+            }
+          ],
+          "payloads": [
+            {
+              "kind": "sbix",
+              "available": true,
+              "strikes": [
+                {
+                  "ppem": 109,
+                  "resolution": 72
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "text": "😀",
+          "glyphs": [
+            {
+              "glyphId": 17,
+              "clusterStart": 0,
+              "clusterEnd": 2,
+              "sourceText": "😀",
+              "xAdvance": 1275,
+              "yAdvance": 0,
+              "xOffset": 0,
+              "yOffset": 0,
+              "flags": 0
+            }
+          ],
+          "payloads": [
+            {
+              "kind": "sbix",
+              "available": true,
+              "strikes": [
+                {
+                  "ppem": 109,
+                  "resolution": 72
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "text": "❤",
+          "glyphs": [
+            {
+              "glyphId": 24,
+              "clusterStart": 0,
+              "clusterEnd": 1,
+              "sourceText": "❤",
+              "xAdvance": 1275,
+              "yAdvance": 0,
+              "xOffset": 0,
+              "yOffset": 0,
+              "flags": 0
+            }
+          ],
+          "payloads": [
+            {
+              "kind": "sbix",
+              "available": true,
+              "strikes": [
+                {
+                  "ppem": 109,
+                  "resolution": 72
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "text": "👨‍👩‍👧",
+          "glyphs": [
+            {
+              "glyphId": 15,
+              "clusterStart": 0,
+              "clusterEnd": 8,
+              "sourceText": "👨‍👩‍👧",
+              "xAdvance": 1275,
+              "yAdvance": 0,
+              "xOffset": 0,
+              "yOffset": 0,
+              "flags": 0
+            }
+          ],
+          "payloads": [
+            {
+              "kind": "sbix",
+              "available": true,
+              "strikes": [
+                {
+                  "ppem": 109,
+                  "resolution": 72
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "text": "👩‍💻",
+          "glyphs": [
+            {
+              "glyphId": 16,
+              "clusterStart": 0,
+              "clusterEnd": 5,
+              "sourceText": "👩‍💻",
+              "xAdvance": 1275,
+              "yAdvance": 0,
+              "xOffset": 0,
+              "yOffset": 0,
+              "flags": 0
+            }
+          ],
+          "payloads": [
+            {
+              "kind": "sbix",
+              "available": true,
+              "strikes": [
+                {
+                  "ppem": 109,
+                  "resolution": 72
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "text": "🇺🇸",
+          "glyphs": [
+            {
+              "glyphId": 14,
+              "clusterStart": 0,
+              "clusterEnd": 4,
+              "sourceText": "🇺🇸",
+              "xAdvance": 1275,
+              "yAdvance": 0,
+              "xOffset": 0,
+              "yOffset": 0,
+              "flags": 0
+            }
+          ],
+          "payloads": [
+            {
+              "kind": "sbix",
+              "available": true,
+              "strikes": [
+                {
+                  "ppem": 109,
+                  "resolution": 72
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "access": "bounded private SFNT table reader over the same caller-owned bytes"
+    },
+    {
+      "format": "svg",
+      "fixture": "test-fixtures/fonts/color-glyph-validation/noto-validation-svg.ttf",
+      "sha256": "57b4e59eb7a8c506affbaeb4b4726a1a37c59bf8f067a47fb541a69c47a0b113",
+      "bytes": 61196,
+      "tables": {
+        "cmap": 228,
+        "glyf": 42,
+        "GSUB": 168,
+        "head": 54,
+        "hhea": 36,
+        "hmtx": 80,
+        "loca": 52,
+        "maxp": 32,
+        "name": 348,
+        "OS/2": 96,
+        "post": 336,
+        "SVG": 59514
+      },
+      "facts": {
+        "unitsPerEm": 1024,
+        "ascender": 950,
+        "descender": -250,
+        "lineGap": 0,
+        "coverageCount": 16,
+        "axes": []
+      },
+      "colrVersion": null,
+      "palette": null,
+      "bitmapStrikes": [],
+      "svgDocuments": [
+        {
+          "startGlyphId": 14,
+          "endGlyphId": 14,
+          "compressed": false,
+          "byteLength": 5807
+        },
+        {
+          "startGlyphId": 15,
+          "endGlyphId": 16,
+          "compressed": false,
+          "byteLength": 29302
+        },
+        {
+          "startGlyphId": 17,
+          "endGlyphId": 17,
+          "compressed": false,
+          "byteLength": 3252
+        },
+        {
+          "startGlyphId": 18,
+          "endGlyphId": 23,
+          "compressed": false,
+          "byteLength": 19678
+        },
+        {
+          "startGlyphId": 24,
+          "endGlyphId": 24,
+          "compressed": false,
+          "byteLength": 1403
+        }
+      ],
+      "shapedCases": [
+        {
+          "text": "✍",
+          "glyphs": [
+            {
+              "glyphId": 18,
+              "clusterStart": 0,
+              "clusterEnd": 1,
+              "sourceText": "✍",
+              "xAdvance": 1275,
+              "yAdvance": 0,
+              "xOffset": 0,
+              "yOffset": 0,
+              "flags": 0
+            }
+          ],
+          "payloads": [
+            {
+              "kind": "svg",
+              "available": true,
+              "documents": [
+                {
+                  "startGlyphId": 14,
+                  "endGlyphId": 14,
+                  "compressed": false,
+                  "byteLength": 5807
+                },
+                {
+                  "startGlyphId": 15,
+                  "endGlyphId": 16,
+                  "compressed": false,
+                  "byteLength": 29302
+                },
+                {
+                  "startGlyphId": 17,
+                  "endGlyphId": 17,
+                  "compressed": false,
+                  "byteLength": 3252
+                },
+                {
+                  "startGlyphId": 18,
+                  "endGlyphId": 23,
+                  "compressed": false,
+                  "byteLength": 19678
+                },
+                {
+                  "startGlyphId": 24,
+                  "endGlyphId": 24,
+                  "compressed": false,
+                  "byteLength": 1403
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "text": "✍🏻",
+          "glyphs": [
+            {
+              "glyphId": 19,
+              "clusterStart": 0,
+              "clusterEnd": 3,
+              "sourceText": "✍🏻",
+              "xAdvance": 1275,
+              "yAdvance": 0,
+              "xOffset": 0,
+              "yOffset": 0,
+              "flags": 0
+            }
+          ],
+          "payloads": [
+            {
+              "kind": "svg",
+              "available": true,
+              "documents": [
+                {
+                  "startGlyphId": 14,
+                  "endGlyphId": 14,
+                  "compressed": false,
+                  "byteLength": 5807
+                },
+                {
+                  "startGlyphId": 15,
+                  "endGlyphId": 16,
+                  "compressed": false,
+                  "byteLength": 29302
+                },
+                {
+                  "startGlyphId": 17,
+                  "endGlyphId": 17,
+                  "compressed": false,
+                  "byteLength": 3252
+                },
+                {
+                  "startGlyphId": 18,
+                  "endGlyphId": 23,
+                  "compressed": false,
+                  "byteLength": 19678
+                },
+                {
+                  "startGlyphId": 24,
+                  "endGlyphId": 24,
+                  "compressed": false,
+                  "byteLength": 1403
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "text": "✍🏽",
+          "glyphs": [
+            {
+              "glyphId": 21,
+              "clusterStart": 0,
+              "clusterEnd": 3,
+              "sourceText": "✍🏽",
+              "xAdvance": 1275,
+              "yAdvance": 0,
+              "xOffset": 0,
+              "yOffset": 0,
+              "flags": 0
+            }
+          ],
+          "payloads": [
+            {
+              "kind": "svg",
+              "available": true,
+              "documents": [
+                {
+                  "startGlyphId": 14,
+                  "endGlyphId": 14,
+                  "compressed": false,
+                  "byteLength": 5807
+                },
+                {
+                  "startGlyphId": 15,
+                  "endGlyphId": 16,
+                  "compressed": false,
+                  "byteLength": 29302
+                },
+                {
+                  "startGlyphId": 17,
+                  "endGlyphId": 17,
+                  "compressed": false,
+                  "byteLength": 3252
+                },
+                {
+                  "startGlyphId": 18,
+                  "endGlyphId": 23,
+                  "compressed": false,
+                  "byteLength": 19678
+                },
+                {
+                  "startGlyphId": 24,
+                  "endGlyphId": 24,
+                  "compressed": false,
+                  "byteLength": 1403
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "text": "✍🏿",
+          "glyphs": [
+            {
+              "glyphId": 23,
+              "clusterStart": 0,
+              "clusterEnd": 3,
+              "sourceText": "✍🏿",
+              "xAdvance": 1275,
+              "yAdvance": 0,
+              "xOffset": 0,
+              "yOffset": 0,
+              "flags": 0
+            }
+          ],
+          "payloads": [
+            {
+              "kind": "svg",
+              "available": true,
+              "documents": [
+                {
+                  "startGlyphId": 14,
+                  "endGlyphId": 14,
+                  "compressed": false,
+                  "byteLength": 5807
+                },
+                {
+                  "startGlyphId": 15,
+                  "endGlyphId": 16,
+                  "compressed": false,
+                  "byteLength": 29302
+                },
+                {
+                  "startGlyphId": 17,
+                  "endGlyphId": 17,
+                  "compressed": false,
+                  "byteLength": 3252
+                },
+                {
+                  "startGlyphId": 18,
+                  "endGlyphId": 23,
+                  "compressed": false,
+                  "byteLength": 19678
+                },
+                {
+                  "startGlyphId": 24,
+                  "endGlyphId": 24,
+                  "compressed": false,
+                  "byteLength": 1403
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "text": "😀",
+          "glyphs": [
+            {
+              "glyphId": 17,
+              "clusterStart": 0,
+              "clusterEnd": 2,
+              "sourceText": "😀",
+              "xAdvance": 1275,
+              "yAdvance": 0,
+              "xOffset": 0,
+              "yOffset": 0,
+              "flags": 0
+            }
+          ],
+          "payloads": [
+            {
+              "kind": "svg",
+              "available": true,
+              "documents": [
+                {
+                  "startGlyphId": 14,
+                  "endGlyphId": 14,
+                  "compressed": false,
+                  "byteLength": 5807
+                },
+                {
+                  "startGlyphId": 15,
+                  "endGlyphId": 16,
+                  "compressed": false,
+                  "byteLength": 29302
+                },
+                {
+                  "startGlyphId": 17,
+                  "endGlyphId": 17,
+                  "compressed": false,
+                  "byteLength": 3252
+                },
+                {
+                  "startGlyphId": 18,
+                  "endGlyphId": 23,
+                  "compressed": false,
+                  "byteLength": 19678
+                },
+                {
+                  "startGlyphId": 24,
+                  "endGlyphId": 24,
+                  "compressed": false,
+                  "byteLength": 1403
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "text": "❤",
+          "glyphs": [
+            {
+              "glyphId": 24,
+              "clusterStart": 0,
+              "clusterEnd": 1,
+              "sourceText": "❤",
+              "xAdvance": 1275,
+              "yAdvance": 0,
+              "xOffset": 0,
+              "yOffset": 0,
+              "flags": 0
+            }
+          ],
+          "payloads": [
+            {
+              "kind": "svg",
+              "available": true,
+              "documents": [
+                {
+                  "startGlyphId": 14,
+                  "endGlyphId": 14,
+                  "compressed": false,
+                  "byteLength": 5807
+                },
+                {
+                  "startGlyphId": 15,
+                  "endGlyphId": 16,
+                  "compressed": false,
+                  "byteLength": 29302
+                },
+                {
+                  "startGlyphId": 17,
+                  "endGlyphId": 17,
+                  "compressed": false,
+                  "byteLength": 3252
+                },
+                {
+                  "startGlyphId": 18,
+                  "endGlyphId": 23,
+                  "compressed": false,
+                  "byteLength": 19678
+                },
+                {
+                  "startGlyphId": 24,
+                  "endGlyphId": 24,
+                  "compressed": false,
+                  "byteLength": 1403
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "text": "👨‍👩‍👧",
+          "glyphs": [
+            {
+              "glyphId": 15,
+              "clusterStart": 0,
+              "clusterEnd": 8,
+              "sourceText": "👨‍👩‍👧",
+              "xAdvance": 1275,
+              "yAdvance": 0,
+              "xOffset": 0,
+              "yOffset": 0,
+              "flags": 0
+            }
+          ],
+          "payloads": [
+            {
+              "kind": "svg",
+              "available": true,
+              "documents": [
+                {
+                  "startGlyphId": 14,
+                  "endGlyphId": 14,
+                  "compressed": false,
+                  "byteLength": 5807
+                },
+                {
+                  "startGlyphId": 15,
+                  "endGlyphId": 16,
+                  "compressed": false,
+                  "byteLength": 29302
+                },
+                {
+                  "startGlyphId": 17,
+                  "endGlyphId": 17,
+                  "compressed": false,
+                  "byteLength": 3252
+                },
+                {
+                  "startGlyphId": 18,
+                  "endGlyphId": 23,
+                  "compressed": false,
+                  "byteLength": 19678
+                },
+                {
+                  "startGlyphId": 24,
+                  "endGlyphId": 24,
+                  "compressed": false,
+                  "byteLength": 1403
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "text": "👩‍💻",
+          "glyphs": [
+            {
+              "glyphId": 16,
+              "clusterStart": 0,
+              "clusterEnd": 5,
+              "sourceText": "👩‍💻",
+              "xAdvance": 1275,
+              "yAdvance": 0,
+              "xOffset": 0,
+              "yOffset": 0,
+              "flags": 0
+            }
+          ],
+          "payloads": [
+            {
+              "kind": "svg",
+              "available": true,
+              "documents": [
+                {
+                  "startGlyphId": 14,
+                  "endGlyphId": 14,
+                  "compressed": false,
+                  "byteLength": 5807
+                },
+                {
+                  "startGlyphId": 15,
+                  "endGlyphId": 16,
+                  "compressed": false,
+                  "byteLength": 29302
+                },
+                {
+                  "startGlyphId": 17,
+                  "endGlyphId": 17,
+                  "compressed": false,
+                  "byteLength": 3252
+                },
+                {
+                  "startGlyphId": 18,
+                  "endGlyphId": 23,
+                  "compressed": false,
+                  "byteLength": 19678
+                },
+                {
+                  "startGlyphId": 24,
+                  "endGlyphId": 24,
+                  "compressed": false,
+                  "byteLength": 1403
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "text": "🇺🇸",
+          "glyphs": [
+            {
+              "glyphId": 14,
+              "clusterStart": 0,
+              "clusterEnd": 4,
+              "sourceText": "🇺🇸",
+              "xAdvance": 1275,
+              "yAdvance": 0,
+              "xOffset": 0,
+              "yOffset": 0,
+              "flags": 0
+            }
+          ],
+          "payloads": [
+            {
+              "kind": "svg",
+              "available": true,
+              "documents": [
+                {
+                  "startGlyphId": 14,
+                  "endGlyphId": 14,
+                  "compressed": false,
+                  "byteLength": 5807
+                },
+                {
+                  "startGlyphId": 15,
+                  "endGlyphId": 16,
+                  "compressed": false,
+                  "byteLength": 29302
+                },
+                {
+                  "startGlyphId": 17,
+                  "endGlyphId": 17,
+                  "compressed": false,
+                  "byteLength": 3252
+                },
+                {
+                  "startGlyphId": 18,
+                  "endGlyphId": 23,
+                  "compressed": false,
+                  "byteLength": 19678
+                },
+                {
+                  "startGlyphId": 24,
+                  "endGlyphId": 24,
+                  "compressed": false,
+                  "byteLength": 1403
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "access": "bounded private SFNT table reader over the same caller-owned bytes"
+    }
+  ],
+  "limitations": [
+    "COLR v1 paint nodes are inventoried but intentionally not normalized or interpreted.",
+    "sbix bytes are located but not decoded into a second general image abstraction.",
+    "SVG document ranges are located but documents are not executed or rasterized."
+  ]
+}

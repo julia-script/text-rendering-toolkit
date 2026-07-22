@@ -1,0 +1,127 @@
+{
+  "schemaVersion": "1",
+  "kind": "candidate-matrix",
+  "environment": {
+    "node": "v24.2.0",
+    "platform": "darwin-arm64"
+  },
+  "evidence": [
+    {
+      "source": "format-probes.json",
+      "integrity": "validated observation"
+    },
+    {
+      "source": "harfbuzz-bridge.json",
+      "integrity": "reproducible bridge measurement"
+    },
+    {
+      "source": "presentation-and-layout.json",
+      "integrity": "public boundary observation"
+    },
+    {
+      "source": "test-fixtures/fonts/color-glyph-validation/noto-validation-colr-v0.ttf",
+      "integrity": "77b3c1b7b4ad1003c74720f7f9f2a64fd4f6c38de60dc4c482729d43f317cc03"
+    },
+    {
+      "source": "test-fixtures/fonts/color-glyph-validation/noto-validation-colr-v1.ttf",
+      "integrity": "10f97be0e9cfce40e55e60eb5b1964a2ecb9fe1d86619243ae21bddfbed17325"
+    },
+    {
+      "source": "test-fixtures/fonts/color-glyph-validation/noto-validation-sbix.ttf",
+      "integrity": "132f8d89bded37c1f6a2dbf241f1b1af1983fe9f45ff8c78dc427ca971d9b664"
+    },
+    {
+      "source": "test-fixtures/fonts/color-glyph-validation/noto-validation-svg.ttf",
+      "integrity": "57b4e59eb7a8c506affbaeb4b4726a1a37c59bf8f067a47fb541a69c47a0b113"
+    }
+  ],
+  "scale": "0 (unacceptable) through 5 (strongest); equal criterion weights",
+  "scores": [
+    {
+      "format": "colr-v0",
+      "usefulCoverage": 4,
+      "scalability": 5,
+      "paletteAndForeground": 4,
+      "variation": 3,
+      "engineAccess": 5,
+      "bundleAndCacheCost": 5,
+      "rendererComplexity": 5,
+      "browserEsm": 5,
+      "lifecycle": 5,
+      "provenance": 5,
+      "decision": "select",
+      "limitations": [
+        "Layered solid fills only; gradients, transforms, and compositing require COLR v1.",
+        "Foreground-color sentinel is supported by the resolver but absent from this source corpus.",
+        "Coverage is proven for the accepted validation corpus, not every deployed emoji font."
+      ],
+      "total": 46
+    },
+    {
+      "format": "colr-v1",
+      "usefulCoverage": 5,
+      "scalability": 5,
+      "paletteAndForeground": 5,
+      "variation": 5,
+      "engineAccess": 3,
+      "bundleAndCacheCost": 4,
+      "rendererComplexity": 1,
+      "browserEsm": 5,
+      "lifecycle": 4,
+      "provenance": 5,
+      "decision": "reject",
+      "limitations": [
+        "The accepted fixture contains a paint graph that the production runtime does not export.",
+        "Partial paint-node support would misrepresent unsupported gradients and composition as support."
+      ],
+      "total": 42
+    },
+    {
+      "format": "sbix",
+      "usefulCoverage": 4,
+      "scalability": 1,
+      "paletteAndForeground": 1,
+      "variation": 1,
+      "engineAccess": 4,
+      "bundleAndCacheCost": 2,
+      "rendererComplexity": 3,
+      "browserEsm": 5,
+      "lifecycle": 4,
+      "provenance": 5,
+      "decision": "reject",
+      "limitations": [
+        "The fixture provides one 109 ppem strike, so quality depends on target size.",
+        "PNG decoding and size-specific RGBA cache ownership would be a second resource path."
+      ],
+      "total": 30
+    },
+    {
+      "format": "svg",
+      "usefulCoverage": 5,
+      "scalability": 5,
+      "paletteAndForeground": 1,
+      "variation": 3,
+      "engineAccess": 4,
+      "bundleAndCacheCost": 1,
+      "rendererComplexity": 1,
+      "browserEsm": 3,
+      "lifecycle": 2,
+      "provenance": 5,
+      "decision": "reject",
+      "limitations": [
+        "A safe SVG sanitizer and rasterizer would add a large untrusted-document surface.",
+        "Browser canvas would violate the renderer-neutral ownership target."
+      ],
+      "total": 30
+    }
+  ],
+  "checkpoint": {
+    "outcome": "go",
+    "selected": "colr-v0",
+    "accessPath": "bounded COLR v0 and CPAL table reader over caller-owned font bytes",
+    "reason": "It passes the complete accepted corpus, stays scalable, reuses the existing outline/SDF path per layer, and avoids the 31,884-byte universal HarfBuzz color bridge delta.",
+    "externalDecoder": "rejected: neither a second font parser nor image/SVG decoder is required",
+    "layoutResult": "unchanged",
+    "productionFollowUp": "add one lazy COLR v0 font capability and renderer-owned layered resource composition"
+  }
+}

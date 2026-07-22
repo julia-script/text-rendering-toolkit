@@ -3,6 +3,7 @@ import { type FontHandle, loadFont } from '@webgpu-text/font'
 const FONT_ASSETS = [
   ['latin', '/fonts/NotoSans-wdth-wght.ttf'],
   ['arabic', '/fonts/NotoSansArabic-wdth-wght.ttf'],
+  ['emoji', '/fonts/noto-validation-colr-v0.ttf'],
 ] as const
 
 export interface DemoFonts {

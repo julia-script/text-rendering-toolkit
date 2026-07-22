@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "tsc -p tsconfig.json && rolldown src/browser-entry.ts --file dist/browser/browser-entry.js --format esm --platform browser --transform.target es2023 --minify",
+    "build": "tsc -p tsconfig.json && rolldown src/browser-entry.ts --file dist/browser/browser-entry.js --format esm --platform browser --transform.target es2023 --minify && cp src/browser-smoke.html dist/browser/index.html",
     "benchmark": "tsc -p tsconfig.json && node dist/src/benchmark.js",
     "fixtures:record": "tsc -p tsconfig.json && node dist/src/record-fixtures.js",
     "test": "vitest run",

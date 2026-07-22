@@ -1,0 +1,79 @@
+---
+title: COLR v0 color glyphs
+description: Render caller-supplied COLR v0 font bytes without moving color policy into layout.
+---
+
+import { ColorGlyphExample } from '@/components/examples/color-glyph-example'
+
+<ColorGlyphExample />
+
+The libraries do not fetch fonts. Your application obtains the bytes however it wants, loads the
+handles, and explicitly orders candidate fonts. Put the emoji font first only where you want its
+glyphs to win.
+
+```ts
+import { loadFont } from '@webgpu-text/font'
+import { layoutText } from '@webgpu-text/layout'
+import { Text, TextResources } from '@webgpu-text/three'
+
+const [latinBytes, emojiBytes] = await Promise.all([
+  fetch('/fonts/NotoSans.ttf').then((response) => response.arrayBuffer()),
+  fetch('/fonts/MyColrV0Emoji.ttf').then((response) => response.arrayBuffer()),
+])
+const latin = await loadFont(latinBytes)
+const emoji = await loadFont(emojiBytes)
+const fonts = new Map([
+  ['latin', latin],
+  ['emoji', emoji],
+])
+
+const layout = layoutText(
+  {
+    text: 'Status: ready 😀',
+    style: {
+      key: 'body',
+      fontKeys: ['latin', 'emoji'],
+      fontSize: 24,
+      language: 'en',
+    },
+    styleRanges: [
+      {
+        start: 14,
+        end: 16,
+        style: {
+          key: 'emoji',
+          fontKeys: ['emoji', 'latin'],
+          fontSize: 24,
+          language: 'und',
+        },
+      },
+    ],
+  },
+  fonts,
+)
+
+const resources = new TextResources({ sdfSize: 64 })
+const text = new Text({
+  layout,
+  fonts,
+  resources,
+  color: 0xffffff,
+  styleColors: { emoji: 0x55ff99 }, // Used by any current-foreground layer.
+})
+await text.sync()
+scene.add(text)
+
+// The layout still has one positioned glyph per shaped glyph. COLR layers are
+// expanded only in renderer planning and reuse ordinary outline SDF slots.
+
+scene.remove(text)
+text.dispose()
+resources.dispose()
+latin.dispose()
+emoji.dispose()
+```
+
+Only COLR v0 with CPAL palette zero is supported today. Palette colors include their alpha. A layer
+marked as current foreground uses `styleColors` or the default `color`. Ordinary fonts, COLR v1,
+SVG glyphs, and embedded bitmap glyphs use the ordinary outline fallback; automatic browser-like
+emoji preference is intentionally not inferred.

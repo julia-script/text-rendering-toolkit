@@ -21,9 +21,24 @@ export interface TextGlyphOutline {
   readonly bounds: TextGlyphBounds
 }
 
+export interface TextRgbaColor {
+  readonly red: number
+  readonly green: number
+  readonly blue: number
+  readonly alpha: number
+}
+
+export type TextColorGlyphPaint = TextRgbaColor | 'foreground'
+
+export interface TextColorGlyphLayer {
+  readonly glyphId: number
+  readonly color: TextColorGlyphPaint
+}
+
 /** The structural subset of `@webgpu-text/font` used by the renderer. */
 export interface TextFont {
   getOutline(glyphId: number, variations?: Readonly<Record<string, number>>): TextGlyphOutline
+  getColorLayers?(glyphId: number): readonly TextColorGlyphLayer[] | null
 }
 
 export interface TextResourcesOptions {

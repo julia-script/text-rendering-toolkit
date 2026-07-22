@@ -6,6 +6,8 @@ export {
 export { TextResources } from './resources.js'
 export { Text } from './text.js'
 export type {
+  TextColorGlyphLayer,
+  TextColorGlyphPaint,
   TextCommittedState,
   TextFont,
   TextGlyphBounds,
@@ -13,4 +15,5 @@ export type {
   TextMaterial,
   TextOptions,
   TextResourcesOptions,
+  TextRgbaColor,
 } from './types.js'

@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "1",
+  "kind": "browser-color-font-reference",
+  "environment": {
+    "node": "browser",
+    "platform": "MacIntel"
+  },
+  "evidence": [
+    {
+      "source": "/@fs/Users/juliaortiz/Documents/dev.nosync/troika/test-fixtures/fonts/color-glyph-validation/noto-validation-colr-v0.ttf",
+      "integrity": "fixture-manifest-sha256"
+    }
+  ],
+  "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/149.0.0.0 Safari/537.36",
+  "font": "ColorGlyphValidation COLR v0",
+  "text": "A😀✍🏽🇺🇸",
+  "semanticPixels": {
+    "opaque": 23316,
+    "transparent": 107756,
+    "chromatic": 18742,
+    "semiTransparent": 1429,
+    "boundedAlpha": true
+  },
+  "authority": "informational rendering reference; project shaping/layout remains authoritative"
+}

@@ -66,12 +66,22 @@ test('ships public ESM runtime and declarations to a clean consumer', () => {
       resolve(consumer, 'main.ts'),
       `
         import { Text, TextResources, InvalidTextInputError } from '@webgpu-text/three'
-        import type { TextFont, TextMaterial, TextOptions, TextResourcesOptions } from '@webgpu-text/three'
+        import type {
+          TextColorGlyphLayer,
+          TextFont,
+          TextMaterial,
+          TextOptions,
+          TextResourcesOptions,
+          TextRgbaColor,
+        } from '@webgpu-text/three'
+        const red = { red: 255, green: 0, blue: 0, alpha: 128 } satisfies TextRgbaColor
+        const layers = [{ glyphId: 1, color: red }] satisfies readonly TextColorGlyphLayer[]
         const font: TextFont = {
           getOutline: () => ({
             commands: new Uint8Array(), coordinates: new Float32Array(),
             bounds: { xMin: 0, yMin: 0, xMax: 0, yMax: 0 },
           }),
+          getColorLayers: () => layers,
         }
         const options = { lit: true } as TextOptions
         const resourceOptions = { sdfSize: 16 } satisfies TextResourcesOptions

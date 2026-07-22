@@ -6,6 +6,7 @@ const documents = [
   'ROADMAP.md',
   'docs/validation/harfbuzz-font-engine.md',
   'docs/validation/text-preparation-boundary.md',
+  'docs/validation/unicode-line-breaking.md',
   'docs/validation/three-webgpu-text-core.md',
   'docs/validation/lit-text-shadow-seam.md',
 ]
@@ -19,3 +20,12 @@ for (const document of documents) {
   mkdirSync(dirname(output), { recursive: true })
   cpSync(resolve(repositoryRoot, document), output)
 }
+
+cpSync(
+  resolve(repositoryRoot, 'test-fixtures/fonts/color-glyph-validation/noto-validation-colr-v0.ttf'),
+  resolve(appRoot, 'public/fonts/noto-validation-colr-v0.ttf'),
+)
+cpSync(
+  resolve(repositoryRoot, 'test-fixtures/fonts/color-glyph-validation/LICENSE'),
+  resolve(appRoot, 'public/fonts/NotoEmoji-LICENSE.txt'),
+)

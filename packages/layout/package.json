@@ -16,12 +16,14 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "fixtures:record": "pnpm build && node --experimental-strip-types scripts/record-preparation-fixtures.ts",
     "test": "vitest run --passWithNoTests",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@webgpu-text/font": "workspace:^",
     "bidi-js": "1.0.3",
+    "linebreak": "1.1.0",
     "unicode-script": "1.2.0"
   }
 }

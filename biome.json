@@ -10,6 +10,7 @@
       "examples/**",
       "experiments/webgpu-rendering-seam/**",
       "experiments/text-preparation/**",
+      "experiments/color-glyph-boundary/**",
       "*.json"
     ]
   },

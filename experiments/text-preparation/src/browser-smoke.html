@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Unicode line-break browser observation</title>
+  </head>
+  <body>
+    <pre id="result">running</pre>
+    <script type="module">
+      import { layoutText, prepareText } from './browser-entry.js'
+
+      const segmenter = new Intl.Segmenter('und', { granularity: 'grapheme' })
+      const font = {
+        facts: {
+          unitsPerEm: 1000,
+          ascender: 800,
+          descender: -200,
+          lineGap: 0,
+          coverageCount: 1,
+          axes: [],
+        },
+        supports: () => true,
+        shape(input) {
+          return {
+            glyphs: [...segmenter.segment(input.text)].map((segment, glyphId) => ({
+              glyphId,
+              clusterStart: segment.index,
+              clusterEnd: segment.index + segment.segment.length,
+              sourceText: segment.segment,
+              xAdvance: 1000,
+              yAdvance: 0,
+              xOffset: 0,
+              yOffset: 0,
+              flags: 0,
+            })),
+            textLengthUtf16: input.text.length,
+            direction: input.direction,
+            script: input.script,
+            language: input.language,
+            variations: { ...(input.variations ?? {}) },
+          }
+        },
+        getOutline() {
+          throw new Error('Browser smoke fixture must not request outlines')
+        },
+        dispose() {},
+      }
+      const input = {
+        text: '你好世界',
+        style: { key: 'body', fontKeys: ['body'], fontSize: 1, language: 'zh' },
+        layout: { maxWidth: 2 },
+      }
+      const prepared = prepareText(input)
+      const layout = layoutText(input, new Map([['body', font]]))
+      const observation = {
+        schemaVersion: prepared.schemaVersion,
+        breakPositions: prepared.breakOpportunities.map(({ position }) => position),
+        lineEnds: layout.lines.map(({ end }) => end),
+      }
+      window.__webgpuTextLineBreakObservation = observation
+      document.querySelector('#result').textContent = JSON.stringify(observation)
+    </script>
+  </body>
+</html>

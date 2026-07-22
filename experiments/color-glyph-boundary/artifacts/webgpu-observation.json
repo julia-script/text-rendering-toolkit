@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "1",
+  "kind": "actual-webgpu-colr-v0",
+  "environment": {
+    "node": "browser",
+    "platform": "MacIntel"
+  },
+  "evidence": [
+    {
+      "source": "/@fs/Users/juliaortiz/Documents/dev.nosync/troika/test-fixtures/fonts/color-glyph-validation/noto-validation-colr-v0.ttf",
+      "integrity": "fixture-manifest-sha256"
+    },
+    {
+      "source": "/@fs/Users/juliaortiz/Documents/dev.nosync/troika/test-fixtures/fonts/harfbuzz-validation/NotoSans-wdth-wght.ttf",
+      "integrity": "harfbuzz-validation fixture"
+    }
+  ],
+  "three": "0.185.1",
+  "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/149.0.0.0 Safari/537.36",
+  "adapter": {
+    "architecture": "metal-3",
+    "description": "",
+    "device": "",
+    "vendor": "apple"
+  },
+  "backend": "WebGPU",
+  "layoutGlyphs": {
+    "small": 5,
+    "large": 5
+  },
+  "renderedLayerInstances": {
+    "unlit": 74,
+    "lit": 74
+  },
+  "materialVariants": ["unlit", "planar-lit"],
+  "paints": ["CPAL palette zero", "current foreground", "CPAL alpha 96/255"],
+  "outlineCallsAfterFirst": 73,
+  "outlineCallsAfterSharedBorrower": 73,
+  "semanticPixels": {
+    "opaque": 19775,
+    "transparent": 111297,
+    "chromatic": 14083,
+    "semiTransparent": 7547,
+    "boundedAlpha": true
+  },
+  "updateRecovery": "failed missing-font update preserved the accepted layout and recovered",
+  "lifecycle": "renderer resources disposed idempotently; caller fonts remain caller-owned"
+}

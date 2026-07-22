@@ -1,8 +1,11 @@
 import bidiFactory from 'bidi-js'
 import { unicodeScriptCode, unicodeScriptExtensionCodes } from 'unicode-script'
 import { TextPreparationError } from './errors.js'
+import { mandatoryLineBreakBoundaries } from './internal/break-controls.js'
+import { lineBreakOpportunities } from './internal/line-break.js'
 import type {
   LayoutPolicy,
+  LineBreakOpportunity,
   ParagraphDirection,
   PreparedSegment,
   PreparedText,
@@ -13,7 +16,7 @@ import type {
 
 const bidi = bidiFactory()
 const segmenter = new Intl.Segmenter('und', { granularity: 'grapheme' })
-const HARD_BREAK = /[\r\n]/u
+const HARD_BREAK = /[\n\v\f\r\u0085\u2028\u2029]/u
 const STRONG_SCRIPT = /^(?!Zyyy$|Zinh$|Zzzz$)[A-Z][a-z]{3}$/
 const SCRIPT = /^[A-Z][a-z]{3}$/
 const LANGUAGE = /^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*$/
@@ -376,11 +379,56 @@ function normalizeSegment(
   })
 }
 
+function normalizeBreakOpportunities(
+  value: unknown,
+  text: string,
+  boundaries: ReadonlySet<number>,
+): readonly LineBreakOpportunity[] {
+  if (!Array.isArray(value)) invalid('breakOpportunities must be an array')
+  const required = mandatoryLineBreakBoundaries(text)
+  let previous = -1
+  const opportunities = value.map((item, index) => {
+    if (typeof item !== 'object' || item === null || Array.isArray(item)) {
+      invalid(`breakOpportunities[${index}] must be an object`)
+    }
+    const opportunity = item as Partial<LineBreakOpportunity>
+    if (
+      !Number.isInteger(opportunity.position) ||
+      (opportunity.position ?? -1) < 0 ||
+      (opportunity.position ?? 0) > text.length ||
+      !boundaries.has(opportunity.position ?? -1)
+    ) {
+      invalid(`breakOpportunities[${index}].position must be a grapheme boundary`)
+    }
+    const position = opportunity.position as number
+    if (position <= previous) {
+      invalid('breakOpportunities must be ordered and unique')
+    }
+    if (typeof opportunity.required !== 'boolean') {
+      invalid(`breakOpportunities[${index}].required must be boolean`)
+    }
+    if (opportunity.required !== required.has(position)) {
+      invalid(`breakOpportunities[${index}].required does not match the source control`)
+    }
+    previous = position
+    return Object.freeze({ position, required: opportunity.required })
+  })
+  if (opportunities.at(-1)?.position !== text.length) {
+    invalid('breakOpportunities must contain one terminal boundary')
+  }
+  for (const position of required) {
+    if (!opportunities.some((opportunity) => opportunity.position === position)) {
+      invalid(`breakOpportunities are missing required boundary ${position}`)
+    }
+  }
+  return Object.freeze(opportunities)
+}
+
 export function validatePreparedText(value: PreparedText): PreparedText {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     invalid('prepared text must be an object')
   }
-  if (value.schemaVersion !== 1) invalid('prepared text schemaVersion must be 1')
+  if (value.schemaVersion !== 2) invalid('prepared text schemaVersion must be 2')
   if (typeof value.text !== 'string') invalid('prepared text must contain text')
   validUtf16(value.text)
   if (value.paragraphDirection === undefined)
@@ -390,6 +438,11 @@ export function validatePreparedText(value: PreparedText): PreparedText {
   const layout = normalizeLayout(value.layout, true)
   if (!Array.isArray(value.segments)) invalid('segments must be an array')
   const boundaries = graphemeBoundaries(value.text)
+  const breakOpportunities = normalizeBreakOpportunities(
+    value.breakOpportunities,
+    value.text,
+    boundaries,
+  )
   const coverage = new Uint8Array(value.text.length)
   let previousEnd = 0
   const segments = value.segments.map((segment, index) => {
@@ -405,12 +458,13 @@ export function validatePreparedText(value: PreparedText): PreparedText {
     }
   }
   return Object.freeze({
-    schemaVersion: 1,
+    schemaVersion: 2,
     text: value.text,
     paragraphDirection: direction,
     defaultStyle,
     layout,
     segments: Object.freeze(segments),
+    breakOpportunities,
   })
 }
 
@@ -471,11 +525,12 @@ export function prepareText(input: PrepareTextInput): PreparedText {
   }
 
   return Object.freeze({
-    schemaVersion: 1,
+    schemaVersion: 2,
     text: input.text,
     paragraphDirection: direction,
     defaultStyle,
     layout: normalizeLayout(input.layout),
     segments: Object.freeze(segments),
+    breakOpportunities: lineBreakOpportunities(input.text),
   })
 }

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "1",
+  "kind": "harfbuzz-color-bridge-browser",
+  "environment": {
+    "node": "browser",
+    "platform": "MacIntel"
+  },
+  "evidence": [
+    {
+      "source": "/.cache/harfbuzzjs/dist/harfbuzz.js",
+      "integrity": "harfbuzz-bridge.json"
+    }
+  ],
+  "browser": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/149.0.0.0 Safari/537.36",
+  "esmInitialization": "pass",
+  "wasmLocation": "/.cache/harfbuzzjs/dist/harfbuzz.wasm"
+}

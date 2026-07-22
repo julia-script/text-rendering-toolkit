@@ -18,10 +18,16 @@ const shaped = font.shape({
 })
 
 const outline = font.getOutline(shaped.glyphs[0].glyphId)
+const layers = font.getColorLayers(shaped.glyphs[0].glyphId)
 font.dispose()
 ```
 
 The handle owns WebAssembly resources. Dispose it when the application no longer needs that font.
 Outline extraction is lazy and cached within the live handle.
+
+For COLR v0 fonts, `getColorLayers()` returns ordered palette-zero layers on demand. Each layer has
+an ordinary outline glyph ID and either RGBA bytes or `"foreground"`, meaning the renderer should
+use the current text color. Ordinary fonts and unsupported color formats return `null`. The handle
+keeps its own copy of the caller-provided bytes until disposal.
 
 This package does not fetch fonts, choose fallbacks, wrap lines, generate SDFs, or import Three.js.

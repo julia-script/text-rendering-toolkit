@@ -16,7 +16,8 @@ const layout = layoutText(input, fonts)
 `prepareText()` is accepted because it performs real, font-independent work:
 grapheme segmentation, paragraph bidi resolution, directional segmentation,
 Unicode script resolution and Common/Inherited adoption, style intersection,
-and layout-policy normalization. The result is immutable, JSON-serializable,
+layout-policy normalization, and default Unicode line-break opportunity
+analysis. The schema-version-2 result is immutable, JSON-serializable,
 and reusable with structurally equivalent caller registries. It contains no font
 handle, glyph, outline, renderer, promise, or owned resource.
 
@@ -47,6 +48,17 @@ interface PrepareTextInput {
   style: TextStyle
   styleRanges?: readonly { start: number; end: number; style: TextStyle }[]
   layout?: Partial<LayoutPolicy>
+}
+
+interface LineBreakOpportunity {
+  position: number
+  required: boolean
+}
+
+interface PreparedText {
+  schemaVersion: 2
+  breakOpportunities: readonly LineBreakOpportunity[]
+  // text, style/layout analysis, and prepared segments omitted here
 }
 
 function prepareText(input: PrepareTextInput): PreparedText
@@ -88,12 +100,29 @@ handle, or installs a global cache.
   require cmap coverage. Hard breaks are not shaped.
 - Missing keys and missing coverage throw deterministic errors containing the
   UTF-16 range and attempted keys. No fallback is discovered or downloaded.
-- HarfBuzz remains the sole shaping authority. Each selected segment is shaped
-  once with explicit direction, script, language, features, and variations.
+- `linebreak@1.1.0` supplies default Unicode 13 opportunities through a local
+  typed adapter. The adapter produces ordered project-owned UTF-16 records,
+  filters editable grapheme boundaries, normalizes mandatory controls and CRLF,
+  and includes one terminal boundary.
+- HarfBuzz remains the sole shaping authority. Compatible selected segments are
+  shaped provisionally, candidate line fragments are measured with call-local
+  memoization, and exact final fragments are reshaped independently with
+  explicit direction, script, language, features, and variations.
   Metrics, advances, offsets, and outline bounds scale by
   `fontSize / unitsPerEm`; `fontUnitScale` preserves lazy outline mapping.
-- The font-aware stage calls the unchanged public `layoutResolvedText()` and
-  returns its renderer-neutral `LayoutResult`.
+- The font-aware stage calls public `layoutResolvedText()` with a stable explicit
+  break plan and returns its renderer-neutral `LayoutResult`. Expert callers
+  that omit opportunities retain the accepted legacy whitespace policy.
+
+### Line-break implementation
+
+`linebreak@1.1.0` is accepted behind a non-exported adapter. It is MIT licensed,
+publishes a browser-compatible ESM entry, returns JavaScript UTF-16 positions,
+and carries generated Unicode 13 data. Its upstream documentation reports
+roughly 50 skipped cases among more than 7,600 conformance fixtures. Project
+fixtures therefore remain explicit about the accepted punctuation, CJK,
+emoji/ZWJ, regional-indicator, combining, and mandatory-control behavior rather
+than claiming complete Unicode or browser parity.
 
 ## Candidate comparison
 
@@ -115,10 +144,10 @@ conformance evidence.
 | Generate a pinned table from `@unicode/unicode-17.0.0` | rejected for now | Reproducible and current, but the source package reports 1,647,729 unpacked bytes and production would own a generator, encoding, update process, and equivalent conformance tests. No measured runtime-size win justified that ownership. |
 | Public HarfBuzz property guessing | rejected | It would add no JavaScript table, but the current public `FontHandle` intentionally exposes shaping—not Unicode property lookup or `hb_buffer_guess_segment_properties()`. Building preparation on private WASM exports would violate the package boundary and still make script analysis font-aware. |
 
-The private browser-compatible ESM entry containing both preparation stages,
-`bidi-js`, and `unicode-script` is produced by `pnpm --filter
+The browser-compatible ESM entry containing production preparation/layout,
+`bidi-js`, `unicode-script`, and `linebreak` is produced by `pnpm --filter
 @webgpu-text/text-preparation-experiment build`. The final minified browser-targeted
-ESM entry is 74,073 bytes raw and 21,650 bytes gzip on the validation checkout; the public
+ESM entry is 98,977 bytes raw and 32,562 bytes gzip on the validation checkout; the public
 font/layout packages remain normal ESM dependencies rather than copied private
 modules. These are observations, not a budget. Candidate dependencies remain
 private until the production change makes the dependency decision explicit.
@@ -162,8 +191,8 @@ access, `old/`, or private package modules.
 The production follow-up must not silently widen this decision into complete
 text editing or typography. The following remain deferred:
 
-- complete Unicode line breaking, dictionary breaking, hyphenation, and
-  reshaping around selected soft breaks;
+- newer Unicode line-break data, CSS/locale tailoring, dictionary segmentation,
+  and hyphenation;
 - bidi caret affinity and editable/incremental paragraph state;
 - workers, shared preparation/layout caches, and font fetching helpers;
 - color-font and emoji rendering policy, even though joiner and variation

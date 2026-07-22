@@ -20,9 +20,11 @@ flowchart LR
 
 ## Preparation can be reused
 
-`prepareText()` understands the string, style ranges, paragraph direction, scripts, and layout
-policy without opening a font. Its serializable result can be reused later. Fonts become necessary
-when `layoutPreparedText()` selects fallback coverage, shapes glyphs, and produces positions.
+`prepareText()` understands the string, style ranges, paragraph direction, scripts, layout policy,
+and default Unicode line-break opportunities without opening a font. Its schema-version-2
+serializable result can be reused later. Fonts become necessary when `layoutPreparedText()` selects
+fallback coverage, measures the prepared candidates, reshapes final line fragments, and produces
+positions.
 
 ```ts
 const prepared = prepareText({ text, style, layout })

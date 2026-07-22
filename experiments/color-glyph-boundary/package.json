@@ -1,0 +1,29 @@
+{
+  "name": "@webgpu-text/color-glyph-boundary-experiment",
+  "version": "0.0.0-private",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "bridge:build": "pnpm build && node dist/src/build-harfbuzz-bridge.js",
+    "fixtures:acquire": "pnpm build && node dist/src/acquire-fixtures.js",
+    "observations:record": "pnpm build && node dist/src/record-observations.js",
+    "test": "vitest run --project unit",
+    "test:browser": "vitest run --project browser",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@webgpu-text/font": "workspace:^",
+    "@webgpu-text/layout": "workspace:^",
+    "@webgpu-text/three": "workspace:^",
+    "three": "0.185.1"
+  },
+  "devDependencies": {
+    "@types/node": "26.1.1",
+    "@types/three": "0.185.1",
+    "@vitest/browser-playwright": "4.1.10",
+    "@webgpu/types": "0.1.71",
+    "playwright": "1.61.1",
+    "vitest": "4.1.10"
+  }
+}

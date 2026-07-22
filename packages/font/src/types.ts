@@ -73,11 +73,26 @@ export interface GlyphOutline {
   readonly bounds: GlyphBounds
 }
 
+export interface RgbaColor {
+  readonly red: number
+  readonly green: number
+  readonly blue: number
+  readonly alpha: number
+}
+
+export type ColorGlyphPaint = RgbaColor | 'foreground'
+
+export interface ColorGlyphLayer {
+  readonly glyphId: number
+  readonly color: ColorGlyphPaint
+}
+
 export interface FontHandle {
   readonly facts: FontFacts
   supports(codePoint: number): boolean
   shape(input: ShapeInput): ShapedRun
   getOutline(glyphId: number, variations?: VariationCoordinates): GlyphOutline
+  getColorLayers(glyphId: number): readonly ColorGlyphLayer[] | null
   dispose(): void
 }
 

@@ -23,4 +23,13 @@ const prepared = prepareText({
 const result = layoutPreparedText(prepared, fonts)
 ```
 
+`prepared.schemaVersion` is `2`. Its immutable `breakOpportunities` are UTF-16 positions computed
+without fonts or a renderer, so the analysis can be serialized and reused. Once fonts are supplied,
+the package measures candidate lines and reshapes the exact fragments that become real lines; this
+keeps Arabic and other contextual shaping from joining across a selected boundary.
+
+The default opportunities use pinned `linebreak@1.1.0` Unicode 13 data. They improve spaces,
+punctuation, CJK, emoji sequences, and mandatory controls, but do not claim browser CSS tailoring,
+dictionary segmentation, or hyphenation.
+
 The result contains data only. Layout never creates SDFs, textures, meshes, or GPU resources.

@@ -9,9 +9,13 @@ import { ThreeExample } from '@/components/examples/three-example'
 
 This client-only example fetches font bytes, calls the same renderer-neutral `layoutText()` API,
 and gives completed `LayoutResult` values and the font registry to two `Text` objects. They borrow
-one application-owned `TextResources`, so repeated font/glyph identities reuse one monochrome SDF
+one application-owned `TextResources`, so repeated font/outline-glyph identities reuse one SDF
 cache and atlas while each mesh keeps independent geometry, material, appearance, and draw calls.
 The renderer does not own shaping or layout policy.
+
+The same handoff renders COLR v0 fonts without changing layout data: ordered layer outlines reuse
+that atlas, palette-zero colors remain instance RGBA, and `"foreground"` layers use the effective
+text or style color. See the color-glyph example for explicit font ordering and caller-owned bytes.
 
 The scene uses the construction-fixed lit material. On unmount it stops rendering, disconnects its
 resize observer, disposes both text meshes before their shared resources, disposes the scene and

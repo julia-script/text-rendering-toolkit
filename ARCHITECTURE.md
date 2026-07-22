@@ -32,10 +32,11 @@ instanced geometry, and shared TSL nodes bound to either the default unlit or
 construction-fixed planar standard material through an atomic `Text.sync()`
 lifecycle.
 
-Automatic script/direction itemization and explicit caller-font fallback are
-now production `@webgpu-text/layout` operations through `prepareText()`,
-`layoutPreparedText()`, and `layoutText()`. Complete Unicode line breaking, reshaping around line
-boundaries, bidi caret affinity, workers, atlas eviction,
+Automatic script/direction itemization, default Unicode 13 line-break
+opportunities, exact line-fragment reshaping, and explicit caller-font fallback
+are now production `@webgpu-text/layout` operations through `prepareText()`,
+`layoutPreparedText()`, and `layoutText()`. CSS/locale tailoring, dictionary
+segmentation, hyphenation, newer line-break data, bidi caret affinity, workers, atlas eviction,
 curved or configurable physical materials, and batching remain separate
 follow-ups. The production standard
 variant now promotes the validated front-facing planar seam with glyph-shaped
@@ -44,6 +45,15 @@ acquisition is caller-owned: no core package
 accepts URLs or performs network fetching. The layout package turns raw text or fully
 resolved runs into `LayoutResult`; the first renderer accepts only that completed
 handoff rather than implementing a partial raw-text policy.
+
+COLR v0 color glyphs are now a production capability. The font handle lazily
+reads validated palette-zero COLR/CPAL layers from its owned byte copy and
+returns ordered outline glyphs with RGBA or current-foreground paint. Three
+expands those layers only during resource planning, reuses ordinary SDF atlas
+slots, and carries paint as normalized instance RGBA. `PreparedText`,
+`LayoutResult`, line/caret/selection data, and caller font ordering remain
+unchanged. COLR v1 paint graphs, embedded bitmaps, SVG documents, and implicit
+browser-style emoji font reordering remain unsupported.
 
 ## Current responsibility map
 
@@ -159,10 +169,11 @@ Two reasonable alternatives are `@glyph-pipeline/*`, which is technically descri
 - HarfBuzz-backed font-specific shaping: cmap lookup, OpenType/AAT substitutions and positioning, script/language features, variation coordinates, clusters, advances, and offsets.
 - Glyph IDs, advance/offset values, and outline extraction.
 - Lazy numeric outline extraction and in-memory caches scoped to an explicit font instance.
+- Lazy bounded COLR v0/CPAL palette-zero layer resolution from the handle's owned byte copy.
 
 **Inputs:** `ArrayBuffer` or `Uint8Array`, plus shaping text/options.
 
-**Outputs:** an opaque `FontHandle` plus `ShapedRun` and `GlyphOutline` values made only from JavaScript objects and typed arrays.
+**Outputs:** an opaque `FontHandle` plus `ShapedRun`, `GlyphOutline`, and optional immutable `ColorGlyphLayer` values made only from JavaScript objects and typed arrays.
 
 **Does not own:** URL fetching, fallback-font policy, line wrapping, bidi paragraph layout, SDF encoding, workers, DOM APIs, or Three.js.
 
@@ -175,19 +186,22 @@ The important correction from the old naming is that “font loading,” “font
 **Owns:**
 
 - The implemented `ResolvedLayoutInput` boundary for fully selected, itemized, shaped, and scaled runs.
-- Deterministic hard breaks, whitespace wrapping, alignment, indentation, anchoring, line metrics, and resolved bidi-level visual ordering.
+- Deterministic mandatory breaks, optional Unicode opportunities, legacy expert whitespace wrapping, alignment, indentation, anchoring, line metrics, and resolved bidi-level visual ordering.
 - Positioned glyph instances, block/visible bounds, caret positions, selection rectangles, and point-to-caret hit testing.
-- The implemented `PreparedText` policy: grapheme segmentation,
-  paragraph bidi levels, ISO script adoption, style intersection, and explicit
-  ordered fallback over caller-supplied font handles.
+- The implemented schema-version-2 `PreparedText` policy: grapheme segmentation,
+  paragraph bidi levels, ISO script adoption, style intersection, pinned
+  Unicode 13 line-break opportunities, and explicit ordered fallback over
+  caller-supplied font handles.
 - Future optional ESM worker entry points for moving layout off the main thread.
 
 **Inputs:** raw text/style policy, immutable serializable `PreparedText`, or
 expert `ResolvedShapedRun` values using one effective layout-unit coordinate
 system. The prepared path receives a
 `ReadonlyMap<string, FontHandle>`. The pure first stage does not consult fonts;
-the synchronous second stage selects, shapes, scales, and delegates to the
-existing resolved core.
+the synchronous second stage selects fonts, performs a full-segment provisional
+shape/layout, measures adjacent legal candidates with call-local fragment
+memoization, reshapes the accepted final line fragments, scales once, and
+delegates to the resolved core with a stable selected break plan.
 
 **Outputs:** a renderer-neutral `LayoutResult` containing glyph references, font identities, positions, font-unit-to-layout-unit scales, bounds, and carets. Outlines are not embedded in the result.
 
@@ -230,6 +244,7 @@ The preserved `SDFGenerator.js` is mostly scheduling and WebGL/canvas integratio
 
 - The implemented layout-result `Text` mesh and latest-state promise synchronization lifecycle.
 - Lazy outline/SDF orchestration, failure atomicity, and committed layout identity.
+- Post-layout ordered color-layer expansion with palette/current-foreground RGBA instance paint and ordinary-outline fallback.
 - Public `TextResources` ownership for flat-slot allocation, RGBA channel packing, byte storage, square growth, full dirty uploads, glyph caching, and lifecycle; `Text` creates a private owner by default or borrows an explicitly shared owner. V1 has no eviction.
 - RGBA atlas upload into a Three `DataTexture`.
 - Capacity-aware instanced glyph geometry and explicit bounds.
@@ -238,7 +253,7 @@ The preserved `SDFGenerator.js` is mostly scheduling and WebGL/canvas integratio
 - Lifecycle-safe disposal that leaves caller fonts, renderer, and canvas alone.
 - Future batching, if profiling demonstrates a need.
 
-**Inputs today:** a completed public `LayoutResult`, a structural map of caller-owned lazy-outline handles, and baseline appearance values.
+**Inputs today:** a completed public `LayoutResult`, a structural map of caller-owned lazy-outline handles with optional color-layer lookup, and baseline appearance values.
 
 **Outputs:** Three scene objects and GPU resources.
 
@@ -254,6 +269,7 @@ The exact TypeScript names are provisional; the separation is not.
 | `ShapedRun` | `font` | `text-layout`, direct users | glyph IDs, cluster/source indices, advances, offsets | line breaks, final x/y placement |
 | `LayoutResult` | `text-layout` | renderers, editors, direct users | positioned glyph references, font keys, font-unit scales, bounds, line data, carets | outlines, font handles, SDF pixels, atlas indices, Three objects |
 | `GlyphOutline` | `font` | `sdf`, renderer orchestration, direct users | path commands and view box for one glyph reference | placement, SDF pixels, atlas state |
+| `ColorGlyphLayer` | `font` | renderer orchestration, direct users | ordered outline glyph IDs plus palette-zero RGBA or current foreground | placement, SDF pixels, COLR table offsets, renderer objects |
 | `Outline` | any producer | `sdf` | path commands and view box | font tables, text, placement |
 | `SdfBitmap` | `sdf` | renderer, direct users | one-channel pixels and encoding metadata | canvas and GPU handles |
 | `RendererAtlas` | renderer | renderer internals | RGBA bytes, slot metadata, dirty regions, cache and Three texture | public SDF API and parser details |
@@ -469,19 +485,23 @@ support remain unproven.
 ### Keep raw-text preparation renderer-neutral and reusable
 
 The validated preparation boundary has two synchronous stages. `prepareText()`
-performs font-independent grapheme, bidi, script, style, and layout-policy
-analysis and returns immutable JSON data. `layoutPreparedText()` receives that
+performs font-independent grapheme, bidi, script, style, layout-policy, and
+default Unicode line-break analysis and returns immutable schema-version-2 JSON
+data. `layoutPreparedText()` receives that
 value and an explicit ordered registry of caller-owned `FontHandle` values,
-selects one font per complete grapheme, shapes and scales through public font
-operations, then invokes the unchanged `layoutResolvedText()` core.
+selects one font per complete grapheme, measures prepared opportunities,
+reshapes exact final line fragments and scales through public font operations,
+then invokes `layoutResolvedText()` with a stable explicit break plan.
 
 This split is accepted for semantic reuse and transferability, not promised
 speed. The one-call `layoutText()` convenience may compose both stages, while
 `layoutResolvedText()` remains the expert boundary. No stage accepts URLs,
 fetches bytes, discovers browser/system fonts, owns handles, or contains
-renderer state. `bidi-js@1.0.3` and Unicode 17.0.0 script data are the pinned
-production revisions; their limitations and comparison are recorded in the
-[text-preparation report](docs/validation/text-preparation-boundary.md).
+renderer state. `bidi-js@1.0.3`, `unicode-script@1.2.0`, and
+`linebreak@1.1.0` are pinned production revisions. Line breaking uses Unicode
+13 data and deliberately excludes CSS/locale tailoring, dictionary
+segmentation, and hyphenation; limitations and observations are recorded in the
+[Unicode line-breaking report](docs/validation/unicode-line-breaking.md).
 
 ### Use HarfBuzzjs as the font and shaping engine
 
@@ -613,6 +633,36 @@ through the production lifecycle. It does not validate curved, double-sided,
 extruded, configurable physical, or normal-mapped text. See the
 [lit/shadow seam report](docs/validation/lit-text-shadow-seam.md) and the
 [production renderer report](docs/validation/three-webgpu-text-core.md).
+
+### Extend the glyph payload lazily for COLR v0
+
+The color-glyph validation confirms that color is a rendering payload, not a
+layout concern:
+
+```mermaid
+flowchart LR
+    Layout["LayoutResult<br/>fontKey + glyphId + variations + placement"] --> Choice{"font payload lookup"}
+    Choice -->|"ordinary or unsupported"| Outline["existing outline → SDF"]
+    Choice -->|"COLR v0"| Colr["ordered layer glyph IDs + CPAL colors"]
+    Colr --> LayerOutlines["existing outline → SDF per layer"]
+    Outline --> Resources["renderer-owned shared resources"]
+    LayerOutlines --> Resources
+    Resources --> Three["Three WebGPU composition"]
+```
+
+The production follow-up should add one narrow lazy COLR v0/CPAL operation to
+the caller-owned font handle. The font package owns table validation and the
+foreground-color sentinel but does not expose arbitrary table bytes. Layout,
+measurement, carets, selection, and the SDF package stay unchanged. The Three
+package owns ordered layer instances, effective style colors, shared resource
+identity, update atomicity, and GPU lifetime.
+
+The selected bounded table reader is preferred to the measured universal
+HarfBuzz color bridge: the bridge works in Node and browser ESM and correctly
+reports layer/palette presence, but enabling layer, paint, bitmap, and SVG
+operations adds 31,884 bytes to the current WASM. COLR v1, sbix, and SVG remain
+deliberately unsupported until their separate complexity is justified. See the
+[color-glyph boundary report](docs/validation/color-glyph-boundary.md).
 
 ### Reuse MIT sources with explicit provenance
 

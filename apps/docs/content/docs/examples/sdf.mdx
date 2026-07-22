@@ -10,5 +10,7 @@ import { SdfExample } from '@/components/examples/sdf-example'
 The selected character is laid out to identify its font and glyph ID. Only then does the example
 call `font.getOutline()`. That lazy numeric outline is passed directly to `generateSdf()`.
 
-The returned `Uint8Array` is painted into ordinary `ImageData`. The SDF package knows nothing about
-fonts, text layout, Three.js, canvas, or WebGPU; this application supplies the bridges.
+The returned `Uint8Array` is painted into ordinary `ImageData`. Change the glyph or bitmap
+resolution, then compare the raw encoded distance with a filled preview whose edge softness is
+adjustable. The SDF package knows nothing about fonts, text layout, Three.js, canvas, or WebGPU;
+this application supplies the bridges.

@@ -2,12 +2,21 @@ import { readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { loadFont } from '@webgpu-text/font'
-import { layoutResolvedText, type ResolvedLayoutInput } from '@webgpu-text/layout'
+import {
+  getSelectionRects,
+  layoutPreparedText,
+  layoutResolvedText,
+  prepareText,
+  type ResolvedLayoutInput,
+} from '@webgpu-text/layout'
 import { expect, test, vi } from 'vitest'
-import { Text, type TextFont } from '../src/index.js'
+import { Text, type TextFont, TextResources } from '../src/index.js'
 
 const fixtures = resolve(
   fileURLToPath(new URL('../../../test-fixtures/fonts/harfbuzz-validation/', import.meta.url)),
+)
+const colorFixtures = resolve(
+  fileURLToPath(new URL('../../../test-fixtures/fonts/color-glyph-validation/', import.meta.url)),
 )
 
 test('renders repeated public-font glyphs through one lazy outline/SDF insertion', async () => {
@@ -143,6 +152,97 @@ test('rejects a disposed public FontHandle without taking ownership', async () =
   const layout = layoutResolvedText(input)
   handle.dispose()
   const text = new Text({ layout, fonts: new Map([['noto', handle]]), sdfSize: 16 })
-  await expect(text.sync()).rejects.toThrow('Unable to resolve outline')
+  await expect(text.sync()).rejects.toThrow('Unable to resolve color layers')
   text.dispose()
+})
+
+test('renders the accepted color corpus through unchanged public layouts at two sizes', async () => {
+  const latin = await loadFont(
+    new Uint8Array(await readFile(resolve(fixtures, 'NotoSans-wdth-wght.ttf'))),
+  )
+  const emoji = await loadFont(
+    new Uint8Array(await readFile(resolve(colorFixtures, 'noto-validation-colr-v0.ttf'))),
+  )
+  const fontRegistry = new Map([
+    ['latin', latin],
+    ['emoji', emoji],
+  ])
+  const getOutline = vi.fn(emoji.getOutline.bind(emoji))
+  const getColorLayers = vi.fn(emoji.getColorLayers.bind(emoji))
+  const renderFonts = new Map<string, TextFont>([
+    ['latin', latin],
+    ['emoji', { getOutline, getColorLayers }],
+  ])
+  const resources = new TextResources({ sdfSize: 16 })
+  const values = []
+  const emojiText = '✍✍🏻✍🏽✍🏿😀❤👨‍👩‍👧👩‍💻🇺🇸'
+  const textValue = `A${emojiText}B`
+  try {
+    for (const fontSize of [1, 2]) {
+      const prepared = prepareText({
+        text: textValue,
+        style: { key: 'latin', fontKeys: ['latin', 'emoji'], fontSize, language: 'en' },
+        styleRanges: [
+          {
+            start: 1,
+            end: textValue.length - 1,
+            style: { key: 'emoji', fontKeys: ['emoji', 'latin'], fontSize, language: 'und' },
+          },
+        ],
+      })
+      const layout = layoutPreparedText(prepared, fontRegistry)
+      const rendererNeutralState = structuredClone({
+        blockBounds: layout.blockBounds,
+        visibleBounds: layout.visibleBounds,
+        lines: layout.lines,
+        carets: layout.carets,
+        glyphs: layout.glyphs,
+        selection: getSelectionRects(layout, { start: 1, end: textValue.length - 1 }),
+      })
+      expect(layout.glyphs[0]?.fontKey).toBe('latin')
+      expect(layout.glyphs.at(-1)?.fontKey).toBe('latin')
+      expect(layout.glyphs.slice(1, -1).every((glyph) => glyph.fontKey === 'emoji')).toBe(true)
+
+      const text = new Text({
+        layout,
+        fonts: renderFonts,
+        resources,
+        color: 0xffffff,
+        styleColors: { emoji: 0x00ff00 },
+      })
+      await text.sync()
+      expect(text.layoutResult).toBe(layout)
+      expect(text.geometry.instanceCount).toBeGreaterThan(layout.glyphs.length)
+      expect({
+        blockBounds: layout.blockBounds,
+        visibleBounds: layout.visibleBounds,
+        lines: layout.lines,
+        carets: layout.carets,
+        glyphs: layout.glyphs,
+        selection: getSelectionRects(layout, { start: 1, end: textValue.length - 1 }),
+      }).toEqual(rendererNeutralState)
+      values.push({
+        instanceCount: text.geometry.instanceCount,
+        bounds: [...text.geometry.getAttribute('glyphBounds').array].slice(
+          0,
+          text.geometry.instanceCount * 4,
+        ),
+        slots: [...text.geometry.getAttribute('glyphSlot').array].slice(
+          0,
+          text.geometry.instanceCount,
+        ),
+      })
+      text.dispose()
+    }
+
+    expect(values[1]?.instanceCount).toBe(values[0]?.instanceCount)
+    expect(values[1]?.slots).toEqual(values[0]?.slots)
+    expect(values[1]?.bounds).not.toEqual(values[0]?.bounds)
+    expect(getColorLayers).toHaveBeenCalledTimes(9)
+    expect(getOutline.mock.calls.length).toBeGreaterThan(0)
+  } finally {
+    resources.dispose()
+    latin.dispose()
+    emoji.dispose()
+  }
 })

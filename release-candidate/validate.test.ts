@@ -96,6 +96,7 @@ const candidateRoot = resolve(workspaceRoot, '.release-candidate')
 const archiveRoot = resolve(candidateRoot, 'packages')
 const packageIds: readonly PackageId[] = ['font', 'layout', 'sdf', 'three']
 const fontFixtures = resolve(workspaceRoot, 'test-fixtures/fonts/harfbuzz-validation')
+const colorFontFixtures = resolve(workspaceRoot, 'test-fixtures/fonts/color-glyph-validation')
 const expectedFiles: Readonly<Record<PackageId, readonly string[]>> = {
   font: [
     'dist/index.js',
@@ -276,6 +277,10 @@ function installConsumer(packages: readonly PackedPackage[], consumer: string): 
   for (const font of ['NotoSans-wdth-wght.ttf', 'NotoSansArabic-wdth-wght.ttf']) {
     cpSync(resolve(fontFixtures, font), resolve(consumer, font))
   }
+  cpSync(
+    resolve(colorFontFixtures, 'noto-validation-colr-v0.ttf'),
+    resolve(consumer, 'noto-validation-colr-v0.ttf'),
+  )
   writeFileSync(
     resolve(consumer, 'tsconfig.json'),
     `${JSON.stringify(

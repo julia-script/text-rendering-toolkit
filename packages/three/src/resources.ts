@@ -4,7 +4,13 @@ import { type DataTexture, Vector2 } from 'three/webgpu'
 
 import { type AtlasAddition, type AtlasPlan, type CachedGlyph, RgbaGlyphAtlas } from './atlas.js'
 import { DisposedTextResourcesError, InvalidTextInputError } from './errors.js'
-import type { TextFont, TextGlyphOutline, TextResourcesOptions } from './types.js'
+import type {
+  TextColorGlyphLayer,
+  TextColorGlyphPaint,
+  TextFont,
+  TextGlyphOutline,
+  TextResourcesOptions,
+} from './types.js'
 
 const DEFAULT_SDF_SIZE = 64
 const SDF_EXPONENT = 9
@@ -13,6 +19,7 @@ interface ResourceState {
   readonly atlas: RgbaGlyphAtlas
   readonly atlasGrid: Vector2
   readonly fontIds: WeakMap<TextFont, number>
+  readonly colorLayers: WeakMap<TextFont, Map<number, readonly TextColorGlyphLayer[] | null>>
   nextFontId: number
   disposed: boolean
 }
@@ -24,6 +31,8 @@ export interface TextResourceBinding {
 
 export interface PlannedTextGlyph {
   readonly glyph: PositionedGlyph
+  readonly outlineGlyphId: number
+  readonly paint: TextColorGlyphPaint
   readonly key: string
 }
 
@@ -110,6 +119,72 @@ function fontId(value: ResourceState, font: TextFont): number {
   return id
 }
 
+function validByte(value: number): boolean {
+  return Number.isInteger(value) && value >= 0 && value <= 255
+}
+
+function resolvedColorLayers(
+  value: ResourceState,
+  font: TextFont,
+  glyphId: number,
+): readonly TextColorGlyphLayer[] | null {
+  let cache = value.colorLayers.get(font)
+  if (!cache) {
+    cache = new Map()
+    value.colorLayers.set(font, cache)
+  }
+  if (cache.has(glyphId)) return cache.get(glyphId) ?? null
+
+  const lookup = font.getColorLayers
+  if (lookup === undefined) {
+    cache.set(glyphId, null)
+    return null
+  }
+  if (typeof lookup !== 'function') throw invalid('Font color lookup must be a function')
+
+  let result: readonly TextColorGlyphLayer[] | null
+  try {
+    result = lookup.call(font, glyphId)
+  } catch (error) {
+    throw invalid(`Unable to resolve color layers for glyph ${glyphId}`, error)
+  }
+  if (result === null) {
+    cache.set(glyphId, null)
+    return null
+  }
+  if (!Array.isArray(result) || result.length === 0) {
+    throw invalid(`Color layers for glyph ${glyphId} must be a non-empty array or null`)
+  }
+  const layers = Object.freeze(
+    result.map((layer, index): TextColorGlyphLayer => {
+      if (
+        !layer ||
+        typeof layer !== 'object' ||
+        !Number.isSafeInteger(layer.glyphId) ||
+        layer.glyphId < 0 ||
+        layer.glyphId > 0xffffffff
+      ) {
+        throw invalid(`Color layer ${index} for glyph ${glyphId} has an invalid glyphId`)
+      }
+      const color = layer.color
+      if (color === 'foreground') return Object.freeze({ glyphId: layer.glyphId, color })
+      if (
+        !color ||
+        typeof color !== 'object' ||
+        !validByte(color.red) ||
+        !validByte(color.green) ||
+        !validByte(color.blue) ||
+        !validByte(color.alpha)
+      ) {
+        throw invalid(`Color layer ${index} for glyph ${glyphId} has invalid RGBA bytes`)
+      }
+      return Object.freeze({ glyphId: layer.glyphId, color: Object.freeze({ ...color }) })
+    }),
+  )
+  cache.set(glyphId, layers)
+  return layers
+}
+
 export class TextResources {
   readonly sdfSize: number
 
@@ -121,6 +196,7 @@ export class TextResources {
       atlas: new RgbaGlyphAtlas(sdfSize),
       atlasGrid: new Vector2(1, 1),
       fontIds: new WeakMap(),
+      colorLayers: new WeakMap(),
       nextFontId: 1,
       disposed: false,
     })
@@ -153,15 +229,22 @@ export function planTextResources(
     if (!font || (typeof font !== 'object' && typeof font !== 'function')) {
       throw invalid(`Font registry has no usable entry for ${glyph.fontKey}`)
     }
-    const key = `${fontId(value, font)}:${glyph.glyphId}:${variationKey(glyph.variations)}:${resources.sdfSize}`
-    let cached = value.atlas.lookup(key) ?? local.get(key)
-    if (cached === undefined) {
-      const bitmap = paddedBitmap(font, glyph.glyphId, glyph.variations, resources.sdfSize)
-      additions.push({ key, bitmap })
-      cached = { slot: bitmap ? -1 : null, viewBox: bitmap?.viewBox ?? null }
-      local.set(key, cached)
+    const colorLayers = resolvedColorLayers(value, font, glyph.glyphId) ?? [
+      { glyphId: glyph.glyphId, color: 'foreground' as const },
+    ]
+    for (const layer of colorLayers) {
+      const key = `${fontId(value, font)}:${layer.glyphId}:${variationKey(glyph.variations)}:${resources.sdfSize}`
+      let cached = value.atlas.lookup(key) ?? local.get(key)
+      if (cached === undefined) {
+        const bitmap = paddedBitmap(font, layer.glyphId, glyph.variations, resources.sdfSize)
+        additions.push({ key, bitmap })
+        cached = { slot: bitmap ? -1 : null, viewBox: bitmap?.viewBox ?? null }
+        local.set(key, cached)
+      }
+      if (cached.slot !== null) {
+        planned.push({ glyph, outlineGlyphId: layer.glyphId, paint: layer.color, key })
+      }
     }
-    if (cached.slot !== null) planned.push({ glyph, key })
   }
   return { atlas: value.atlas.plan(additions), glyphs: planned }
 }

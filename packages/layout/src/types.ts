@@ -13,6 +13,12 @@ export interface LayoutBounds {
   readonly top: number
 }
 
+/** A legal UTF-16 boundary after which layout may, or must, start a new line. */
+export interface LineBreakOpportunity {
+  readonly position: number
+  readonly required: boolean
+}
+
 /** Effective metrics in the same layout units as glyph advances and output coordinates. */
 export interface ResolvedRunMetrics {
   readonly ascender: number
@@ -77,6 +83,8 @@ export interface ResolvedLayoutInput {
   readonly anchorX: HorizontalAnchor
   readonly anchorY: VerticalAnchor
   readonly runs: readonly ResolvedShapedRun[]
+  /** Optional explicit Unicode opportunities. Omission preserves legacy whitespace wrapping. */
+  readonly breakOpportunities?: readonly LineBreakOpportunity[]
 }
 
 export type ParagraphDirection = 'auto' | 'ltr' | 'rtl'
@@ -128,12 +136,13 @@ export interface PreparedSegment extends Utf16Range {
 }
 
 export interface PreparedText {
-  readonly schemaVersion: 1
+  readonly schemaVersion: 2
   readonly text: string
   readonly paragraphDirection: ParagraphDirection
   readonly defaultStyle: TextStyle
   readonly layout: LayoutPolicy
   readonly segments: readonly PreparedSegment[]
+  readonly breakOpportunities: readonly LineBreakOpportunity[]
 }
 
 export type FontRegistry = ReadonlyMap<string, FontHandle>
