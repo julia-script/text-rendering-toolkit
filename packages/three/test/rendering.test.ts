@@ -1,4 +1,4 @@
-import { MeshBasicNodeMaterial, MeshStandardNodeMaterial } from 'three/webgpu'
+import { MeshBasicNodeMaterial, MeshStandardNodeMaterial, Vector2 } from 'three/webgpu'
 import { expect, test, vi } from 'vitest'
 import { RgbaGlyphAtlas } from '../src/atlas.js'
 import {
@@ -46,9 +46,10 @@ test('updates instanced attributes with capacity growth and explicit bounds', ()
 
 test('creates unlit and planar lit materials from shared controls', () => {
   const atlas = new RgbaGlyphAtlas(16)
+  const atlasGrid = new Vector2(1, 1)
   const geometry = createGlyphGeometry()
-  const { material, controls } = createGlyphMaterial(atlas.texture)
-  const lit = createGlyphMaterial(atlas.texture, true)
+  const { material, controls } = createGlyphMaterial(atlas.texture, atlasGrid)
+  const lit = createGlyphMaterial(atlas.texture, atlasGrid, true)
   expect(material).toBeInstanceOf(MeshBasicNodeMaterial)
   expect(lit.material).toBeInstanceOf(MeshStandardNodeMaterial)
   expect(lit.material.metalness).toBe(0)
@@ -60,8 +61,10 @@ test('creates unlit and planar lit materials from shared controls', () => {
   expect(lit.material.castShadowNode).toBeNull()
   expect(lit.material.castShadowPositionNode).toBeNull()
   expect(lit.material.shadowSide).toBe(lit.material.side)
-  updateGlyphMaterial(controls, 2, 0.4, { left: -1, bottom: -2, right: 3, top: 4 })
+  atlasGrid.set(2, 2)
+  updateGlyphMaterial(controls, 0.4, { left: -1, bottom: -2, right: 3, top: 4 })
   expect(controls.atlasGrid.value.toArray()).toEqual([2, 2])
+  expect(lit.controls.atlasGrid.value).toBe(atlasGrid)
   expect(controls.opacity.value).toBe(0.4)
   expect(controls.clipRect.value.toArray()).toEqual([-1, -2, 3, 4])
   const geometryDisposed = vi.fn()

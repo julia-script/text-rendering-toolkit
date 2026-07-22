@@ -1,6 +1,14 @@
 import { Mesh, MeshBasicNodeMaterial, MeshStandardNodeMaterial } from 'three/webgpu'
 import { describe, expect, test, vi } from 'vitest'
-import { DisposedTextError, InvalidTextInputError, Text } from '../src/index.js'
+import {
+  DisposedTextError,
+  DisposedTextResourcesError,
+  InvalidTextInputError,
+  Text,
+  type TextOptions,
+  TextResources,
+} from '../src/index.js'
+import { textResourceBinding } from '../src/resources.js'
 import { emptyOutline, font, rectangleOutline, resolvedLayout } from './helpers.js'
 
 describe('public Text lifecycle', () => {
@@ -185,5 +193,141 @@ describe('public Text lifecycle', () => {
     expect(outline).toHaveBeenCalledOnce()
     expect(handle.getOutline(7)).toBe(rectangleOutline)
     replacement.dispose()
+  })
+
+  test('shares glyph work while keeping text state independent', async () => {
+    const outline = vi.fn()
+    const handle = font({ onOutline: outline })
+    const fonts = new Map([['font', handle]])
+    const resources = new TextResources({ sdfSize: 16 })
+    const firstLayout = resolvedLayout('AA', { glyphIds: [7, 7], styleKey: 'first' })
+    const secondLayout = resolvedLayout('A', { glyphIds: [7], styleKey: 'second' })
+    const first = new Text({
+      layout: firstLayout,
+      fonts,
+      resources,
+      styleColors: { first: 0xff0000 },
+    })
+    const second = new Text({
+      layout: secondLayout,
+      fonts,
+      resources,
+      styleColors: { second: 0x00ff00 },
+    })
+    await first.sync()
+    await second.sync()
+    expect(outline).toHaveBeenCalledOnce()
+    expect(first.layoutResult).toBe(firstLayout)
+    expect(second.layoutResult).toBe(secondLayout)
+    expect([...first.geometry.getAttribute('glyphSlot').array].slice(0, 2)).toEqual([0, 0])
+    expect([...second.geometry.getAttribute('glyphSlot').array].slice(0, 1)).toEqual([0])
+    expect([...first.geometry.getAttribute('glyphColor').array].slice(0, 3)).toEqual([255, 0, 0])
+    expect([...second.geometry.getAttribute('glyphColor').array].slice(0, 3)).toEqual([0, 255, 0])
+    first.dispose()
+    second.dispose()
+    resources.dispose()
+  })
+
+  test('distinguishes handles and propagates shared growth without resync', async () => {
+    const firstOutline = vi.fn()
+    const secondOutline = vi.fn()
+    const firstHandle = font({ onOutline: firstOutline })
+    const secondHandle = font({ onOutline: secondOutline })
+    const resources = new TextResources({ sdfSize: 16 })
+    const binding = textResourceBinding(resources)
+    const first = new Text({
+      layout: resolvedLayout('A', { glyphIds: [1] }),
+      fonts: new Map([['font', firstHandle]]),
+      resources,
+    })
+    await first.sync()
+    const originalLayout = first.layoutResult
+    const originalSlot = first.geometry.getAttribute('glyphSlot').getX(0)
+
+    const second = new Text({
+      layout: resolvedLayout('ABCDE', { glyphIds: [1, 2, 3, 4, 5] }),
+      fonts: new Map([['font', secondHandle]]),
+      resources,
+    })
+    await second.sync()
+    expect(firstOutline).toHaveBeenCalledOnce()
+    expect(secondOutline).toHaveBeenCalledTimes(5)
+    expect(binding.atlasGrid.toArray()).toEqual([2, 2])
+    expect(first.layoutResult).toBe(originalLayout)
+    expect(first.geometry.getAttribute('glyphSlot').getX(0)).toBe(originalSlot)
+    first.dispose()
+    second.dispose()
+    resources.dispose()
+  })
+
+  test('keeps shared plans atomic after outline failure', async () => {
+    const calls: number[] = []
+    let rejectGlyph = true
+    const handle = {
+      getOutline(glyphId: number) {
+        calls.push(glyphId)
+        if (rejectGlyph && glyphId === 3) throw new Error('broken glyph')
+        return rectangleOutline
+      },
+    }
+    const resources = new TextResources({ sdfSize: 16 })
+    const committed = new Text({
+      layout: resolvedLayout('A', { glyphIds: [1] }),
+      fonts: new Map([['font', handle]]),
+      resources,
+    })
+    await committed.sync()
+    const failing = new Text({
+      layout: resolvedLayout('BC', { glyphIds: [2, 3] }),
+      fonts: new Map([['font', handle]]),
+      resources,
+    })
+    await expect(failing.sync()).rejects.toThrow('Unable to resolve outline for glyph 3')
+    rejectGlyph = false
+    failing.layout = resolvedLayout('B', { glyphIds: [2] })
+    await failing.sync()
+    expect(calls.filter((glyphId) => glyphId === 2)).toHaveLength(2)
+    expect(committed.geometry.getAttribute('glyphSlot').getX(0)).toBe(0)
+    expect(failing.geometry.getAttribute('glyphSlot').getX(0)).toBe(1)
+    committed.dispose()
+    failing.dispose()
+    resources.dispose()
+  })
+
+  test('separates borrower and shared-resource disposal', async () => {
+    const handle = font()
+    const resources = new TextResources({ sdfSize: 16 })
+    const textureDisposed = vi.fn()
+    textResourceBinding(resources).texture.addEventListener('dispose', textureDisposed)
+    const first = new Text({
+      layout: resolvedLayout('A'),
+      fonts: new Map([['font', handle]]),
+      resources,
+    })
+    const second = new Text({
+      layout: resolvedLayout('A'),
+      fonts: new Map([['font', handle]]),
+      resources,
+    })
+    const pending = first.sync()
+    first.dispose()
+    await expect(pending).rejects.toThrow(DisposedTextError)
+    expect(textureDisposed).not.toHaveBeenCalled()
+    await second.sync()
+    resources.dispose()
+    resources.dispose()
+    expect(textureDisposed).toHaveBeenCalledOnce()
+    await expect(second.sync()).rejects.toThrow(DisposedTextResourcesError)
+    second.dispose()
+  })
+
+  test('rejects ambiguous and already-disposed resources', () => {
+    const resources = new TextResources({ sdfSize: 16 })
+    const base = { layout: resolvedLayout(''), fonts: new Map(), resources }
+    expect(() => new Text({ ...base, sdfSize: 16 } as unknown as TextOptions)).toThrow(
+      InvalidTextInputError,
+    )
+    resources.dispose()
+    expect(() => new Text(base)).toThrow(DisposedTextResourcesError)
   })
 })

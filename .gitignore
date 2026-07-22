@@ -1,8 +1,12 @@
 /old/
 **/node_modules/
 **/dist/
+**/.next/
+**/.source/
+/apps/docs/public/repository/
 /coverage/
 **/.turbo/
 **/.vitest-attachments/
 **/test/__screenshots__/
+/.release-candidate/
 .DS_Store

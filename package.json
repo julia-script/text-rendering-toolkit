@@ -11,7 +11,10 @@
     "build": "turbo run build",
     "check": "biome check . && turbo run typecheck test",
     "check:write": "biome check --write .",
+    "docs:build": "turbo run build --filter=@webgpu-text/docs",
+    "docs:dev": "turbo run build --filter=@webgpu-text/docs^... && pnpm --filter @webgpu-text/docs dev",
     "format": "biome format --write .",
+    "release:candidate": "pnpm build && vitest run release-candidate/validate.test.ts",
     "test": "turbo run test",
     "typecheck": "turbo run typecheck"
   },

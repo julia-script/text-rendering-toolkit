@@ -5,8 +5,9 @@ ESM-aware development server that handles TypeScript and place a normalized TTF
 at `/fonts/NotoSans-Regular.ttf`.
 
 The application—not the libraries—fetches the bytes, creates and disposes the
-font handle, renderer, canvas, scene, and camera. The `Text` object owns only its
-geometry, material, atlas, and cache.
+font handle, renderer, canvas, scene, and camera. It also creates one
+`TextResources` shared by two independent text meshes, disposes both meshes,
+then disposes their shared monochrome glyph cache and atlas.
 
 The example type-checks and builds with the workspace:
 

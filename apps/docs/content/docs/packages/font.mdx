@@ -1,0 +1,27 @@
+---
+title: Font
+description: Parse caller-owned bytes, shape explicit runs, inspect coverage, and request outlines.
+---
+
+`@webgpu-text/font` owns one HarfBuzz-backed font handle. It accepts bytes—not a URL—and exposes
+font facts, coverage checks, shaping, and lazy glyph outlines.
+
+```ts
+import { loadFont } from '@webgpu-text/font'
+
+const font = await loadFont(bytes)
+const shaped = font.shape({
+  text: 'مرحبا',
+  direction: 'rtl',
+  script: 'Arab',
+  language: 'ar',
+})
+
+const outline = font.getOutline(shaped.glyphs[0].glyphId)
+font.dispose()
+```
+
+The handle owns WebAssembly resources. Dispose it when the application no longer needs that font.
+Outline extraction is lazy and cached within the live handle.
+
+This package does not fetch fonts, choose fallbacks, wrap lines, generate SDFs, or import Three.js.

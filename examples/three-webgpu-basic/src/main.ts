@@ -1,6 +1,6 @@
 import { type FontHandle, loadFont } from '@webgpu-text/font'
 import { layoutResolvedText, type ResolvedLayoutInput } from '@webgpu-text/layout'
-import { Text } from '@webgpu-text/three'
+import { Text, TextResources } from '@webgpu-text/three'
 import {
   AmbientLight,
   Color,
@@ -78,15 +78,28 @@ async function start(canvas: HTMLCanvasElement) {
   scene.background = new Color(0x101820)
   const camera = new OrthographicCamera(-2, 2, 0.75, -0.75, 0.1, 10)
   camera.position.z = 3
-  const text = new Text({
+  const resources = new TextResources({ sdfSize: 64 })
+  const title = new Text({
     layout: layoutResolvedText(resolveSingleRun(font, 'WebGPU Text', 0.45)),
     fonts: new Map([['body', font]]),
+    resources,
     lit: true,
     color: 0x55d8ff,
   })
-  await text.sync()
-  text.castShadow = true
-  text.receiveShadow = true
+  const label = new Text({
+    layout: layoutResolvedText(resolveSingleRun(font, 'Shared text resources', 0.2)),
+    fonts: new Map([['body', font]]),
+    resources,
+    lit: true,
+    color: 0xffcc55,
+  })
+  await Promise.all([title.sync(), label.sync()])
+  title.position.y = 0.2
+  label.position.y = -0.35
+  title.castShadow = true
+  title.receiveShadow = true
+  label.castShadow = true
+  label.receiveShadow = true
   const receiverGeometry = new PlaneGeometry(4, 1.5)
   const receiverMaterial = new MeshStandardNodeMaterial({ color: 0x36424a, roughness: 1 })
   const receiver = new Mesh(receiverGeometry, receiverMaterial)
@@ -96,11 +109,13 @@ async function start(canvas: HTMLCanvasElement) {
   const directional = new DirectionalLight(0xffffff, 2)
   directional.position.set(-2, 2, 3)
   directional.castShadow = true
-  scene.add(receiver, text, ambient, directional)
+  scene.add(receiver, title, label, ambient, directional)
   renderer.render(scene, camera)
   return () => {
-    scene.remove(receiver, text, ambient, directional)
-    text.dispose()
+    scene.remove(receiver, title, label, ambient, directional)
+    title.dispose()
+    label.dispose()
+    resources.dispose()
     receiverGeometry.dispose()
     receiverMaterial.dispose()
     directional.dispose()

@@ -1,0 +1,23 @@
+---
+title: SDF
+description: Convert a numeric outline into a deterministic one-channel signed-distance bitmap on the CPU.
+---
+
+`@webgpu-text/sdf` is independent of fonts, text, canvases, and renderers. Give it an outline, a view
+box, output dimensions, and encoding parameters; it returns an `SdfBitmap` containing a typed array.
+
+```ts
+import { generateSdf } from '@webgpu-text/sdf'
+
+const bitmap = generateSdf({
+  outline,
+  viewBox: { left: -64, bottom: -64, right: 1064, top: 1064 },
+  width: 96,
+  height: 96,
+  distance: 96,
+  exponent: 9,
+})
+```
+
+The caller decides whether those bytes become `ImageData`, an engine texture, an atlas entry, a
+file, or something else.

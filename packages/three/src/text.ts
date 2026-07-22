@@ -1,8 +1,7 @@
 import type { LayoutBounds, LayoutResult, PositionedGlyph } from '@webgpu-text/layout'
-import { generateSdf, type SdfBitmap, type SdfViewBox } from '@webgpu-text/sdf'
+import type { SdfViewBox } from '@webgpu-text/sdf'
 import { Color, type ColorRepresentation, Mesh } from 'three/webgpu'
 
-import { type AtlasAddition, type AtlasPlan, type CachedGlyph, RgbaGlyphAtlas } from './atlas.js'
 import { DisposedTextError, InvalidTextInputError } from './errors.js'
 import {
   createGlyphGeometry,
@@ -12,11 +11,16 @@ import {
   updateGlyphGeometry,
   updateGlyphMaterial,
 } from './rendering.js'
-import type { TextFont, TextGlyphOutline, TextMaterial, TextOptions } from './types.js'
+import {
+  commitTextResources,
+  planTextResources,
+  type TextResourcePlan,
+  TextResources,
+  textResourceBinding,
+} from './resources.js'
+import type { TextFont, TextMaterial, TextOptions } from './types.js'
 
 const DEFAULT_COLOR = 0xffffff
-const DEFAULT_SDF_SIZE = 64
-const SDF_EXPONENT = 9
 
 interface SyncSnapshot {
   readonly revision: number
@@ -30,25 +34,14 @@ interface SyncSnapshot {
 
 interface BuiltState {
   readonly layout: LayoutResult
-  readonly atlas: AtlasPlan
+  readonly resources: TextResourcePlan
   readonly instances: GlyphInstanceData
   readonly opacity: number
   readonly clipRect: LayoutBounds | null
 }
 
-interface ResolvedRenderableGlyph {
-  readonly glyph: PositionedGlyph
-  readonly key: string
-}
-
 function invalid(message: string, cause?: unknown): InvalidTextInputError {
   return new InvalidTextInputError(message, cause === undefined ? undefined : { cause })
-}
-
-function validateSdfSize(size: number): void {
-  if (!Number.isSafeInteger(size) || size < 16 || size > 512) {
-    throw invalid('sdfSize must be a safe integer from 16 through 512')
-  }
 }
 
 function validateOpacity(opacity: number): void {
@@ -119,58 +112,6 @@ function normalizedColor(value: ColorRepresentation, label: string): Color {
   }
 }
 
-function variationKey(variations: Readonly<Record<string, number>>): string {
-  return Object.entries(variations)
-    .sort(([left], [right]) => left.localeCompare(right))
-    .map(([axis, value]) => `${axis}:${value}`)
-    .join(',')
-}
-
-function hasDrawableCommand(commands: Uint8Array): boolean {
-  return commands.some((command) => command === 1 || command === 2 || command === 3)
-}
-
-function paddedBitmap(
-  font: TextFont,
-  glyphId: number,
-  variations: Readonly<Record<string, number>>,
-  size: number,
-): SdfBitmap | null {
-  let outline: TextGlyphOutline
-  try {
-    outline = font.getOutline(glyphId, variations)
-  } catch (error) {
-    throw invalid(`Unable to resolve outline for glyph ${glyphId}`, error)
-  }
-  if (!hasDrawableCommand(outline.commands)) return null
-  const { xMin, yMin, xMax, yMax } = outline.bounds
-  if (![xMin, yMin, xMax, yMax].every(Number.isFinite) || xMin > xMax || yMin > yMax) {
-    throw invalid(`Glyph ${glyphId} has invalid outline bounds`)
-  }
-  const extent = Math.max(xMax - xMin, yMax - yMin)
-  if (!(extent > 0)) return null
-  const paddingPixels = Math.max(2, Math.floor(size / 8))
-  const contentPixels = size - paddingPixels * 2
-  const unitsPerPixel = extent / contentPixels
-  const viewExtent = unitsPerPixel * size
-  const centerX = (xMin + xMax) / 2
-  const centerY = (yMin + yMax) / 2
-  const viewBox: SdfViewBox = {
-    left: centerX - viewExtent / 2,
-    bottom: centerY - viewExtent / 2,
-    right: centerX + viewExtent / 2,
-    top: centerY + viewExtent / 2,
-  }
-  return generateSdf({
-    outline,
-    viewBox,
-    width: size,
-    height: size,
-    distance: unitsPerPixel * paddingPixels,
-    exponent: SDF_EXPONENT,
-  })
-}
-
 function quadBounds(
   glyph: PositionedGlyph,
   viewBox: SdfViewBox,
@@ -196,10 +137,9 @@ export class Text extends Mesh<ReturnType<typeof createGlyphGeometry>, TextMater
   readonly lit: boolean
   readonly sdfSize: number
 
-  readonly #atlas: RgbaGlyphAtlas
+  readonly #resources: TextResources
+  readonly #ownsResources: boolean
   readonly #controls: GlyphMaterialControls
-  readonly #fontIds = new WeakMap<TextFont, number>()
-  #nextFontId = 1
   #revision = 0
   #pending: Promise<void> | null = null
   #latest: SyncSnapshot | null = null
@@ -207,13 +147,23 @@ export class Text extends Mesh<ReturnType<typeof createGlyphGeometry>, TextMater
   #disposed = false
 
   constructor(options: TextOptions) {
-    const sdfSize = options.sdfSize ?? DEFAULT_SDF_SIZE
+    if (options.resources !== undefined && options.sdfSize !== undefined) {
+      throw invalid('resources and sdfSize cannot be supplied together')
+    }
+    if (options.resources !== undefined && !(options.resources instanceof TextResources)) {
+      throw invalid('resources must be a TextResources instance')
+    }
     const lit = options.lit ?? false
-    validateSdfSize(sdfSize)
     if (typeof lit !== 'boolean') throw invalid('lit must be a boolean')
-    const atlas = new RgbaGlyphAtlas(sdfSize)
+    const ownsResources = options.resources === undefined
+    const resources =
+      options.resources ??
+      (options.sdfSize === undefined
+        ? new TextResources()
+        : new TextResources({ sdfSize: options.sdfSize }))
+    const binding = textResourceBinding(resources)
     const geometry = createGlyphGeometry()
-    const rendered = createGlyphMaterial(atlas.texture, lit)
+    const rendered = createGlyphMaterial(binding.texture, binding.atlasGrid, lit)
     super(geometry, rendered.material)
     this.layout = options.layout
     this.fonts = options.fonts
@@ -222,8 +172,9 @@ export class Text extends Mesh<ReturnType<typeof createGlyphGeometry>, TextMater
     this.opacity = options.opacity ?? 1
     this.clipRect = options.clipRect ?? null
     this.lit = lit
-    this.sdfSize = sdfSize
-    this.#atlas = atlas
+    this.sdfSize = resources.sdfSize
+    this.#resources = resources
+    this.#ownsResources = ownsResources
     this.#controls = rendered.controls
     this.frustumCulled = false
   }
@@ -265,7 +216,7 @@ export class Text extends Mesh<ReturnType<typeof createGlyphGeometry>, TextMater
     this.#layoutResult = null
     this.geometry.dispose()
     this.material.dispose()
-    this.#atlas.dispose()
+    if (this.#ownsResources) this.#resources.dispose()
   }
 
   async #flush(): Promise<void> {
@@ -275,44 +226,13 @@ export class Text extends Mesh<ReturnType<typeof createGlyphGeometry>, TextMater
       const built = this.#build(snapshot)
       if (this.#disposed || snapshot.revision !== this.#revision) throw new DisposedTextError()
       updateGlyphGeometry(this.geometry, built.instances, built.layout.blockBounds)
-      this.#atlas.commit(built.atlas)
-      updateGlyphMaterial(this.#controls, built.atlas.gridSize, built.opacity, built.clipRect)
+      commitTextResources(this.#resources, built.resources)
+      updateGlyphMaterial(this.#controls, built.opacity, built.clipRect)
       this.#layoutResult = built.layout
     } finally {
       this.#latest = null
       this.#pending = null
     }
-  }
-
-  #fontId(font: TextFont): number {
-    let id = this.#fontIds.get(font)
-    if (id === undefined) {
-      id = this.#nextFontId++
-      this.#fontIds.set(font, id)
-    }
-    return id
-  }
-
-  #resolveGlyph(
-    snapshot: SyncSnapshot,
-    glyph: PositionedGlyph,
-    additions: AtlasAddition[],
-    local: Map<string, CachedGlyph>,
-  ): ResolvedRenderableGlyph | null {
-    const font = snapshot.fonts.get(glyph.fontKey)
-    if (!font || (typeof font !== 'object' && typeof font !== 'function')) {
-      throw invalid(`Font registry has no usable entry for ${glyph.fontKey}`)
-    }
-    const key = `${this.#fontId(font)}:${glyph.glyphId}:${variationKey(glyph.variations)}:${this.sdfSize}`
-    let cached = this.#atlas.lookup(key) ?? local.get(key)
-    if (cached === undefined) {
-      const bitmap = paddedBitmap(font, glyph.glyphId, glyph.variations, this.sdfSize)
-      additions.push({ key, bitmap })
-      cached = { slot: bitmap ? -1 : null, viewBox: bitmap?.viewBox ?? null }
-      local.set(key, cached)
-    }
-    if (cached.slot === null) return null
-    return { glyph, key }
   }
 
   #build(snapshot: SyncSnapshot): BuiltState {
@@ -325,19 +245,13 @@ export class Text extends Mesh<ReturnType<typeof createGlyphGeometry>, TextMater
     }
     const layout = snapshot.layout
     validateLayout(layout)
-    const additions: AtlasAddition[] = []
-    const local = new Map<string, CachedGlyph>()
-    const renderable: ResolvedRenderableGlyph[] = []
-    for (const glyph of layout.glyphs) {
-      const resolved = this.#resolveGlyph(snapshot, glyph, additions, local)
-      if (resolved) renderable.push(resolved)
-    }
-    const atlas = this.#atlas.plan(additions)
+    const resources = planTextResources(this.#resources, layout.glyphs, snapshot.fonts)
+    const renderable = resources.glyphs
     const bounds = new Float32Array(renderable.length * 4)
     const slots = new Uint32Array(renderable.length)
     const colors = new Uint8Array(renderable.length * 3)
     for (const [index, item] of renderable.entries()) {
-      const cached = atlas.glyphs.get(item.key)
+      const cached = resources.atlas.glyphs.get(item.key)
       if (!cached || cached.slot === null || !cached.viewBox) {
         throw invalid(`Atlas plan is missing glyph ${item.glyph.glyphId}`)
       }
@@ -353,7 +267,7 @@ export class Text extends Mesh<ReturnType<typeof createGlyphGeometry>, TextMater
     }
     return {
       layout,
-      atlas,
+      resources,
       instances: { bounds, slots, colors, count: renderable.length },
       opacity: snapshot.opacity,
       clipRect: snapshot.clipRect,

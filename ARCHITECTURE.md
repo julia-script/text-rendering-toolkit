@@ -26,7 +26,8 @@ production cores are implemented and validated: `@webgpu-text/font`, resolved
 `@webgpu-text/layout`, CPU `@webgpu-text/sdf`, and layout-result
 `@webgpu-text/three`. The renderer consumes completed renderer-neutral layout,
 caller-owned structural font handles,
-lazy numeric outlines, deterministic SDFs, a private growing RGBA atlas,
+lazy numeric outlines, deterministic SDFs, private convenience resources or
+an explicitly shared growing RGBA atlas,
 instanced geometry, and shared TSL nodes bound to either the default unlit or
 construction-fixed planar standard material through an atomic `Text.sync()`
 lifecycle.
@@ -34,7 +35,7 @@ lifecycle.
 Automatic script/direction itemization and explicit caller-font fallback are
 now production `@webgpu-text/layout` operations through `prepareText()`,
 `layoutPreparedText()`, and `layoutText()`. Complete Unicode line breaking, reshaping around line
-boundaries, bidi caret affinity, workers, shared atlas residency/eviction,
+boundaries, bidi caret affinity, workers, atlas eviction,
 curved or configurable physical materials, and batching remain separate
 follow-ups. The production standard
 variant now promotes the validated front-facing planar seam with glyph-shaped
@@ -229,7 +230,7 @@ The preserved `SDFGenerator.js` is mostly scheduling and WebGL/canvas integratio
 
 - The implemented layout-result `Text` mesh and latest-state promise synchronization lifecycle.
 - Lazy outline/SDF orchestration, failure atomicity, and committed layout identity.
-- One private atlas per text: flat-slot allocation, RGBA channel packing, byte storage, square growth, full dirty uploads, glyph cache, and lifecycle. V1 has no eviction.
+- Public `TextResources` ownership for flat-slot allocation, RGBA channel packing, byte storage, square growth, full dirty uploads, glyph caching, and lifecycle; `Text` creates a private owner by default or borrows an explicitly shared owner. V1 has no eviction.
 - RGBA atlas upload into a Three `DataTexture`.
 - Capacity-aware instanced glyph geometry and explicit bounds.
 - Shared TSL placement, SDF decoding, derivative antialiasing, fill, per-style color, opacity, and rectangular clipping bound to the default unlit material or an opt-in fixed planar standard material.
@@ -548,14 +549,22 @@ flowchart LR
 
 The flat atlas slot is the renderer-neutral geometry value: `cell = floor(slot / 4)` and `channel = slot % 4`. The renderer derives cell UVs from atlas dimensions/cell size and selects the packed RGBA channel in TSL. `sdf` remains unaware of cells, channels, textures, and Three.js.
 
-Production ownership differs from the self-contained experiment harness. A text object owns its instanced geometry and node material and releases its atlas references. The renderer atlas owner owns packing, cache state, texture updates, and texture disposal. The application owns the shared `WebGPURenderer` and DOM canvas; creating a renderer per text object is prohibited.
+Production ownership differs from the self-contained experiment harness. A
+text object owns its instanced geometry and node material. With default private
+resources it also disposes its resource owner; with injected resources it only
+borrows them. Public `TextResources` owns packing, cache state, texture updates,
+and texture disposal, and applications dispose shared resources after every
+borrower. The application separately owns the shared `WebGPURenderer` and DOM
+canvas; creating a renderer per text object is prohibited.
 
 The original experiment proved one-cell/four-channel rendering, semantic SDF
 coverage, opacity, clipping, orientation, cylindrical placement, in-place
 texture/attribute updates, and create-render-update-dispose reuse. The shipped
 renderer follow-up then proved real-font SDFs and multi-cell atlas growth, and
 the planar integration proved production lighting and shadows with the same
-atlas and lifecycle. Atlas eviction, partial texture upload, configurable or
+atlas and lifecycle. The shared-resource follow-up proved same-handle glyph/SDF
+reuse plus borrower-triggered atlas growth without resynchronizing or visually
+changing an existing text. Atlas eviction, partial texture upload, configurable or
 curved materials, and batching remain separate work.
 
 Three's renderer-backend identity and TSL surface remain revision-specific boundaries. The private validation may inspect `renderer.backend.isWebGPUBackend` for pinned actual-WebGPU evidence, but that diagnostic must not spread through the public API. The TSL implementation should remain behind a narrow local adapter: Three's complete fluent TSL declarations caused pathological TypeScript 7.0.2 memory growth during the spike. Every Three revision change must rerun the browser validation before the supported range changes.

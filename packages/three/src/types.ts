@@ -4,6 +4,7 @@ import type {
   MeshBasicNodeMaterial,
   MeshStandardNodeMaterial,
 } from 'three/webgpu'
+import type { TextResources } from './resources.js'
 
 export type TextMaterial = MeshBasicNodeMaterial | MeshStandardNodeMaterial
 
@@ -25,7 +26,11 @@ export interface TextFont {
   getOutline(glyphId: number, variations?: Readonly<Record<string, number>>): TextGlyphOutline
 }
 
-export interface TextOptions {
+export interface TextResourcesOptions {
+  readonly sdfSize?: number
+}
+
+interface TextOptionsBase {
   readonly layout: LayoutResult
   readonly fonts: ReadonlyMap<string, TextFont>
   readonly lit?: boolean
@@ -33,8 +38,13 @@ export interface TextOptions {
   readonly styleColors?: Readonly<Record<string, ColorRepresentation>>
   readonly opacity?: number
   readonly clipRect?: LayoutBounds | null
-  readonly sdfSize?: number
 }
+
+export type TextOptions = TextOptionsBase &
+  (
+    | { readonly resources: TextResources; readonly sdfSize?: never }
+    | { readonly resources?: undefined; readonly sdfSize?: number }
+  )
 
 export interface TextCommittedState {
   readonly layoutResult: LayoutResult

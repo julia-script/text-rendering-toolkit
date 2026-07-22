@@ -1,0 +1,19 @@
+---
+title: Three.js WebGPU text
+description: Hand raw-text layout results to the isolated Three.js WebGPU frontend.
+---
+
+import { ThreeExample } from '@/components/examples/three-example'
+
+<ThreeExample />
+
+This client-only example fetches font bytes, calls the same renderer-neutral `layoutText()` API,
+and gives completed `LayoutResult` values and the font registry to two `Text` objects. They borrow
+one application-owned `TextResources`, so repeated font/glyph identities reuse one monochrome SDF
+cache and atlas while each mesh keeps independent geometry, material, appearance, and draw calls.
+The renderer does not own shaping or layout policy.
+
+The scene uses the construction-fixed lit material. On unmount it stops rendering, disconnects its
+resize observer, disposes both text meshes before their shared resources, disposes the scene and
+font handles, and finally disposes the renderer. Browsers without WebGPU receive a local unsupported
+message while the rest of the documentation remains usable.

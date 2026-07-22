@@ -1,0 +1,51 @@
+---
+title: Getting started
+description: Load caller-owned font bytes and turn raw multilingual text into positioned glyphs.
+---
+
+Install only the layers you need. This first example needs the font and layout packages:
+
+```sh
+pnpm add @webgpu-text/font @webgpu-text/layout
+```
+
+## Bring your own bytes
+
+The font package does not fetch URLs. Your application decides whether font bytes come from
+`fetch`, a file picker, a database, or an application cache.
+
+```ts
+import { loadFont } from '@webgpu-text/font'
+import { layoutText } from '@webgpu-text/layout'
+
+const response = await fetch('/fonts/NotoSans-wdth-wght.ttf')
+if (!response.ok) throw new Error(`Font request failed: ${response.status}`)
+
+const font = await loadFont(await response.arrayBuffer())
+const fonts = new Map([['body', font]])
+
+const layout = layoutText(
+  {
+    text: 'Hello WebGPU',
+    style: {
+      key: 'body',
+      fontKeys: ['body'],
+      fontSize: 24,
+      language: 'en',
+    },
+  },
+  fonts,
+)
+
+console.log(layout.lines, layout.glyphs)
+font.dispose()
+```
+
+`layout` is ordinary renderer-neutral data. You can inspect it, cache it, send it to your own
+renderer, or pass it to `@webgpu-text/three`.
+
+## Next
+
+- Open the [layout inspector](/docs/examples/layout) for mixed Latin and Arabic text.
+- Read the [pipeline overview](/docs/concepts/pipeline) to see where each package stops.
+- Add the [Three.js package](/docs/packages/three) only if Three.js WebGPU is your frontend.

@@ -154,10 +154,10 @@ export function updateGlyphGeometry(
   geometry.boundingSphere = new Sphere(center, center.distanceTo(maximum))
 }
 
-function createGlyphNodeAssembly(atlas: DataTexture) {
+function createGlyphNodeAssembly(atlas: DataTexture, sharedAtlasGrid = new Vector2(1, 1)) {
   const opacity = tsl.uniform(1)
   const clipRect = tsl.uniform(new Vector4(-1e20, -1e20, 1e20, 1e20))
-  const atlasGrid = tsl.uniform(new Vector2(1, 1))
+  const atlasGrid = tsl.uniform(sharedAtlasGrid)
   const bounds = tsl.attribute('glyphBounds', 'vec4')
   const slot = tsl.attribute('glyphSlot', 'uint')
   const glyphColor = tsl.attribute('glyphColor', 'vec3')
@@ -213,8 +213,12 @@ function createGlyphNodeAssembly(atlas: DataTexture) {
   }
 }
 
-export function createGlyphMaterial(atlas: DataTexture, lit = false) {
-  const nodes = createGlyphNodeAssembly(atlas)
+export function createGlyphMaterial(
+  atlas: DataTexture,
+  sharedAtlasGrid = new Vector2(1, 1),
+  lit = false,
+) {
+  const nodes = createGlyphNodeAssembly(atlas, sharedAtlasGrid)
   if (lit) {
     const material = new MeshStandardNodeMaterial({
       depthWrite: false,
@@ -243,11 +247,9 @@ export function createGlyphMaterial(atlas: DataTexture, lit = false) {
 
 export function updateGlyphMaterial(
   controls: GlyphMaterialControls,
-  gridSize: number,
   opacity: number,
   clipRect: LayoutBounds | null,
 ): void {
-  controls.atlasGrid.value.set(gridSize, gridSize)
   controls.opacity.value = opacity
   controls.clipRect.value.set(
     clipRect?.left ?? -1e20,

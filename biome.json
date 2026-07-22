@@ -2,7 +2,10 @@
   "$schema": "https://biomejs.dev/schemas/2.5.4/schema.json",
   "files": {
     "includes": [
+      "apps/**",
+      "!apps/docs/next-env.d.ts",
       "packages/**",
+      "release-candidate/**",
       "!packages/font/src/internal/vendor",
       "examples/**",
       "experiments/webgpu-rendering-seam/**",

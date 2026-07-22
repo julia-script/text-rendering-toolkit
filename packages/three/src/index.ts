@@ -1,4 +1,9 @@
-export { DisposedTextError, InvalidTextInputError } from './errors.js'
+export {
+  DisposedTextError,
+  DisposedTextResourcesError,
+  InvalidTextInputError,
+} from './errors.js'
+export { TextResources } from './resources.js'
 export { Text } from './text.js'
 export type {
   TextCommittedState,
@@ -7,4 +12,5 @@ export type {
   TextGlyphOutline,
   TextMaterial,
   TextOptions,
+  TextResourcesOptions,
 } from './types.js'

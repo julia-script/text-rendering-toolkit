@@ -16,6 +16,15 @@
   },
   "initialInstanceCount": 14,
   "updatedInstanceCount": 15,
+  "sharedResources": {
+    "primaryInstanceCount": 15,
+    "secondaryGrowthInstanceCount": 36,
+    "outlineCallsAfterPrimary": 14,
+    "outlineCallsAfterDuplicate": 14,
+    "outlineCallsAfterGrowth": 44,
+    "maximumSlotAfterGrowth": 43,
+    "primaryChangedPixelsAfterBorrowerGrowth": 0
+  },
   "initialSemanticPixels": {
     "occupied": 10102,
     "cyan": 2721,
@@ -35,5 +44,5 @@
     "publicNodes": ["positionNode", "colorNode", "opacityNode", "maskShadowNode"]
   },
   "fixtureFonts": "NotoSans-wdth-wght.ttf + NotoSansArabic-wdth-wght.ttf",
-  "frameSha256": "5f13dea325eb37c56f1f85fb7d2a096e0be0131cad137b35fd016ac00d75c57a"
+  "frameSha256": "0c12f3e1289547647d634d15341d58e1cfda886498247e44ec47ff33491fefd1"
 }

@@ -1,0 +1,79 @@
+import { readFile } from 'node:fs/promises'
+
+import { type FontHandle, loadFont } from '@webgpu-text/font'
+import { layoutPreparedText, prepareText } from '@webgpu-text/layout'
+import { generateSdf } from '@webgpu-text/sdf'
+import { Text, TextResources } from '@webgpu-text/three'
+
+const bytes = async (name: string): Promise<Uint8Array> => {
+  const value = await readFile(new URL(name, import.meta.url))
+  return new Uint8Array(value.buffer, value.byteOffset, value.byteLength)
+}
+
+const latin = await loadFont(await bytes('./NotoSans-wdth-wght.ttf'))
+const arabic = await loadFont(await bytes('./NotoSansArabic-wdth-wght.ttf'))
+const fonts = new Map<string, FontHandle>([
+  ['latin', latin],
+  ['arabic', arabic],
+])
+
+try {
+  const prepared = prepareText({
+    text: 'Hello مرحبا',
+    style: {
+      key: 'body',
+      fontKeys: ['latin', 'arabic'],
+      fontSize: 24,
+      language: 'und',
+    },
+  })
+  if (!prepared.segments.some((segment) => segment.direction === 'rtl')) {
+    throw new Error('Prepared text did not retain the right-to-left segment')
+  }
+
+  const layout = layoutPreparedText(prepared, fonts)
+  const glyph = layout.glyphs[0]
+  if (!glyph) throw new Error('Layout did not produce glyphs')
+  const font = fonts.get(glyph.fontKey)
+  if (!font) throw new Error(`Layout selected an unknown font: ${glyph.fontKey}`)
+  const outline = font.getOutline(glyph.glyphId, glyph.variations)
+  const padding = Math.max(
+    1,
+    Math.max(outline.bounds.xMax - outline.bounds.xMin, outline.bounds.yMax - outline.bounds.yMin) /
+      8,
+  )
+  const bitmap = generateSdf({
+    outline,
+    viewBox: {
+      left: outline.bounds.xMin - padding,
+      bottom: outline.bounds.yMin - padding,
+      right: outline.bounds.xMax + padding,
+      top: outline.bounds.yMax + padding,
+    },
+    width: 16,
+    height: 16,
+    distance: padding,
+    exponent: 9,
+  })
+  if (bitmap.pixels.length !== 256) throw new Error('SDF generation returned the wrong size')
+
+  const resources = new TextResources({ sdfSize: 16 })
+  const text = new Text({ layout, fonts, resources })
+  const repeated = new Text({ layout, fonts, resources })
+  try {
+    await Promise.all([text.sync(), repeated.sync()])
+    if ((text.committedState?.instanceCount ?? 0) === 0) {
+      throw new Error('Three.js text did not commit any glyph instances')
+    }
+    if (repeated.committedState?.instanceCount !== text.committedState?.instanceCount) {
+      throw new Error('Shared Three.js text committed inconsistent glyph instances')
+    }
+  } finally {
+    text.dispose()
+    repeated.dispose()
+    resources.dispose()
+  }
+} finally {
+  latin.dispose()
+  arabic.dispose()
+}

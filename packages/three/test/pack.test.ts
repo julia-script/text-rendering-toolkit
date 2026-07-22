@@ -65,8 +65,8 @@ test('ships public ESM runtime and declarations to a clean consumer', () => {
     writeFileSync(
       resolve(consumer, 'main.ts'),
       `
-        import { Text, InvalidTextInputError } from '@webgpu-text/three'
-        import type { TextFont, TextMaterial, TextOptions } from '@webgpu-text/three'
+        import { Text, TextResources, InvalidTextInputError } from '@webgpu-text/three'
+        import type { TextFont, TextMaterial, TextOptions, TextResourcesOptions } from '@webgpu-text/three'
         const font: TextFont = {
           getOutline: () => ({
             commands: new Uint8Array(), coordinates: new Float32Array(),
@@ -74,11 +74,14 @@ test('ships public ESM runtime and declarations to a clean consumer', () => {
           }),
         }
         const options = { lit: true } as TextOptions
+        const resourceOptions = { sdfSize: 16 } satisfies TextResourcesOptions
+        const resources = new TextResources(resourceOptions)
         const material = null as TextMaterial | null
         void font
         void options
         void material
-        if (typeof Text !== 'function' || typeof InvalidTextInputError !== 'function') {
+        resources.dispose()
+        if (typeof Text !== 'function' || typeof TextResources !== 'function' || typeof InvalidTextInputError !== 'function') {
           throw new Error('Missing public renderer exports')
         }
       `,

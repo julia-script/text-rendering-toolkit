@@ -11,7 +11,7 @@ Build a small, production-quality family of text-processing packages culminating
 
 The result is deliberately greenfield: strict TypeScript source, native ESM packages, explicit data contracts between layers, promise-based synchronization, TSL node materials, and no compatibility commitment to `troika-three-text`, `WebGLRenderer`, CommonJS, or UMD.
 
-**Current objective achieved:** representative multilingual text now renders through `WebGPURenderer` using a WebGL-free runtime, backed by deterministic layout/SDF tests, a real-font actual-WebGPU fixture, strict TypeScript checks, and a public-only consumer example. `LayoutResult` is the completed renderer-neutral handoff, so Three performs no shaping, line layout, caret, or selection policy. The Three package now ships both its default unlit material and an opt-in construction-fixed planar standard material with glyph-shaped cast and received shadows. `@webgpu-text/layout` now turns ordinary raw text into the same handoff through reusable serializable preparation, explicit caller-font fallback, and HarfBuzz shaping.
+**Current objective achieved:** representative multilingual text now renders through `WebGPURenderer` using a WebGL-free runtime, backed by deterministic layout/SDF tests, a real-font actual-WebGPU fixture, strict TypeScript checks, and a public-only consumer example. `LayoutResult` is the completed renderer-neutral handoff, so Three performs no shaping, line layout, caret, or selection policy. The Three package now ships both its default unlit material and an opt-in construction-fixed planar standard material with glyph-shaped cast and received shadows. `@webgpu-text/layout` now turns ordinary raw text into the same handoff through reusable serializable preparation, explicit caller-font fallback, and HarfBuzz shaping. Multiple independent `Text` objects can borrow one explicit `TextResources`, reusing same-handle glyph/SDF work and one growable atlas without coupling preparation to Three. The four packages also assemble into one audited local release candidate whose tarballs pass an isolated external consumer check; public release work is intentionally paused while the packages are consumed locally.
 
 ## Where we are starting
 
@@ -175,7 +175,10 @@ flowchart TD
     Sample --> Coverage[Decode signed distance and calculate antialiasing]
 ```
 
-Atlas growth allocates a larger typed array and copies existing rows. The first release will upload the full dirty texture after changes; partial GPU updates are an optimization to consider only after profiling.
+Atlas growth allocates a larger typed array and remaps existing logical slots to
+their positions in the wider grid. The current implementation uploads the full
+dirty texture after changes; partial GPU updates are an optimization to consider
+only after profiling.
 
 ### Synchronization lifecycle
 
@@ -216,11 +219,14 @@ Concurrent calls to `sync()` will coalesce behind the latest requested state. A 
 Each package must expose a useful direct API. Representative lower-level usage is documented in [ARCHITECTURE.md](ARCHITECTURE.md); the composed renderer API should remain small and unsurprising:
 
 ```ts
-import { Text } from '@scope/three-webgpu-text'
+import { Text, TextResources } from '@scope/three-webgpu-text'
+
+const resources = new TextResources()
 
 const text = new Text({
   layout: layoutResolvedText(resolvedLayoutInput),
   fonts: new Map([['body', font]]),
+  resources,
   color: 0xffffff
 })
 
@@ -231,13 +237,14 @@ text.layout = layoutResolvedText(nextResolvedLayoutInput)
 await text.sync()
 
 text.dispose()
+resources.dispose()
 ```
 
 `Text` extends Three’s `Mesh` from `three/webgpu`. Its default material is an
 unlit node material. Its public boundary accepts a completed `LayoutResult` and
 caller-owned lazy-outline handles; raw-text itemization, fallback, shaping,
-layout, carets, and selection remain layout work. Per-object GPU atlas state
-remains private to the renderer.
+layout, carets, and selection remain layout work. Resource state remains private
+to the renderer package, while applications may explicitly share and own it.
 
 ## Column rules
 
@@ -247,30 +254,46 @@ remains private to the renderer.
 
 ## Now
 
-### Implement renderer-neutral raw-text preparation
-- **Problem:** The validated preparation contract was private evidence, so production consumers still had to construct resolved runs manually.
-- **Outcome & done-when:** `@webgpu-text/layout` exposes reusable `prepareText()`, font-aware `layoutPreparedText()`, and one-call `layoutText()` with canonical conformance, lazy outlines, caller-owned fonts, clean package installation, and browser-compatible ESM evidence.
-- **Status:** complete — production raw-text preparation, explicit caller-font fallback, HarfBuzz shaping, lazy-outline `LayoutResult` composition, parsed-value validation, clean package installation, and browser-compatible ESM conformance pass the canonical corpus without changing the resolved expert API or Three renderer.
-- **Links:** OpenSpec change `implement-renderer-neutral-text-preparation` · [package README](packages/layout/README.md) · [validation report](docs/validation/text-preparation-boundary.md)
+### Share renderer resources across independent text objects
+- **Problem:** Private per-text atlases repeated outline resolution, SDF generation, texture memory, and uploads when many labels used the same font glyphs.
+- **Outcome & done-when:** applications can explicitly own one resource object, lend it to independent lit or unlit texts, reuse same-handle glyph work and stable slots, grow the atlas from any borrower without resynchronizing existing texts, and dispose borrowers before the owner.
+- **Status:** complete — `TextResources` owns the shared cache and atlas while private resources remain the convenient default. Deterministic tests cover reuse, separation, failures, and lifetime; actual Apple Metal WebGPU evidence records a duplicate with no new outline calls and borrower growth through slot 43 with 0 changed pixels in the existing text.
+- **Links:** OpenSpec change `establish-shared-text-renderer-resources` · [renderer validation](docs/validation/three-webgpu-text-core.md)
 
 ## Next
 
-### Efficient rendering of many independent text objects
-- **Problem:** One mesh and material state per label may become CPU- or draw-call-bound in dense interfaces and scenes.
-- **Hypothesis:** a purpose-built batched text container, informed by Troika’s `BatchedText` data layout but designed for WebGPU storage/data nodes, will reduce draw calls without complicating ordinary `Text`.
+### Browser-grade line breaking
+- **Problem:** Raw-text preparation deliberately uses a bounded line-break policy, so wrapping does not yet match the browser-grade behavior expected for multilingual prose, punctuation, long words, and break-sensitive scripts.
+- **Hypothesis:** a Unicode line-break implementation plus reshaping at chosen boundaries can improve ordinary paragraph fidelity without changing the renderer-neutral `LayoutResult` handoff.
+- **Confidence:** high
+- **Assumes:** the current preparation/resolution split remains the right place to compute reusable Unicode analysis before font-dependent shaping.
+- **Open questions:** Which Unicode line-breaking data or implementation should be adopted? Which browser fixtures define parity? Which scripts require reshaping around an accepted break?
+
+### Color emoji and color-font glyphs
+- **Problem:** The monochrome SDF path cannot represent layered or bitmap color glyphs, making ordinary emoji-rich text incomplete compared with browser rendering.
+- **Hypothesis:** preserve one renderer-neutral positioned-glyph stream while allowing a glyph payload to select monochrome SDF or a color-glyph representation resolved lazily from the font.
 - **Confidence:** medium
-- **Assumes:** a real consumer or benchmark demonstrates that ordinary instanced glyph rendering is insufficient — unvalidated.
-- **Open questions:** Is Three’s `BatchedMesh` enough? Are storage buffers preferable to float data textures? Which properties must vary per member?
+- **Assumes:** line breaking lands first and color support can remain optional for consumers that only need monochrome text.
+- **Open questions:** Which formats come first—COLR/CPAL, SVG, CBDT/CBLC, or sbix? Should color glyphs use an RGBA atlas or renderer-owned texture layers? How is fallback tested across text and emoji fonts?
+
+### Browser-like decoration and paint
+- **Problem:** Underline, strikethrough, stroke/outline, and drop shadow are common text presentation features that currently require application-specific geometry or materials.
+- **Hypothesis:** keep decoration geometry renderer-neutral where metrics and line fragments matter, then add a small dedicated Three paint surface for SDF stroke and shadow controls.
+- **Confidence:** medium
+- **Assumes:** these features remain explicit and composable rather than recreating Troika’s arbitrary shader-rewriting surface.
+- **Open questions:** Which package owns decoration segments? How should skip-ink and per-run styles behave? Can stroke and shadow share the existing SDF atlas without reducing quality?
 
 ## Later
 
-- Complete raw-text layout semantics — why it matters: production preparation will initially retain the validated bounded line-break policy; revisit full Unicode line breaking, break-sensitive reshaping, and bidi caret affinity when concrete multilingual editing cases require them.
+- Improve bidi caret affinity and editing semantics — why it matters: visual text is the priority now; richer interaction data can follow when concrete multilingual editing cases require it.
 - Move shaping or SDF work to ESM workers — why it matters: the current synchronous pipeline is simpler and deterministic; revisit only when end-to-end measurements show main-thread latency that the public promise boundaries cannot absorb.
-- Extend appearance beyond flat fill and planar lighting — why it matters: strokes, outlines, curvature, and additional dedicated node-material variants may be useful, but each needs concrete demand and actual-WebGPU evidence rather than compatibility-driven surface area.
+- Efficient rendering of many independent text objects — why it matters: shared resources remove duplicate glyph work but do not reduce draw calls; revisit batching only after a dense-scene benchmark demonstrates a bottleneck.
+- Extend appearance beyond browser-like text paint — why it matters: curvature and additional dedicated physical-material variants are specialized effects and remain lower priority than ordinary text fidelity.
 - Move SDF generation to WebGPU compute — why it matters: complex fonts or large first-use glyph sets may expose CPU generation latency; revisit only with profiling evidence.
 - Improve atlas residency and eviction — why it matters: long-lived applications may accumulate unused glyphs; revisit when memory measurements show a practical ceiling.
-- Extend font-format and advanced-font coverage — why it matters: WOFF/WOFF2 decoding and color glyphs require additional contracts; variable TrueType axes are already validated. Revisit decoder costs after the ordinary TTF/OTF outline/SDF path is stable.
+- Extend font-container coverage — why it matters: WOFF/WOFF2 decoding requires additional contracts; variable TrueType axes are already validated. Revisit decoder costs after the ordinary TTF/OTF path is stable.
 - Publish optional framework integrations — why it matters: easier adoption in React Three Fiber or other ecosystems; revisit after the core API is stable.
+- Authorize a public release — why it matters: package identity, licensing, version, canonical metadata, npm access, and provenance are already bounded, but intentionally paused while the project is consumed locally.
 
 ## Not doing
 
@@ -285,6 +308,8 @@ remains private to the renderer.
 ## Open questions
 
 - Should we adopt the recommended project name **WebGPU Text**, repository `webgpu-text`, and packages `@webgpu-text/font`, `@webgpu-text/layout`, `@webgpu-text/sdf`, and `@webgpu-text/three`? The exact package names are currently unused, but npm scope ownership still needs confirmation.
+- Which license and initial coordinated version should cover the new project's original code and first public package family?
+- Which canonical repository metadata, npm access policy, and provenance workflow should the first release use?
 - Which CI environment can reproduce the validated Chrome for Testing 149 WebGPU launch currently proven on macOS/Apple Metal?
 
 ## Decisions made
@@ -302,16 +327,18 @@ remains private to the renderer.
 - **Atlas ownership:** `@scope/sdf` returns only `SdfBitmap`; `@scope/three-webgpu-text` owns the complete atlas implementation and GPU lifecycle.
 - **Renderer kernel:** promote one instanced unit quad, typed bounds/flat-slot/color attributes, renderer-owned RGBA `DataTexture`, and an unlit TSL material for cell/channel addressing, SDF coverage, opacity, clipping, orientation, and curvature. Do not port shader rewriting.
 - **Renderer validation:** pin Three.js 0.185.1 for the first implementation and rerun the private actual-WebGPU experiment before widening or changing the revision. WebGL fallback is never passing evidence.
-- **Renderer ownership:** production text objects own their geometry/material and atlas references; the atlas owner owns texture/cache disposal; the application owns the shared Three renderer and canvas.
+- **Renderer ownership:** production text objects own their geometry and material. `TextResources` owns texture/cache state; a text disposes default private resources but only borrows injected resources. Applications dispose a shared resource after all borrowers, and separately own the shared Three renderer and canvas.
 - **Renderer-neutral handoff:** `LayoutResult` is the complete input to any renderer and carries `fontUnitScale` on each positioned glyph. Three accepts that result plus structural caller-owned lazy-outline handles and performs no layout or interaction policy.
 - **Raw-text preparation:** promote the validated synchronous two-stage layout contract: immutable serializable bidi/script/style preparation first, then explicit grapheme-safe fallback and HarfBuzz shaping over caller-owned font handles. Keep `layoutResolvedText()` as the expert API and offer a one-call convenience composition; never make font fetching part of this path.
-- **First atlas lifetime:** each `Text` owns one private growing RGBA atlas with full dirty texture uploads and no eviction; introduce sharing only when many-label measurements justify the extra ownership policy.
+- **Shared atlas lifetime:** each `Text` still creates private resources by default, while applications may inject one fixed-SDF-size `TextResources` into multiple texts for same-handle glyph/SDF reuse and one monotonic growing RGBA atlas. Sharing does not batch meshes or reduce draw calls; borrowers dispose before the owner, and v1 has no eviction.
 - **First appearance surface:** the initial slice shipped flat unlit TSL fill, per-style color, opacity, and rectangular clipping on Three.js 0.185.1. Planar lighting and glyph-shaped shadows were added in a later validated change; curvature, strokes, and arbitrary material derivation remain deferred.
 - **Planar lit/shadow seam:** a standard node material can reuse instanced `positionNode`, RGBA `colorNode`, and antialiased `opacityNode`; add planar normals, a midpoint SDF `maskShadowNode`, and set `shadowSide` to the visible side for zero-thickness glyph quads. Do not add `castShadowNode`, transmitted shadows, duplicate shadow geometry, or private renderer hooks for the ordinary planar case.
 - **Production planar lighting:** `TextOptions.lit` is a construction-only boolean. The standard variant uses fixed metalness `0` and roughness `0.9`, shares all production glyph nodes and lifecycle state, and leaves `castShadow`, `receiveShadow`, lights, shadow maps, renderer, and scene ownership to ordinary Three.js callers. Runtime material switching and a physical-material option hierarchy remain deferred.
 
 ## Changelog
 
+- 2026-07-21: Added explicit shared renderer resources. Independent lit and unlit `Text` objects can borrow one `TextResources`, reuse resource-local same-handle glyph/SDF work and stable slots, observe atlas growth without resynchronizing existing borrowers, and retain private convenience ownership by default. Actual Apple Metal WebGPU evidence grew a borrower through slot 43 with 0 changed pixels in the existing text. Public release work is paused; browser-grade line breaking is now the next priority, followed by color glyphs and browser-like decoration/paint.
+- 2026-07-21: Validated the first local package-family release candidate. All four tarballs pass packed-manifest/content audits and an external clean-consumer TypeScript/runtime check covering HarfBuzz WASM, multilingual preparation/layout, CPU SDF, and Three.js synchronization without workspace links. Publication remains blocked on package identity/scope, project license, public version, canonical metadata, npm access, and provenance decisions.
 - 2026-07-21: Implemented production renderer-neutral raw-text preparation in `@webgpu-text/layout`. Added reusable serializable `prepareText()`, explicit-font `layoutPreparedText()`, one-call `layoutText()`, pinned Unicode 13 bidi and Unicode 17 script dependencies, structured failures, lazy outlines, canonical multilingual conformance, clean-package validation, and browser ESM evidence while preserving caller font ownership and the existing resolved expert API.
 - 2026-07-21: Reconciled the roadmap after archiving `validate-text-preparation-boundary`. All twelve OpenSpec changes are archived, no delivery change is active, and completed cards were cleared from **Now**. Production renderer-neutral raw-text preparation remains the leading **Next** candidate; no scope or priority pivot was inferred.
 - 2026-07-21: Validated renderer-neutral raw-text preparation over fifteen canonical cases. Accepted a reusable serializable `PreparedText` boundary, explicit caller-font fallback, `bidi-js@1.0.3`, Unicode 17 script data, and unchanged public HarfBuzz/layout composition; recorded that shaping dominates measured execution and deferred complete breaking/reshaping, bidi affinity, workers, fetching, emoji/color fonts, and batching.

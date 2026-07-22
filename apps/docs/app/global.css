@@ -1,0 +1,18 @@
+@import "tailwindcss";
+@import "fumadocs-ui/css/neutral.css";
+@import "fumadocs-ui/css/preset.css";
+
+:root {
+  --docs-accent: #21c7a8;
+}
+
+body {
+  background-image: radial-gradient(circle at 15% 0%, rgb(33 199 168 / 8%), transparent 28rem);
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}

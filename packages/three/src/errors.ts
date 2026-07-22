@@ -9,3 +9,11 @@ export class DisposedTextError extends Error {
     super('Text has been disposed')
   }
 }
+
+export class DisposedTextResourcesError extends Error {
+  override readonly name = 'DisposedTextResourcesError'
+
+  constructor() {
+    super('TextResources has been disposed')
+  }
+}

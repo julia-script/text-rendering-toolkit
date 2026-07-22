@@ -5,7 +5,7 @@ import {
   type ResolvedLayoutInput,
   type ResolvedShapedRun,
 } from '@webgpu-text/layout'
-import { Text } from '@webgpu-text/three'
+import { Text, type TextFont, TextResources } from '@webgpu-text/three'
 import {
   AmbientLight,
   BoxGeometry,
@@ -135,6 +135,26 @@ function layout(fonts: { latin: FontHandle; arabic: FontHandle }, withNewGlyph: 
   return layoutResolvedText(input(fonts, withNewGlyph))
 }
 
+function growthLayout(font: FontHandle) {
+  const text = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789'
+  const run = resolvedRun(font, text, 0, text.length, 'latin', 'latin', 'ltr', 'Latn', 'en', 0.18)
+  return layoutResolvedText({
+    text,
+    paragraphLevel: 0,
+    defaultMetrics: run.metrics,
+    maxWidth: null,
+    whiteSpace: 'normal',
+    overflowWrap: 'normal',
+    textAlign: 'left',
+    textIndent: 0,
+    letterSpacing: 0,
+    lineHeight: 'normal',
+    anchorX: -1.7,
+    anchorY: 0,
+    runs: [run],
+  })
+}
+
 function pixelAt(image: ImageData, x: number, y: number) {
   const offset = (Math.floor(y) * image.width + Math.floor(x)) * 4
   return [
@@ -195,9 +215,14 @@ function darkerBy(lit: ImageData, shadowed: ImageData, x: number, y: number) {
   return luminance(sampleWorld(lit, x, y)) - luminance(sampleWorld(shadowed, x, y))
 }
 
-function changedPixels(left: ImageData, right: ImageData, maximumX = left.width) {
+function changedPixels(
+  left: ImageData,
+  right: ImageData,
+  maximumX = left.width,
+  maximumY = left.height,
+) {
   let changed = 0
-  for (let y = 0; y < left.height; y += 1) {
+  for (let y = 0; y < maximumY; y += 1) {
     for (let x = 0; x < maximumX; x += 1) {
       if (distance(pixelAt(left, x, y), pixelAt(right, x, y)) > 8) changed += 1
     }
@@ -254,19 +279,49 @@ async function createHarness() {
   scene.background = new Color(0x101820)
   const camera = new OrthographicCamera(-2, 2, 1, -1, 0.1, 10)
   camera.position.z = 5
+  const outlineCalls = { latin: 0, arabic: 0 }
+  const renderFonts = new Map<string, TextFont>([
+    [
+      'latin',
+      {
+        getOutline(glyphId, variations) {
+          outlineCalls.latin += 1
+          return fonts.latin.getOutline(glyphId, variations)
+        },
+      },
+    ],
+    [
+      'arabic',
+      {
+        getOutline(glyphId, variations) {
+          outlineCalls.arabic += 1
+          return fonts.arabic.getOutline(glyphId, variations)
+        },
+      },
+    ],
+  ])
+  const resources = new TextResources({ sdfSize: 64 })
   const text = new Text({
     layout: layout(fonts, false),
-    fonts: new Map([
-      ['latin', fonts.latin],
-      ['arabic', fonts.arabic],
-    ]),
+    fonts: renderFonts,
+    resources,
     lit: true,
     styleColors: { latin: 0x33ccff, arabic: 0xffcc33 },
     opacity: 1,
-    sdfSize: 64,
   })
   await text.sync()
+  const outlineCallsAfterPrimary = outlineCalls.latin + outlineCalls.arabic
+  const secondary = new Text({
+    layout: layout(fonts, false),
+    fonts: renderFonts,
+    resources,
+    styleColors: { latin: 0x99ff77, arabic: 0xff88cc },
+  })
+  await secondary.sync()
+  const outlineCallsAfterDuplicate = outlineCalls.latin + outlineCalls.arabic
   text.position.y = 0.25
+  secondary.position.y = -0.55
+  secondary.scale.setScalar(0.55)
 
   const receiverGeometry = new PlaneGeometry(4, 1.2)
   const receiverMaterial = new MeshStandardNodeMaterial({
@@ -307,7 +362,7 @@ async function createHarness() {
   directional.shadow.bias = -0.0005
   directional.shadow.normalBias = 0.01
 
-  scene.add(receiver, text, occluder, ambient, directional, directional.target)
+  scene.add(receiver, text, secondary, occluder, ambient, directional, directional.target)
 
   function setMode(mode: SceneMode) {
     const castText = mode === 'cast' || mode === 'shadow'
@@ -329,6 +384,8 @@ async function createHarness() {
     disposed = true
     scene.clear()
     text.dispose()
+    secondary.dispose()
+    resources.dispose()
     receiverGeometry.dispose()
     receiverMaterial.dispose()
     occluderGeometry.dispose()
@@ -345,6 +402,11 @@ async function createHarness() {
     fonts,
     renderer,
     text,
+    secondary,
+    resources,
+    outlineCalls,
+    outlineCallsAfterPrimary,
+    outlineCallsAfterDuplicate,
     setMode,
     render: async () => {
       renderer.render(scene, camera)
@@ -381,6 +443,7 @@ describe('production @webgpu-text/three actual-WebGPU evidence', () => {
     expect(baselineObservation.occupied).toBeGreaterThan(800)
     expect(baselineObservation.cyan).toBeGreaterThan(100)
     expect(baselineObservation.yellow).toBeGreaterThan(100)
+    expect(harness.outlineCallsAfterDuplicate).toBe(harness.outlineCallsAfterPrimary)
     const material = harness.text.material
     if (!(material instanceof MeshStandardNodeMaterial)) {
       throw new Error('Expected the production planar standard material')
@@ -431,6 +494,29 @@ describe('production @webgpu-text/three actual-WebGPU evidence', () => {
     expect(changedPixels(lit, updated)).toBeGreaterThan(100)
     expect(changedPixels(lit, updated, 110)).toBeLessThan(30)
 
+    const primaryLayoutBeforeSharedGrowth = harness.text.layoutResult
+    const primarySlotsBeforeSharedGrowth = [
+      ...harness.text.geometry.getAttribute('glyphSlot').array,
+    ].slice(0, harness.text.geometry.instanceCount)
+    harness.secondary.layout = growthLayout(harness.fonts.latin)
+    await harness.secondary.sync()
+    const grown = await captureMode(harness, 'lit')
+    const growthSlots = [...harness.secondary.geometry.getAttribute('glyphSlot').array].slice(
+      0,
+      harness.secondary.geometry.instanceCount,
+    )
+    expect(Math.max(...growthSlots)).toBeGreaterThanOrEqual(16)
+    expect(harness.text.layoutResult).toBe(primaryLayoutBeforeSharedGrowth)
+    expect(
+      [...harness.text.geometry.getAttribute('glyphSlot').array].slice(
+        0,
+        harness.text.geometry.instanceCount,
+      ),
+    ).toEqual(primarySlotsBeforeSharedGrowth)
+    expect(changedPixels(updated, grown, WIDTH, Math.floor(HEIGHT * 0.45))).toBeLessThan(40)
+    const outlineCallsAfterGrowth = harness.outlineCalls.latin + harness.outlineCalls.arabic
+    expect(outlineCallsAfterGrowth).toBeGreaterThan(harness.outlineCallsAfterDuplicate)
+
     await captureMode(harness, 'shadow')
 
     await page.screenshot({
@@ -455,6 +541,20 @@ describe('production @webgpu-text/three actual-WebGPU evidence', () => {
       viewport: { width: WIDTH, height: HEIGHT, dpr: 1 },
       initialInstanceCount: initialCount,
       updatedInstanceCount: harness.text.geometry.instanceCount,
+      sharedResources: {
+        primaryInstanceCount: harness.text.geometry.instanceCount,
+        secondaryGrowthInstanceCount: harness.secondary.geometry.instanceCount,
+        outlineCallsAfterPrimary: harness.outlineCallsAfterPrimary,
+        outlineCallsAfterDuplicate: harness.outlineCallsAfterDuplicate,
+        outlineCallsAfterGrowth,
+        maximumSlotAfterGrowth: Math.max(...growthSlots),
+        primaryChangedPixelsAfterBorrowerGrowth: changedPixels(
+          updated,
+          grown,
+          WIDTH,
+          Math.floor(HEIGHT * 0.45),
+        ),
+      },
       initialSemanticPixels: baselineObservation,
       litSemanticPixels: {
         lightGain,

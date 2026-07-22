@@ -1,0 +1,26 @@
+---
+title: Layout
+description: Prepare Unicode text and turn shaped runs into renderer-neutral positions and interaction data.
+---
+
+`@webgpu-text/layout` owns text preparation, explicit fallback selection over supplied font handles,
+shaping orchestration, wrapping, alignment, bidi placement, bounds, carets, and selection geometry.
+
+Use `prepareText()` when you want a reusable, serializable text-policy result. Use
+`layoutPreparedText()` when fonts are available, or `layoutText()` for the convenient one-step path.
+
+```ts
+const prepared = prepareText({
+  text: 'Hello مرحبا',
+  style: {
+    key: 'body',
+    fontKeys: ['latin', 'arabic'],
+    fontSize: 24,
+    language: 'und',
+  },
+})
+
+const result = layoutPreparedText(prepared, fonts)
+```
+
+The result contains data only. Layout never creates SDFs, textures, meshes, or GPU resources.

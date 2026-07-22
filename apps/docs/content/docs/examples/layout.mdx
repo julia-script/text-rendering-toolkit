@@ -1,0 +1,15 @@
+---
+title: Layout inspector
+description: Inspect multilingual preparation and glyph positioning without a renderer.
+---
+
+import { LayoutExample } from '@/components/examples/layout-example'
+
+<LayoutExample />
+
+This example fetches two font files in the application, gives their bytes to `loadFont()`, prepares
+the editable string, and supplies the resulting font registry to `layoutPreparedText()`.
+
+Nothing in this path imports Three.js or checks for WebGPU. Change the text and watch scripts,
+directions, fallback font keys, line assignments, and glyph positions update from the same public
+data a renderer would receive.

@@ -19,15 +19,30 @@ export interface AtlasPlan {
   readonly dirty: boolean
 }
 
-function copyRows(
+function copySlots(
   source: Uint8Array,
   sourceWidth: number,
   target: Uint8Array,
   targetWidth: number,
+  cellSize: number,
+  slotCount: number,
 ): void {
-  const rowBytes = sourceWidth * 4
-  for (let y = 0; y < sourceWidth; y += 1) {
-    target.set(source.subarray(y * rowBytes, (y + 1) * rowBytes), y * targetWidth * 4)
+  const sourceCellsPerRow = sourceWidth / cellSize
+  const targetCellsPerRow = targetWidth / cellSize
+  for (let slot = 0; slot < slotCount; slot += 1) {
+    const channel = slot % 4
+    const cell = Math.floor(slot / 4)
+    const sourceX = (cell % sourceCellsPerRow) * cellSize
+    const sourceY = Math.floor(cell / sourceCellsPerRow) * cellSize
+    const targetX = (cell % targetCellsPerRow) * cellSize
+    const targetY = Math.floor(cell / targetCellsPerRow) * cellSize
+    for (let y = 0; y < cellSize; y += 1) {
+      for (let x = 0; x < cellSize; x += 1) {
+        const sourceOffset = ((sourceY + y) * sourceWidth + sourceX + x) * 4 + channel
+        const targetOffset = ((targetY + y) * targetWidth + targetX + x) * 4 + channel
+        target[targetOffset] = source[sourceOffset] ?? 0
+      }
+    }
   }
 }
 
@@ -114,7 +129,14 @@ export class RgbaGlyphAtlas {
     while (gridSize * gridSize * 4 < this.#nextSlot + drawable) gridSize *= 2
     const atlasWidth = gridSize * this.cellSize
     const pixels = new Uint8Array(atlasWidth * atlasWidth * 4)
-    copyRows(this.#pixels, this.#gridSize * this.cellSize, pixels, atlasWidth)
+    copySlots(
+      this.#pixels,
+      this.#gridSize * this.cellSize,
+      pixels,
+      atlasWidth,
+      this.cellSize,
+      this.#nextSlot,
+    )
     let nextSlot = this.#nextSlot
     for (const [key, bitmap] of unique) {
       if (bitmap === null) {
@@ -137,11 +159,16 @@ export class RgbaGlyphAtlas {
   commit(plan: AtlasPlan): void {
     if (this.#disposed) throw new Error('Atlas has been disposed')
     if (!plan.dirty) return
+    const resized = plan.gridSize !== this.#gridSize
     this.#pixels = plan.pixels
     this.#gridSize = plan.gridSize
     this.#nextSlot = plan.nextSlot
     this.#glyphs = plan.glyphs
     const size = plan.gridSize * this.cellSize
+    // Three retains backend texture storage by Texture identity. Releasing that
+    // storage before a resize lets WebGPU allocate the new dimensions while
+    // materials keep referencing this same DataTexture object.
+    if (resized) this.texture.dispose()
     this.texture.image = { data: plan.pixels, width: size, height: size }
     this.texture.needsUpdate = true
   }

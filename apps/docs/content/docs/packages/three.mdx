@@ -1,0 +1,35 @@
+---
+title: Three.js WebGPU
+description: Render LayoutResult values with private or explicitly shared Three.js resources.
+---
+
+`@webgpu-text/three` is the optional renderer frontend. It accepts completed layout data and a map
+of font handles that can provide outlines.
+
+```ts
+import { Text, TextResources } from '@webgpu-text/three'
+
+const resources = new TextResources({ sdfSize: 64 })
+const text = new Text({
+  layout,
+  fonts,
+  resources,
+  color: 0x55d8ff,
+  lit: true,
+})
+
+await text.sync()
+scene.add(text)
+
+// Later
+scene.remove(text)
+text.dispose()
+resources.dispose()
+```
+
+Omit `resources` for a one-off mesh that owns a private cache and atlas. Inject one owner into
+multiple meshes to reuse glyph work and atlas storage; this does not merge their geometry or reduce
+draw calls. Dispose every borrower before the shared owner. The application still owns the font
+handles and decides when to dispose them. `lit` is fixed when the text object is created; construct
+a new object when changing between unlit and lit materials. The initial shared owner is monochrome
+SDF-only; color glyphs and emoji remain a later resource lane.

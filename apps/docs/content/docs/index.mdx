@@ -1,0 +1,16 @@
+---
+title: WebGPU Text
+description: A renderer-neutral text pipeline with an optional Three.js WebGPU frontend.
+---
+
+WebGPU Text is four small packages that turn font bytes and Unicode text into positioned glyphs,
+CPU-generated signed-distance fields, and—only when requested—a Three.js WebGPU mesh.
+
+## Start with the boundary you need
+
+- Use `@webgpu-text/font` to parse fonts, shape text, and request outlines.
+- Add `@webgpu-text/layout` to prepare raw multilingual text and position glyphs.
+- Add `@webgpu-text/sdf` when a renderer needs a CPU-generated distance-field bitmap.
+- Add `@webgpu-text/three` only for the supplied Three.js WebGPU renderer.
+
+[Get started](/docs/getting-started) or [understand the pipeline](/docs/concepts/pipeline).
