@@ -28,7 +28,7 @@ test('renders repeated public-font glyphs through one lazy outline/SDF insertion
     const shaped = handle.shape({ text: 'SSS', direction: 'ltr', script: 'Latn', language: 'en' })
     const scale = 1 / handle.facts.unitsPerEm
     const getOutline = vi.fn(handle.getOutline.bind(handle))
-    const font: TextFont = { getOutline }
+    const font: TextFont = { facts: handle.facts, getOutline }
     const input: ResolvedLayoutInput = {
       text: 'SSS',
       paragraphLevel: 0,
@@ -115,6 +115,89 @@ test('renders repeated public-font glyphs through one lazy outline/SDF insertion
   }
 })
 
+test('shares painted Latin and Arabic SDFs across unlit and lit borrowers', async () => {
+  const latin = await loadFont(
+    new Uint8Array(await readFile(resolve(fixtures, 'NotoSans-wdth-wght.ttf'))),
+  )
+  const arabic = await loadFont(
+    new Uint8Array(await readFile(resolve(fixtures, 'NotoSansArabic-wdth-wght.ttf'))),
+  )
+  const latinOutline = vi.fn(latin.getOutline.bind(latin))
+  const arabicOutline = vi.fn(arabic.getOutline.bind(arabic))
+  const fonts = new Map([
+    ['latin', latin],
+    ['arabic', arabic],
+  ])
+  const renderFonts = new Map<string, TextFont>([
+    [
+      'latin',
+      {
+        facts: latin.facts,
+        getOutline: latinOutline,
+        getColorLayers: latin.getColorLayers.bind(latin),
+      },
+    ],
+    [
+      'arabic',
+      {
+        facts: arabic.facts,
+        getOutline: arabicOutline,
+        getColorLayers: arabic.getColorLayers.bind(arabic),
+      },
+    ],
+  ])
+  const resources = new TextResources({ sdfSize: 64 })
+  try {
+    const layout = layoutPreparedText(
+      prepareText({
+        text: 'Hello مرحبا',
+        style: { key: 'body', fontKeys: ['latin', 'arabic'], fontSize: 1, language: 'und' },
+      }),
+      fonts,
+    )
+    const shared = {
+      layout,
+      fonts: renderFonts,
+      resources,
+      outline: { width: 0.01, color: 0x22d3ee, opacity: 0.8 },
+      shadow: {
+        offsetX: 0.01,
+        offsetY: -0.01,
+        softness: 0.01,
+        color: 0x172554,
+        opacity: 0.6,
+      },
+      clipRect: { ...layout.blockBounds },
+    } as const
+    const unlit = new Text(shared)
+    const lit = new Text({ ...shared, lit: true })
+    await unlit.sync()
+    const outlineCalls = latinOutline.mock.calls.length + arabicOutline.mock.calls.length
+    const slots = [...unlit.geometry.getAttribute('glyphSlot').array].slice(
+      0,
+      unlit.geometry.instanceCount,
+    )
+    await lit.sync()
+
+    expect(layout.glyphs.some((glyph) => glyph.fontKey === 'latin')).toBe(true)
+    expect(layout.glyphs.some((glyph) => glyph.fontKey === 'arabic')).toBe(true)
+    expect(latinOutline.mock.calls.length + arabicOutline.mock.calls.length).toBe(outlineCalls)
+    expect(
+      [...lit.geometry.getAttribute('glyphSlot').array].slice(0, lit.geometry.instanceCount),
+    ).toEqual(slots)
+    unlit.shadow = { ...shared.shadow, offsetX: 0.02, color: 0x7c3aed }
+    await unlit.sync()
+    expect(latinOutline.mock.calls.length + arabicOutline.mock.calls.length).toBe(outlineCalls)
+    expect(unlit.material).not.toBe(lit.material)
+    unlit.dispose()
+    lit.dispose()
+  } finally {
+    resources.dispose()
+    latin.dispose()
+    arabic.dispose()
+  }
+})
+
 test('rejects a disposed public FontHandle without taking ownership', async () => {
   const handle = await loadFont(
     new Uint8Array(await readFile(resolve(fixtures, 'NotoSans-wdth-wght.ttf'))),
@@ -190,9 +273,9 @@ test('renders the accepted color corpus through unchanged public layouts at two 
   const getColorLayers = vi.fn(emoji.getColorLayers.bind(emoji))
   const renderFonts = new Map<string, TextFont>([
     ['latin', latin],
-    ['emoji', { getOutline, getColorLayers }],
+    ['emoji', { facts: emoji.facts, getOutline, getColorLayers }],
   ])
-  const resources = new TextResources({ sdfSize: 16 })
+  const resources = new TextResources({ sdfSize: 64, sdfPadding: 0.25 })
   const values = []
   const emojiText = '✍✍🏻✍🏽✍🏿😀❤👨‍👩‍👧👩‍💻🇺🇸'
   const textValue = `A${emojiText}B`
@@ -238,10 +321,24 @@ test('renders the accepted color corpus through unchanged public layouts at two 
         resources,
         color: 0xffffff,
         styleColors: { emoji: 0x00ff00 },
+        outline: { width: fontSize * 0.01, color: 0xff00ff },
+        shadow: {
+          offsetX: fontSize * 0.01,
+          offsetY: -fontSize * 0.01,
+          softness: fontSize * 0.01,
+          color: 0x000000,
+          opacity: 0.5,
+        },
       })
       await text.sync()
       expect(text.layoutResult).toBe(layout)
       expect(text.geometry.instanceCount).toBeGreaterThan(layout.glyphs.length)
+      const eligibility = [
+        ...text.geometry.getAttribute('glyphSdf').array.slice(0, text.geometry.instanceCount * 3),
+      ].filter((_, index) => index % 3 === 2)
+      expect(eligibility[0]).toBe(1)
+      expect(eligibility.at(-1)).toBe(1)
+      expect(eligibility.slice(1, -1).every((value) => value === 0)).toBe(true)
       expect({
         blockBounds: layout.blockBounds,
         visibleBounds: layout.visibleBounds,

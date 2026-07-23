@@ -34,13 +34,27 @@
   },
   "materialVariants": ["unlit", "planar-lit"],
   "paints": ["CPAL palette zero", "current foreground", "CPAL alpha 96/255"],
+  "ordinarySdfPaint": {
+    "outline": {
+      "width": 0.025,
+      "color": "#ff3d81"
+    },
+    "shadow": {
+      "offset": [0.02, -0.025],
+      "softness": 0.015,
+      "color": "#44aaff"
+    },
+    "eligibleInstances": 2,
+    "colrLayerInstances": 72,
+    "boundary": "ordinary glyphs receive SDF paint; COLR layers remain unchanged"
+  },
   "outlineCallsAfterFirst": 73,
   "outlineCallsAfterSharedBorrower": 73,
   "semanticPixels": {
-    "opaque": 19775,
-    "transparent": 111297,
-    "chromatic": 14083,
-    "semiTransparent": 7547,
+    "opaque": 22420,
+    "transparent": 108652,
+    "chromatic": 16828,
+    "semiTransparent": 9022,
     "boundedAlpha": true
   },
   "updateRecovery": "failed missing-font update preserved the accepted layout and recovered",

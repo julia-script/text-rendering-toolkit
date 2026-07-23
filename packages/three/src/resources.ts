@@ -15,6 +15,9 @@ import type {
 /** SDF cell size used when the caller specifies none. */
 const DEFAULT_SDF_SIZE = 64
 
+/** Em distance reserved around every glyph when the caller specifies none. */
+const DEFAULT_SDF_PADDING = 0.125
+
 /** Falloff exponent for generated fields; concentrates precision near the edge. */
 const SDF_EXPONENT = 9
 
@@ -37,6 +40,8 @@ export interface PlannedTextGlyph {
   readonly outlineGlyphId: number
   readonly paint: TextColorGlyphPaint
   readonly key: string
+  /** Whether renderer-owned outline and drop-shadow paint may affect this instance. */
+  readonly effectEligible: boolean
 }
 
 export interface TextResourcePlan {
@@ -57,6 +62,12 @@ function invalid(message: string, cause?: unknown): InvalidTextInputError {
 function validateSdfSize(size: number): void {
   if (!Number.isSafeInteger(size) || size < 16 || size > 512) {
     throw invalid('sdfSize must be a safe integer from 16 through 512')
+  }
+}
+
+function validateSdfPadding(padding: number): void {
+  if (!Number.isFinite(padding) || padding <= 0) {
+    throw invalid('sdfPadding must be finite and positive')
   }
 }
 
@@ -98,7 +109,12 @@ function paddedBitmap(
   glyphId: number,
   variations: Readonly<Record<string, number>>,
   size: number,
+  paddingEm: number,
 ): SdfBitmap | null {
+  const unitsPerEm = font.facts?.unitsPerEm
+  if (!Number.isFinite(unitsPerEm) || unitsPerEm <= 0) {
+    throw invalid('Font facts.unitsPerEm must be finite and positive')
+  }
   let outline: TextGlyphOutline
   try {
     outline = font.getOutline(glyphId, variations)
@@ -112,9 +128,8 @@ function paddedBitmap(
   }
   const extent = Math.max(xMax - xMin, yMax - yMin)
   if (!(extent > 0)) return null
-  const paddingPixels = Math.max(2, Math.floor(size / 8))
-  const unitsPerPixel = extent / (size - paddingPixels * 2)
-  const viewExtent = unitsPerPixel * size
+  const paddingUnits = unitsPerEm * paddingEm
+  const viewExtent = extent + paddingUnits * 2
   const centerX = (xMin + xMax) / 2
   const centerY = (yMin + yMax) / 2
   const viewBox: SdfViewBox = {
@@ -128,7 +143,7 @@ function paddedBitmap(
     viewBox,
     width: size,
     height: size,
-    distance: unitsPerPixel * paddingPixels,
+    distance: paddingUnits,
     exponent: SDF_EXPONENT,
   })
 }
@@ -261,16 +276,21 @@ function resolvedColorLayers(
 export class TextResources {
   /** SDF cell size in texels; fixed for this instance's lifetime. */
   readonly sdfSize: number
+  /** SDF padding in em units; fixed for this instance's lifetime. */
+  readonly sdfPadding: number
 
   /**
-   * @param options - Optional SDF cell size.
+   * @param options - Optional SDF cell size and em padding.
    * @throws {@link InvalidTextInputError} if `sdfSize` is not a safe integer
-   *   from `16` through `512`.
+   *   from `16` through `512`, or `sdfPadding` is not finite and positive.
    */
   constructor(options: TextResourcesOptions = {}) {
     const sdfSize = options.sdfSize ?? DEFAULT_SDF_SIZE
+    const sdfPadding = options.sdfPadding ?? DEFAULT_SDF_PADDING
     validateSdfSize(sdfSize)
+    validateSdfPadding(sdfPadding)
     this.sdfSize = sdfSize
+    this.sdfPadding = sdfPadding
     states.set(this, {
       atlas: new RgbaGlyphAtlas(sdfSize),
       atlasGrid: new Vector2(1, 1),
@@ -330,20 +350,36 @@ export function planTextResources(
     if (!font || (typeof font !== 'object' && typeof font !== 'function')) {
       throw invalid(`Font registry has no usable entry for ${glyph.fontKey}`)
     }
-    const colorLayers = resolvedColorLayers(value, font, glyph.glyphId) ?? [
-      { glyphId: glyph.glyphId, color: 'foreground' as const },
-    ]
+    const resolvedLayers = resolvedColorLayers(value, font, glyph.glyphId)
+    const colorLayers = resolvedLayers ?? [{ glyphId: glyph.glyphId, color: 'foreground' as const }]
     for (const layer of colorLayers) {
       const key = `${fontId(value, font)}:${layer.glyphId}:${variationKey(glyph.variations)}:${resources.sdfSize}`
       let cached = value.atlas.lookup(key) ?? local.get(key)
       if (cached === undefined) {
-        const bitmap = paddedBitmap(font, layer.glyphId, glyph.variations, resources.sdfSize)
+        const bitmap = paddedBitmap(
+          font,
+          layer.glyphId,
+          glyph.variations,
+          resources.sdfSize,
+          resources.sdfPadding,
+        )
         additions.push({ key, bitmap })
-        cached = { slot: bitmap ? -1 : null, viewBox: bitmap?.viewBox ?? null }
+        cached = {
+          slot: bitmap ? -1 : null,
+          viewBox: bitmap?.viewBox ?? null,
+          distance: bitmap?.distance ?? null,
+          exponent: bitmap?.exponent ?? null,
+        }
         local.set(key, cached)
       }
       if (cached.slot !== null) {
-        planned.push({ glyph, outlineGlyphId: layer.glyphId, paint: layer.color, key })
+        planned.push({
+          glyph,
+          outlineGlyphId: layer.glyphId,
+          paint: layer.color,
+          key,
+          effectEligible: resolvedLayers === null,
+        })
       }
     }
   }

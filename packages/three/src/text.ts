@@ -8,6 +8,7 @@ import {
   createGlyphMaterial,
   type GlyphInstanceData,
   type GlyphMaterialControls,
+  type GlyphMaterialPaint,
   updateGlyphGeometry,
   updateGlyphMaterial,
 } from './rendering.js'
@@ -18,7 +19,7 @@ import {
   TextResources,
   textResourceBinding,
 } from './resources.js'
-import type { TextFont, TextMaterial, TextOptions } from './types.js'
+import type { TextFont, TextMaterial, TextOptions, TextOutline, TextShadow } from './types.js'
 
 const DEFAULT_COLOR = 0xffffff
 
@@ -30,6 +31,8 @@ interface SyncSnapshot {
   readonly styleColors: Readonly<Record<string, ColorRepresentation>>
   readonly opacity: number
   readonly clipRect: LayoutBounds | null
+  readonly outline: TextOutline | null
+  readonly shadow: TextShadow | null
 }
 
 interface BuiltState {
@@ -38,6 +41,8 @@ interface BuiltState {
   readonly instances: GlyphInstanceData
   readonly opacity: number
   readonly clipRect: LayoutBounds | null
+  readonly paint: GlyphMaterialPaint
+  readonly renderBounds: LayoutBounds
 }
 
 function invalid(message: string, cause?: unknown): InvalidTextInputError {
@@ -109,6 +114,108 @@ function normalizedColor(value: ColorRepresentation, label: string): Color {
     return color
   } catch (error) {
     throw invalid(`${label} is not a valid finite Three.js color`, error)
+  }
+}
+
+function normalizedPaint(
+  outline: TextOutline | null,
+  shadow: TextShadow | null,
+): GlyphMaterialPaint {
+  let outlineWidth = 0
+  let outlineOpacity = 0
+  let outlineColor = new Color(0)
+  if (outline !== null) {
+    if (!outline || typeof outline !== 'object') throw invalid('outline must be an object or null')
+    outlineWidth = outline.width
+    outlineOpacity = outline.opacity ?? 1
+    outlineColor = normalizedColor(outline.color, 'outline.color')
+    if (!Number.isFinite(outlineWidth) || outlineWidth < 0) {
+      throw invalid('outline.width must be finite and non-negative')
+    }
+    validateOpacity(outlineOpacity)
+    if (outlineWidth === 0 || outlineOpacity === 0) outlineOpacity = 0
+  }
+
+  let shadowOffsetX = 0
+  let shadowOffsetY = 0
+  let shadowSoftness = 0
+  let shadowOpacity = 0
+  let shadowColor = new Color(0)
+  if (shadow !== null) {
+    if (!shadow || typeof shadow !== 'object') throw invalid('shadow must be an object or null')
+    shadowOffsetX = shadow.offsetX
+    shadowOffsetY = shadow.offsetY
+    shadowSoftness = shadow.softness
+    shadowOpacity = shadow.opacity ?? 1
+    shadowColor = normalizedColor(shadow.color, 'shadow.color')
+    if (![shadowOffsetX, shadowOffsetY].every(Number.isFinite)) {
+      throw invalid('shadow offsets must be finite')
+    }
+    if (!Number.isFinite(shadowSoftness) || shadowSoftness < 0) {
+      throw invalid('shadow.softness must be finite and non-negative')
+    }
+    validateOpacity(shadowOpacity)
+    if (shadowOpacity === 0) {
+      shadowOffsetX = 0
+      shadowOffsetY = 0
+      shadowSoftness = 0
+    }
+  }
+
+  return {
+    outlineColor,
+    outlineOpacity,
+    outlineWidth,
+    shadowColor,
+    shadowOpacity,
+    shadowOffsetX,
+    shadowOffsetY,
+    shadowSoftness,
+  }
+}
+
+function paintExtent(paint: GlyphMaterialPaint): number {
+  return Math.max(
+    paint.outlineOpacity > 0 ? paint.outlineWidth : 0,
+    paint.shadowOpacity > 0 ? Math.abs(paint.shadowOffsetX) + paint.shadowSoftness : 0,
+    paint.shadowOpacity > 0 ? Math.abs(paint.shadowOffsetY) + paint.shadowSoftness : 0,
+  )
+}
+
+function usablePaintDistance(maximumDistance: number, exponent: number): number {
+  return maximumDistance * (1 - (2 / 255) ** (1 / exponent))
+}
+
+function expandedBounds(
+  bounds: LayoutBounds,
+  paint: GlyphMaterialPaint,
+  antialiasMargin: number,
+  effectEligible: boolean,
+): LayoutBounds {
+  if (!effectEligible || paintExtent(paint) === 0) return { ...bounds }
+  const outline = paint.outlineOpacity > 0 ? paint.outlineWidth : 0
+  const shadow = paint.shadowOpacity > 0
+  const left = Math.max(
+    outline,
+    shadow ? Math.max(0, paint.shadowSoftness - paint.shadowOffsetX) : 0,
+  )
+  const right = Math.max(
+    outline,
+    shadow ? Math.max(0, paint.shadowSoftness + paint.shadowOffsetX) : 0,
+  )
+  const bottom = Math.max(
+    outline,
+    shadow ? Math.max(0, paint.shadowSoftness - paint.shadowOffsetY) : 0,
+  )
+  const top = Math.max(
+    outline,
+    shadow ? Math.max(0, paint.shadowSoftness + paint.shadowOffsetY) : 0,
+  )
+  return {
+    left: bounds.left - left - antialiasMargin,
+    bottom: bounds.bottom - bottom - antialiasMargin,
+    right: bounds.right + right + antialiasMargin,
+    top: bounds.top + top + antialiasMargin,
   }
 }
 
@@ -186,6 +293,10 @@ export class Text extends Mesh<ReturnType<typeof createGlyphGeometry>, TextMater
   opacity: number
   /** Local rectangular clip in layout coordinates, or `null`. */
   clipRect: LayoutBounds | null
+  /** One outer outline for ordinary glyphs, or `null`. */
+  outline: TextOutline | null
+  /** One offset, softened drop shadow for ordinary glyphs, or `null`. */
+  shadow: TextShadow | null
   /** Whether this object uses the lit standard material. Fixed at construction. */
   readonly lit: boolean
   /**
@@ -243,6 +354,8 @@ export class Text extends Mesh<ReturnType<typeof createGlyphGeometry>, TextMater
     this.styleColors = options.styleColors ?? {}
     this.opacity = options.opacity ?? 1
     this.clipRect = options.clipRect ?? null
+    this.outline = options.outline ?? null
+    this.shadow = options.shadow ?? null
     this.lit = lit
     this.sdfSize = resources.sdfSize
     this.#resources = resources
@@ -332,6 +445,8 @@ export class Text extends Mesh<ReturnType<typeof createGlyphGeometry>, TextMater
       styleColors: { ...this.styleColors },
       opacity: this.opacity,
       clipRect: this.clipRect ? { ...this.clipRect } : null,
+      outline: this.outline ? { ...this.outline } : null,
+      shadow: this.shadow ? { ...this.shadow } : null,
     }
     this.#pending ??= Promise.resolve().then(() => this.#flush())
     return this.#pending
@@ -366,9 +481,9 @@ export class Text extends Mesh<ReturnType<typeof createGlyphGeometry>, TextMater
       if (this.#disposed || !snapshot) throw new DisposedTextError()
       const built = this.#build(snapshot)
       if (this.#disposed || snapshot.revision !== this.#revision) throw new DisposedTextError()
-      updateGlyphGeometry(this.geometry, built.instances, built.layout.blockBounds)
+      updateGlyphGeometry(this.geometry, built.instances, built.renderBounds)
       commitTextResources(this.#resources, built.resources)
-      updateGlyphMaterial(this.#controls, built.opacity, built.clipRect)
+      updateGlyphMaterial(this.#controls, built.opacity, built.clipRect, built.paint)
       this.#layoutResult = built.layout
     } finally {
       this.#latest = null
@@ -379,6 +494,7 @@ export class Text extends Mesh<ReturnType<typeof createGlyphGeometry>, TextMater
   #build(snapshot: SyncSnapshot): BuiltState {
     validateOpacity(snapshot.opacity)
     validateClipRect(snapshot.clipRect)
+    const paint = normalizedPaint(snapshot.outline, snapshot.shadow)
     const defaultColor = normalizedColor(snapshot.color, 'color')
     const styleColors = new Map<string, Color>()
     for (const [key, value] of Object.entries(snapshot.styleColors)) {
@@ -391,13 +507,38 @@ export class Text extends Mesh<ReturnType<typeof createGlyphGeometry>, TextMater
     const bounds = new Float32Array(renderable.length * 4)
     const slots = new Uint32Array(renderable.length)
     const colors = new Uint8Array(renderable.length * 4)
+    const sdf = new Float32Array(renderable.length * 3)
+    const requiredExtent = paintExtent(paint)
+    let largestTexel = 0
+    let hasEffectEligibleGlyph = false
     for (const [index, item] of renderable.entries()) {
       const cached = resources.atlas.glyphs.get(item.key)
-      if (!cached || cached.slot === null || !cached.viewBox) {
+      if (
+        !cached ||
+        cached.slot === null ||
+        !cached.viewBox ||
+        cached.distance === null ||
+        cached.exponent === null
+      ) {
         throw invalid(`Atlas plan is missing glyph ${item.outlineGlyphId}`)
       }
-      bounds.set(quadBounds(item.glyph, cached.viewBox, item.glyph.fontUnitScale), index * 4)
+      const glyphBounds = quadBounds(item.glyph, cached.viewBox, item.glyph.fontUnitScale)
+      bounds.set(glyphBounds, index * 4)
       slots[index] = cached.slot
+      const maximumDistance = cached.distance * item.glyph.fontUnitScale
+      const texelSize = (glyphBounds[2] - glyphBounds[0]) / this.sdfSize
+      if (item.effectEligible) {
+        hasEffectEligibleGlyph = true
+        largestTexel = Math.max(largestTexel, texelSize)
+        const required = requiredExtent + (requiredExtent > 0 ? texelSize : 0)
+        const available = usablePaintDistance(maximumDistance, cached.exponent)
+        if (required > available + Number.EPSILON) {
+          throw invalid(
+            `SDF paint requires ${required.toFixed(6)} layout units but glyph ${item.outlineGlyphId} has ${available.toFixed(6)} safely encodable; increase TextResources sdfPadding`,
+          )
+        }
+      }
+      sdf.set([maximumDistance, cached.exponent, item.effectEligible ? 1 : 0], index * 3)
       const foreground = styleColors.get(item.glyph.styleKey) ?? defaultColor
       const color = item.paint === 'foreground' ? foreground : item.paint
       const components =
@@ -411,9 +552,11 @@ export class Text extends Mesh<ReturnType<typeof createGlyphGeometry>, TextMater
     return {
       layout,
       resources,
-      instances: { bounds, slots, colors, count: renderable.length },
+      instances: { bounds, slots, colors, sdf, count: renderable.length },
       opacity: snapshot.opacity,
       clipRect: snapshot.clipRect,
+      paint,
+      renderBounds: expandedBounds(layout.blockBounds, paint, largestTexel, hasEffectEligibleGlyph),
     }
   }
 }

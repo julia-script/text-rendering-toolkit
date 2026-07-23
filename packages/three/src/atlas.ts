@@ -7,6 +7,10 @@ export interface CachedGlyph {
   readonly slot: number | null
   /** View box the SDF was generated with, for sizing the quad; `null` when blank. */
   readonly viewBox: SdfViewBox | null
+  /** Maximum signed distance represented by the encoded bytes, in font units. */
+  readonly distance: number | null
+  /** Nonlinear distance falloff exponent used by the encoded bytes. */
+  readonly exponent: number | null
 }
 
 /** One glyph queued for insertion; a `null` bitmap records a blank glyph. */
@@ -190,12 +194,17 @@ export class RgbaGlyphAtlas {
     let nextSlot = this.#nextSlot
     for (const [key, bitmap] of unique) {
       if (bitmap === null) {
-        glyphs.set(key, { slot: null, viewBox: null })
+        glyphs.set(key, { slot: null, viewBox: null, distance: null, exponent: null })
         continue
       }
       const slot = nextSlot++
       pack(pixels, atlasWidth, this.cellSize, slot, bitmap)
-      glyphs.set(key, { slot, viewBox: bitmap.viewBox })
+      glyphs.set(key, {
+        slot,
+        viewBox: bitmap.viewBox,
+        distance: bitmap.distance,
+        exponent: bitmap.exponent,
+      })
     }
     return {
       pixels,

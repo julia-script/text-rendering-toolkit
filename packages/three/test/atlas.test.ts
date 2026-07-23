@@ -50,7 +50,12 @@ test('packs four channels, grows to multiple cells, and preserves cached slots',
 test('records empty glyphs without allocating slots and disposes once', () => {
   const atlas = new RgbaGlyphAtlas(2)
   atlas.commit(atlas.plan([{ key: 'empty', bitmap: null }]))
-  expect(atlas.lookup('empty')).toEqual({ slot: null, viewBox: null })
+  expect(atlas.lookup('empty')).toEqual({
+    slot: null,
+    viewBox: null,
+    distance: null,
+    exponent: null,
+  })
   const disposed = vi.fn()
   atlas.texture.addEventListener('dispose', disposed)
   atlas.dispose()

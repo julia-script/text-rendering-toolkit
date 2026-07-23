@@ -84,13 +84,21 @@ async function start(canvas: HTMLCanvasElement) {
   scene.background = new Color(0x101820)
   const camera = new OrthographicCamera(-2, 2, 0.75, -0.75, 0.1, 10)
   camera.position.z = 3
-  const resources = new TextResources({ sdfSize: 64 })
+  const resources = new TextResources({ sdfSize: 64, sdfPadding: 0.125 })
   const title = new Text({
     layout: layoutResolvedText(resolveSingleRun(font, 'WebGPU Text', 0.45)),
     fonts: new Map([['body', font]]),
     resources,
     lit: true,
     color: 0x55d8ff,
+    outline: { width: 0.02, color: 0xe0f2fe, opacity: 0.9 },
+    shadow: {
+      offsetX: 0.025,
+      offsetY: -0.025,
+      softness: 0.015,
+      color: 0x020617,
+      opacity: 0.7,
+    },
   })
   const label = new Text({
     layout: layoutResolvedText(resolveSingleRun(font, 'Shared text resources', 0.2)),
@@ -100,6 +108,15 @@ async function start(canvas: HTMLCanvasElement) {
     color: 0xffcc55,
   })
   await Promise.all([title.sync(), label.sync()])
+  const acceptedOutline = title.outline
+  title.outline = { width: 1, color: 0xffffff }
+  try {
+    await title.sync()
+  } catch {
+    // Failed paint is atomic; restore a supported value on the same mesh/resources.
+    title.outline = acceptedOutline
+    await title.sync()
+  }
   title.position.y = 0.2
   label.position.y = -0.35
   title.castShadow = true

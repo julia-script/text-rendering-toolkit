@@ -64,7 +64,7 @@ describe('private COLR v0 seam', () => {
           [
             'emoji',
             {
-              font: { getOutline: font.getOutline.bind(font) },
+              font: { facts: font.facts, getOutline: font.getOutline.bind(font) },
               bytes: new Uint8Array(4),
             },
           ],

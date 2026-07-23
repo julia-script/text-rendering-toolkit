@@ -10,7 +10,7 @@ const ThreeExampleClient = dynamic(
 
 export function ThreeExample() {
   return (
-    <ExampleFrame title="Three.js WebGPU text" status="WebGPU client island">
+    <ExampleFrame title="Outline and drop shadow" status="Interactive">
       <ThreeExampleClient />
     </ExampleFrame>
   )

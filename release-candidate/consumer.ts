@@ -66,9 +66,21 @@ try {
   })
   if (bitmap.pixels.length !== 256) throw new Error('SDF generation returned the wrong size')
 
-  const resources = new TextResources({ sdfSize: 16 })
-  const text = new Text({ layout, fonts, resources })
-  const repeated = new Text({ layout, fonts, resources })
+  const resources = new TextResources({ sdfSize: 32, sdfPadding: 0.2 })
+  const text = new Text({
+    layout,
+    fonts,
+    resources,
+    outline: { width: 1.5, color: 0x22d3ee, opacity: 0.9 },
+    shadow: {
+      offsetX: 1,
+      offsetY: -1,
+      softness: 1,
+      color: 0x172554,
+      opacity: 0.6,
+    },
+  })
+  const repeated = new Text({ layout, fonts, resources, lit: true })
   try {
     await Promise.all([text.sync(), repeated.sync()])
     if ((text.committedState?.instanceCount ?? 0) === 0) {
@@ -77,6 +89,8 @@ try {
     if (repeated.committedState?.instanceCount !== text.committedState?.instanceCount) {
       throw new Error('Shared Three.js text committed inconsistent glyph instances')
     }
+    text.outline = { width: 1, color: 0x84cc16 }
+    await text.sync()
 
     const colorPrepared = prepareText({
       text: 'A😀✍🏽🇺🇸B',

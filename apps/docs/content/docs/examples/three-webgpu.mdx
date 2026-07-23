@@ -7,17 +7,11 @@ import { ThreeExample } from '@/components/examples/three-example'
 
 <ThreeExample />
 
-This client-only example fetches font bytes, calls the same renderer-neutral `layoutText()` API,
-and gives completed `LayoutResult` values and the font registry to two `Text` objects. They borrow
-one application-owned `TextResources`, so repeated font/outline-glyph identities reuse one SDF
-cache and atlas while each mesh keeps independent geometry, material, appearance, and draw calls.
-The renderer does not own shaping or layout policy.
+This example focuses on one job: painting ordinary text with an outer outline and one visual drop
+shadow. Toggle either layer, change its color, and adjust the outline width or shadow shape without
+reshaping the text or generating another glyph.
 
-The same handoff renders COLR v0 fonts without changing layout data: ordered layer outlines reuse
-that atlas, palette-zero colors remain instance RGBA, and `"foreground"` layers use the effective
-text or style color. See the color-glyph example for explicit font ordering and caller-owned bytes.
-
-The scene uses the construction-fixed lit material. On unmount it stops rendering, disconnects its
-resize observer, disposes both text meshes before their shared resources, disposes the scene and
-font handles, and finally disposes the renderer. Browsers without WebGPU receive a local unsupported
-message while the rest of the documentation remains usable.
+Width, offsets, and softness use the same units as the text layout. Shadow softness is a
+distance-field falloff rather than a browser-style Gaussian blur. See the
+[Three package guide](/docs/packages/three) for resource sizing, clipping, lighting, and scene
+shadows, or the [color-glyph example](/docs/examples/color-glyphs) for COLR behavior.

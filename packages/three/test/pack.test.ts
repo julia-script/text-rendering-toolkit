@@ -75,18 +75,22 @@ test('ships public ESM runtime and declarations to a clean consumer', () => {
     writeFileSync(
       resolve(consumer, 'main.ts'),
       `
+        import type { LayoutResult } from '@webgpu-text/layout'
         import { Text, TextResources, InvalidTextInputError } from '@webgpu-text/three'
         import type {
           TextColorGlyphLayer,
           TextFont,
           TextMaterial,
           TextOptions,
+          TextOutline,
           TextResourcesOptions,
           TextRgbaColor,
+          TextShadow,
         } from '@webgpu-text/three'
         const red = { red: 255, green: 0, blue: 0, alpha: 128 } satisfies TextRgbaColor
         const layers = [{ glyphId: 1, color: red }] satisfies readonly TextColorGlyphLayer[]
         const font: TextFont = {
+          facts: { unitsPerEm: 1000 },
           getOutline: () => ({
             commands: new Uint8Array(), coordinates: new Float32Array(),
             bounds: { xMin: 0, yMin: 0, xMax: 0, yMax: 0 },
@@ -94,12 +98,25 @@ test('ships public ESM runtime and declarations to a clean consumer', () => {
           getColorLayers: () => layers,
         }
         const options = { lit: true } as TextOptions
-        const resourceOptions = { sdfSize: 16 } satisfies TextResourcesOptions
+        const outline = { width: 0.02, color: 0xff0000, opacity: 0.8 } satisfies TextOutline
+        const shadow = {
+          offsetX: 0.01, offsetY: -0.01, softness: 0.01, color: 0x000000, opacity: 0.5,
+        } satisfies TextShadow
+        const resourceOptions = { sdfSize: 16, sdfPadding: 0.25 } satisfies TextResourcesOptions
         const resources = new TextResources(resourceOptions)
+        const layout = {
+          glyphs: [], blockBounds: { left: 0, bottom: 0, right: 0, top: 0 },
+        } as unknown as LayoutResult
+        const text = new Text({ layout, fonts: new Map([['font', font]]), resources, outline, shadow })
+        await text.sync()
+        text.outline = null
+        text.shadow = { ...shadow, offsetX: 0.02 }
+        await text.sync()
         const material = null as TextMaterial | null
         void font
         void options
         void material
+        text.dispose()
         resources.dispose()
         if (typeof Text !== 'function' || typeof TextResources !== 'function' || typeof InvalidTextInputError !== 'function') {
           throw new Error('Missing public renderer exports')
@@ -135,4 +152,4 @@ test('ships public ESM runtime and declarations to a clean consumer', () => {
   } finally {
     rmSync(temporary, { recursive: true, force: true })
   }
-})
+}, 15_000)

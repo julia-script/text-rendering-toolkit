@@ -17,22 +17,13 @@
   "fixture": {
     "atlasSha256": "75958a3cea4f6dc6df4d15ebfcb822c5b2b113523ad65469dd9704aa4430c15a",
     "instances": 4,
-    "normal": [
-      0,
-      0,
-      1
-    ],
+    "normal": [0, 0, 1],
     "shadowSide": "visible-front-side"
   },
   "material": {
     "metalness": 0,
     "roughness": 0.9,
-    "publicNodes": [
-      "positionNode",
-      "colorNode",
-      "opacityNode",
-      "maskShadowNode"
-    ]
+    "publicNodes": ["positionNode", "colorNode", "opacityNode", "maskShadowNode"]
   },
   "observations": {
     "lightGain": 104.407,

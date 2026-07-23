@@ -179,18 +179,35 @@ function distance(left: readonly number[], right: readonly number[]) {
 }
 
 function observations(image: ImageData) {
+  let background = 0
+  let edge = 0
   let occupied = 0
   let cyan = 0
+  let green = 0
+  let pink = 0
   let yellow = 0
   for (let y = 0; y < Math.floor(image.height * 0.45); y += 1) {
     for (let x = 0; x < image.width; x += 1) {
       const pixel = pixelAt(image, x, y)
-      if (distance(pixel, BACKGROUND) > 12) occupied += 1
+      const backgroundDistance = distance(pixel, BACKGROUND)
+      if (backgroundDistance <= 2) background += 1
+      if (backgroundDistance > 12 && backgroundDistance < 80) edge += 1
+      if (backgroundDistance > 12) occupied += 1
       if (pixel[1] > pixel[0] + 15 && pixel[2] > pixel[0] + 15) cyan += 1
+      if (pixel[1] > pixel[0] + 20 && pixel[1] > pixel[2] + 15) green += 1
+      if (pixel[0] > pixel[1] + 20 && pixel[2] > pixel[1] + 10) pink += 1
       if (pixel[0] > pixel[2] + 15 && pixel[1] > pixel[2] + 10) yellow += 1
     }
   }
-  return { occupied, cyan, yellow }
+  return { background, edge, occupied, cyan, green, pink, yellow }
+}
+
+function boxRecord(box: typeof Text.prototype.geometry.boundingBox) {
+  if (!box) throw new Error('Expected computed renderer bounds')
+  return {
+    min: { x: box.min.x, y: box.min.y },
+    max: { x: box.max.x, y: box.max.y },
+  }
 }
 
 function luminance(color: readonly number[]) {
@@ -290,6 +307,7 @@ async function createHarness() {
     [
       'latin',
       {
+        facts: fonts.latin.facts,
         getOutline(glyphId, variations) {
           outlineCalls.latin += 1
           return fonts.latin.getOutline(glyphId, variations)
@@ -299,6 +317,7 @@ async function createHarness() {
     [
       'arabic',
       {
+        facts: fonts.arabic.facts,
         getOutline(glyphId, variations) {
           outlineCalls.arabic += 1
           return fonts.arabic.getOutline(glyphId, variations)
@@ -306,7 +325,7 @@ async function createHarness() {
       },
     ],
   ])
-  const resources = new TextResources({ sdfSize: 64 })
+  const resources = new TextResources({ sdfSize: 64, sdfPadding: 0.5 })
   const text = new Text({
     layout: layout(fonts, false),
     fonts: renderFonts,
@@ -314,6 +333,14 @@ async function createHarness() {
     lit: true,
     styleColors: { latin: 0x33ccff, arabic: 0xffcc33 },
     opacity: 1,
+    outline: { width: 0.014, color: 0xff4dba, opacity: 0.95 },
+    shadow: {
+      offsetX: 0.018,
+      offsetY: -0.025,
+      softness: 0.014,
+      color: 0x25e06f,
+      opacity: 0.8,
+    },
   })
   await text.sync()
   const outlineCallsAfterPrimary = outlineCalls.latin + outlineCalls.arabic
@@ -322,6 +349,14 @@ async function createHarness() {
     fonts: renderFonts,
     resources,
     styleColors: { latin: 0x99ff77, arabic: 0xff88cc },
+    outline: { width: 0.012, color: 0x7857ff },
+    shadow: {
+      offsetX: -0.018,
+      offsetY: -0.02,
+      softness: 0.012,
+      color: 0xff9f1c,
+      opacity: 0.75,
+    },
   })
   await secondary.sync()
   const outlineCallsAfterDuplicate = outlineCalls.latin + outlineCalls.arabic
@@ -444,16 +479,72 @@ describe('production @webgpu-text/three actual-WebGPU evidence', () => {
     const receive = await captureMode(harness, 'receive')
     const baselineObservation = observations(lit)
     const initialCount = harness.text.geometry.instanceCount
-    const initialSlots = harness.text.geometry.getAttribute('glyphSlot').array
+    const initialSlots = [...harness.text.geometry.getAttribute('glyphSlot').array].slice(
+      0,
+      initialCount,
+    )
     expect(Math.max(...[...initialSlots].slice(0, initialCount))).toBeGreaterThanOrEqual(4)
     expect(baselineObservation.occupied).toBeGreaterThan(800)
+    expect(baselineObservation.background).toBeGreaterThan(10_000)
+    expect(baselineObservation.edge).toBeGreaterThan(100)
     expect(baselineObservation.cyan).toBeGreaterThan(100)
+    expect(baselineObservation.green).toBeGreaterThan(10)
+    expect(baselineObservation.pink).toBeGreaterThan(10)
     expect(baselineObservation.yellow).toBeGreaterThan(100)
     expect(harness.outlineCallsAfterDuplicate).toBe(harness.outlineCallsAfterPrimary)
     const material = harness.text.material
     if (!(material instanceof MeshStandardNodeMaterial)) {
       throw new Error('Expected the production planar standard material')
     }
+    const colorNode = material.colorNode
+    const initialBounds = boxRecord(harness.text.geometry.boundingBox)
+    const outlineCallsBeforeAppearance = harness.outlineCalls.latin + harness.outlineCalls.arabic
+
+    harness.text.outline = { width: 0.024, color: 0xff7a18, opacity: 0.85 }
+    harness.text.shadow = {
+      offsetX: -0.028,
+      offsetY: -0.032,
+      softness: 0.02,
+      color: 0x6e56cf,
+      opacity: 0.9,
+    }
+    await harness.text.sync()
+    const appearanceUpdated = await captureMode(harness, 'lit')
+    const updatedPaintBounds = boxRecord(harness.text.geometry.boundingBox)
+    expect(changedPixels(lit, appearanceUpdated)).toBeGreaterThan(100)
+    expect(
+      [...harness.text.geometry.getAttribute('glyphSlot').array].slice(0, initialCount),
+    ).toEqual(initialSlots)
+    expect(harness.outlineCalls.latin + harness.outlineCalls.arabic).toBe(
+      outlineCallsBeforeAppearance,
+    )
+    expect(harness.text.material).toBe(material)
+    expect(material.colorNode).toBe(colorNode)
+    expect(updatedPaintBounds.min.x).toBeLessThan(initialBounds.min.x)
+    expect(updatedPaintBounds.min.y).toBeLessThan(initialBounds.min.y)
+
+    const committedBeforeRejection = harness.text.layoutResult
+    harness.text.outline = { width: 1, color: 0xffffff }
+    await expect(harness.text.sync()).rejects.toThrow('sdfPadding')
+    await harness.render()
+    const rejectedFrame = await capture(harness.renderer)
+    expect(changedPixels(appearanceUpdated, rejectedFrame)).toBe(0)
+    expect(harness.text.layoutResult).toBe(committedBeforeRejection)
+    expect(
+      [...harness.text.geometry.getAttribute('glyphSlot').array].slice(0, initialCount),
+    ).toEqual(initialSlots)
+    expect(boxRecord(harness.text.geometry.boundingBox)).toEqual(updatedPaintBounds)
+    harness.text.outline = { width: 0.018, color: 0xff4dba, opacity: 0.95 }
+    harness.text.shadow = {
+      offsetX: 0.018,
+      offsetY: -0.025,
+      softness: 0.014,
+      color: 0x25e06f,
+      opacity: 0.8,
+    }
+    await harness.text.sync()
+    const recovered = await captureMode(harness, 'lit')
+    expect(changedPixels(rejectedFrame, recovered)).toBeGreaterThan(50)
 
     const instanceBounds = harness.text.geometry.getAttribute('glyphBounds').array
     const iCenter = {
@@ -474,6 +565,17 @@ describe('production @webgpu-text/three actual-WebGPU evidence', () => {
       x: (oBounds.left + oBounds.right) / 2,
       y: (oBounds.bottom + oBounds.top) / 2,
     }
+    const lastOffset = (initialCount - 1) * 4
+    const lastBounds = {
+      left: instanceBounds[lastOffset] ?? 0,
+      bottom: (instanceBounds[lastOffset + 1] ?? 0) + harness.text.position.y,
+      right: instanceBounds[lastOffset + 2] ?? 0,
+      top: (instanceBounds[lastOffset + 3] ?? 0) + harness.text.position.y,
+    }
+    const distantGlyph = {
+      x: lastBounds.left + (lastBounds.right - lastBounds.left) * 0.3,
+      y: (lastBounds.bottom + lastBounds.top) / 2,
+    }
     const lightGain =
       luminance(sampleWorld(lit, iCenter.x, iCenter.y)) -
       luminance(sampleWorld(ambient, iCenter.x, iCenter.y))
@@ -483,7 +585,7 @@ describe('production @webgpu-text/three actual-WebGPU evidence', () => {
     expect(castShadow).toBeGreaterThan(6)
     expect(castCutout).toBeLessThan(castShadow * 0.6)
     const receivedShadow = darkerBy(lit, receive, iCenter.x, iCenter.y)
-    const unshadowedGlyph = darkerBy(lit, receive, oStroke.x, oStroke.y)
+    const unshadowedGlyph = darkerBy(lit, receive, distantGlyph.x, distantGlyph.y)
     expect(receivedShadow).toBeGreaterThan(6)
     expect(unshadowedGlyph).toBeLessThan(receivedShadow * 0.6)
     const committed = harness.text.layoutResult
@@ -497,8 +599,8 @@ describe('production @webgpu-text/three actual-WebGPU evidence', () => {
     await harness.text.sync()
     const updated = await captureMode(harness, 'lit')
     expect(harness.text.geometry.instanceCount).toBeGreaterThan(initialCount)
-    expect(changedPixels(lit, updated)).toBeGreaterThan(100)
-    expect(changedPixels(lit, updated, 110)).toBeLessThan(30)
+    expect(changedPixels(recovered, updated)).toBeGreaterThan(100)
+    expect(changedPixels(recovered, updated, 110)).toBeLessThan(30)
 
     const primaryLayoutBeforeSharedGrowth = harness.text.layoutResult
     const primarySlotsBeforeSharedGrowth = [
@@ -560,6 +662,18 @@ describe('production @webgpu-text/three actual-WebGPU evidence', () => {
           WIDTH,
           Math.floor(HEIGHT * 0.45),
         ),
+      },
+      sdfPaint: {
+        sdfSize: harness.resources.sdfSize,
+        sdfPadding: harness.resources.sdfPadding,
+        initialBounds,
+        updatedPaintBounds,
+        appearanceChangedPixels: changedPixels(lit, appearanceUpdated),
+        rejectedFrameChangedPixels: changedPixels(appearanceUpdated, rejectedFrame),
+        recoveredFrameChangedPixels: changedPixels(rejectedFrame, recovered),
+        slotsStable: true,
+        materialAndColorNodeStable: true,
+        outlineCallsStableAcrossAppearance: true,
       },
       initialSemanticPixels: baselineObservation,
       litSemanticPixels: {

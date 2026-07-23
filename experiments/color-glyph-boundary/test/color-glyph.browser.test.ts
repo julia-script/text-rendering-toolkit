@@ -146,6 +146,7 @@ describe('color-glyph browser boundaries', () => {
     ])
     const outlineCalls = { emoji: 0, latin: 0 }
     const emojiFont = (paint: 'intrinsic' | 'foreground' | 'alpha'): TextFont => ({
+      facts: emoji.facts,
       getOutline(glyphId, variations) {
         outlineCalls.emoji += 1
         return emoji.getOutline(glyphId, variations)
@@ -171,6 +172,7 @@ describe('color-glyph browser boundaries', () => {
       [
         'latin',
         {
+          facts: latin.facts,
           getOutline(glyphId, variations) {
             outlineCalls.latin += 1
             return latin.getOutline(glyphId, variations)
@@ -221,7 +223,7 @@ describe('color-glyph browser boundaries', () => {
       )
     const smallLayout = layoutAt(0.55)
     const largeLayout = layoutAt(0.82)
-    const resources = new TextResources({ sdfSize: 64 })
+    const resources = new TextResources({ sdfSize: 64, sdfPadding: 0.4 })
 
     const renderer = new WebGPURenderer({
       alpha: true,
@@ -247,6 +249,14 @@ describe('color-glyph browser boundaries', () => {
       resources,
       color: 0xffffff,
       styleColors: { foreground: 0x00ff66 },
+      outline: { width: 0.025, color: 0xff3d81 },
+      shadow: {
+        offsetX: 0.02,
+        offsetY: -0.025,
+        softness: 0.015,
+        color: 0x44aaff,
+        opacity: 0.8,
+      },
     })
     const large = new Text({
       layout: largeLayout,
@@ -255,11 +265,25 @@ describe('color-glyph browser boundaries', () => {
       color: 0xffffff,
       styleColors: { foreground: 0x00ff66 },
       lit: true,
+      outline: { width: 0.025, color: 0xff3d81 },
+      shadow: {
+        offsetX: 0.02,
+        offsetY: -0.025,
+        softness: 0.015,
+        color: 0x44aaff,
+        opacity: 0.8,
+      },
     })
     small.position.y = 0.55
     large.position.y = -0.55
     large.castShadow = true
     await Promise.all([small.sync(), large.sync()])
+    const sdfMetadata = small.geometry.getAttribute('glyphSdf')
+    const eligibleInstances = Array.from({ length: small.geometry.instanceCount }, (_, index) =>
+      sdfMetadata.getZ(index),
+    )
+    expect(eligibleInstances).toContain(0)
+    expect(eligibleInstances).toContain(1)
     const callsAfterFirst = outlineCalls.emoji + outlineCalls.latin
     const borrower = new Text({ layout: smallLayout, fonts: renderFonts, resources })
     await borrower.sync()
@@ -315,6 +339,13 @@ describe('color-glyph browser boundaries', () => {
       },
       materialVariants: ['unlit', 'planar-lit'],
       paints: ['CPAL palette zero', 'current foreground', 'CPAL alpha 96/255'],
+      ordinarySdfPaint: {
+        outline: { width: 0.025, color: '#ff3d81' },
+        shadow: { offset: [0.02, -0.025], softness: 0.015, color: '#44aaff' },
+        eligibleInstances: eligibleInstances.filter((value) => value === 1).length,
+        colrLayerInstances: eligibleInstances.filter((value) => value === 0).length,
+        boundary: 'ordinary glyphs receive SDF paint; COLR layers remain unchanged',
+      },
       outlineCallsAfterFirst: callsAfterFirst,
       outlineCallsAfterSharedBorrower: callsAfterBorrower,
       semanticPixels: pixelEvidence,

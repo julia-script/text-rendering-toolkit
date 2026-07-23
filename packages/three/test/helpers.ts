@@ -27,6 +27,7 @@ export function font(
   } = {},
 ): TextFont {
   return {
+    facts: { unitsPerEm: 1000 },
     getOutline(glyphId) {
       options.onOutline?.(glyphId)
       return options.outline ?? rectangleOutline

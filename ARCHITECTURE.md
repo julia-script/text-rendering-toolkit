@@ -64,9 +64,13 @@ numeric metrics, clipping, and optional bounds-only skip ink into immutable
 analytic segments. SVG, Canvas, native, or Three consumers can render those
 numbers without font access or reshaping, and a renderer that already owns
 outlines or SDF coverage may refine automatic skip ink against exact glyph ink.
-Glyph outline and one drop shadow remain a separate
-Three-only production follow-up; COLR composed-silhouette outline and shadow
-remain deferred.
+Ordinary-glyph outline and one visual drop shadow are now public Three-only
+appearance. They decode the existing nonlinear SDF and stable atlas slot in
+both material variants, use independent colors and layout-unit distances, and
+commit atomically with directional bounds and clipping. Fixed em-based
+`sdfPadding` reserves physical effect room independently from `sdfSize`
+resolution. COLR composed-silhouette outline and shadow remain deferred, and
+shadow softness is SDF falloff rather than Gaussian blur.
 
 ## Current responsibility map
 
@@ -262,11 +266,12 @@ The preserved `SDFGenerator.js` is mostly scheduling and WebGL/canvas integratio
 - RGBA atlas upload into a Three `DataTexture`.
 - Capacity-aware instanced glyph geometry and explicit bounds.
 - Shared TSL placement, SDF decoding, derivative antialiasing, fill, per-style color, opacity, and rectangular clipping bound to the default unlit material or an opt-in fixed planar standard material.
+- One independent-color outer outline and one offset SDF-softened visual shadow for ordinary glyphs, decoded from the existing slot with appearance-only updates, directional bounds, and atomic padding validation.
 - Constant planar normals plus the visible-side midpoint SDF shadow mask required for ordinary Three.js glyph-shaped cast and received shadows.
 - Lifecycle-safe disposal that leaves caller fonts, renderer, and canvas alone.
 - Future batching, if profiling demonstrates a need.
 
-**Inputs today:** a completed public `LayoutResult`, a structural map of caller-owned lazy-outline handles with optional color-layer lookup, and baseline appearance values.
+**Inputs today:** a completed public `LayoutResult`, a structural map of caller-owned lazy-outline handles with units-per-em facts and optional color-layer lookup, construction-fixed SDF size/padding, and mutable fill/outline/shadow appearance values.
 
 **Outputs:** Three scene objects and GPU resources.
 
@@ -709,12 +714,15 @@ variable-font metrics do not apply MVAR adjustments; numeric spans are the
 explicit correction path.
 
 Glyph outline and shadow are instead renderer paint. For ordinary SDF glyphs,
-Three can reuse one SDF and stable atlas slot for fill, an outline distance
-band, and one offset or softened shadow. Paint colors and controls remain
-appearance-only. Synchronization must reject before commit when outline or
-shadow extent plus one antialias pixel exceeds encoded atlas padding; it must
-not silently clamp or create color-specific SDF resources. Bounds expand for
-accepted paint and the existing local clip applies to the composed result.
+Three now reuses one nonlinear SDF and stable atlas slot for fill, an outer
+outline distance band, and one offset or softened shadow. Paint colors and
+controls remain appearance-only across unlit and planar-lit material variants.
+Synchronization rejects before commit when outline or shadow extent plus one
+antialias pixel exceeds the construction-fixed em-based `sdfPadding`; it does
+not silently clamp or create color-specific SDF resources. `sdfSize` controls
+texel resolution separately. Bounds expand directionally for accepted paint,
+the existing local clip applies to the composed result, and the visual shadow
+does not participate in the lit material's scene-shadow mask.
 
 Renderer-neutral decorations can cross COLR v0 glyphs unchanged. Outline and
 shadow over the composed silhouette of a layered color glyph are explicitly
@@ -723,7 +731,9 @@ The accepted contracts, actual Apple Metal WebGPU evidence, limits, and two
 production scopes are recorded in the
 [browser-text decoration report](docs/validation/browser-text-decoration-boundary.md).
 Production font/layout conformance is recorded in the
-[renderer-neutral decoration report](docs/validation/renderer-neutral-text-decorations.md).
+[renderer-neutral decoration report](docs/validation/renderer-neutral-text-decorations.md),
+and the shipped Three paint path is recorded in the
+[production renderer report](docs/validation/three-webgpu-text-core.md).
 
 ### Reuse MIT sources with explicit provenance
 

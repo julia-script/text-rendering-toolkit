@@ -70,6 +70,116 @@ describe('public Text lifecycle', () => {
     text.dispose()
   })
 
+  test('snapshots outline and shadow, expands bounds, reuses resources, and recovers atomically', async () => {
+    const getOutline = vi.fn()
+    const layout = resolvedLayout('AA', { glyphIds: [7, 7] })
+    const outline = { width: 0.03, color: 0xff8800, opacity: 0.75 }
+    const shadow = {
+      offsetX: 0.02,
+      offsetY: -0.02,
+      softness: 0.01,
+      color: 0x112244,
+      opacity: 0.5,
+    }
+    const text = new Text({
+      layout,
+      fonts: new Map([['font', font({ onOutline: getOutline })]]),
+      outline,
+      shadow,
+      sdfSize: 64,
+    })
+    expect(text.outline).toBe(outline)
+    expect(text.shadow).toBe(shadow)
+    const pending = text.sync()
+    outline.width = 1
+    await pending
+
+    const texel = (950 * 0.001) / 64
+    expect(text.geometry.boundingBox?.min.x).toBeCloseTo(layout.blockBounds.left - 0.03 - texel)
+    expect(text.geometry.boundingBox?.min.y).toBeCloseTo(layout.blockBounds.bottom - 0.03 - texel)
+    expect(text.geometry.boundingBox?.max.x).toBeCloseTo(layout.blockBounds.right + 0.03 + texel)
+    expect(text.geometry.boundingBox?.max.y).toBeCloseTo(layout.blockBounds.top + 0.03 + texel)
+    expect([...text.geometry.getAttribute('glyphSdf').array].slice(0, 6)).toEqual([
+      expect.closeTo(0.125),
+      9,
+      1,
+      expect.closeTo(0.125),
+      9,
+      1,
+    ])
+    expect(getOutline).toHaveBeenCalledOnce()
+
+    text.outline = { width: 0.035, color: 0x00ff00 }
+    await text.sync()
+    expect(getOutline).toHaveBeenCalledOnce()
+    const committed = text.layoutResult
+    const acceptedBounds = text.geometry.boundingBox?.clone()
+
+    text.outline = { width: 0.2, color: 0xffffff }
+    await expect(text.sync()).rejects.toThrow(/requires .* safely encodable/)
+    expect(text.layoutResult).toBe(committed)
+    expect(text.geometry.boundingBox).toEqual(acceptedBounds)
+    expect(getOutline).toHaveBeenCalledOnce()
+
+    text.outline = { width: 0.02, color: 0xffffff }
+    await text.sync()
+    expect(text.layoutResult).toBe(committed)
+    expect(getOutline).toHaveBeenCalledOnce()
+    text.dispose()
+  })
+
+  test('rejects paint that falls into the nonlinear eight-bit clamp range', async () => {
+    const text = new Text({
+      layout: resolvedLayout('A'),
+      fonts: new Map([['font', font()]]),
+      outline: { width: 0.037, color: 0xffffff },
+      sdfSize: 64,
+    })
+    await text.sync()
+    const committed = text.layoutResult
+    text.outline = { width: 0.038, color: 0xffffff }
+    await expect(text.sync()).rejects.toThrow('safely encodable')
+    expect(text.layoutResult).toBe(committed)
+    text.dispose()
+  })
+
+  test('validates paint records before committing even for empty text', async () => {
+    const text = new Text({ layout: resolvedLayout(''), fonts: new Map(), sdfSize: 64 })
+    expect(text.outline).toBeNull()
+    expect(text.shadow).toBeNull()
+    text.outline = { width: -1, color: 0xffffff }
+    await expect(text.sync()).rejects.toThrow('outline.width')
+    text.outline = null
+    text.shadow = { offsetX: 0, offsetY: 0, softness: -1, color: 0 }
+    await expect(text.sync()).rejects.toThrow('shadow.softness')
+    text.shadow = { offsetX: 0, offsetY: 0, softness: 0, color: 0, opacity: 2 }
+    await expect(text.sync()).rejects.toThrow('opacity')
+    text.shadow = null
+    await text.sync()
+    expect(text.geometry.instanceCount).toBe(0)
+    text.dispose()
+  })
+
+  test('converts layout-unit paint independently for mixed glyph scales', async () => {
+    const layout = structuredClone(resolvedLayout('AA', { glyphIds: [7, 7] }))
+    ;(layout.glyphs[1] as { fontUnitScale: number }).fontUnitScale = 0.0005
+    const getOutline = vi.fn()
+    const text = new Text({
+      layout,
+      fonts: new Map([['font', font({ onOutline: getOutline })]]),
+      outline: { width: 0.018, color: 0xff0000 },
+      sdfSize: 64,
+    })
+    await text.sync()
+    const sdf = [...text.geometry.getAttribute('glyphSdf').array]
+    expect(sdf[0]).toBeCloseTo(0.125)
+    expect(sdf[3]).toBeCloseTo(0.0625)
+    expect(sdf.slice(1, 3)).toEqual([9, 1])
+    expect(sdf.slice(4, 6)).toEqual([9, 1])
+    expect(getOutline).toHaveBeenCalledOnce()
+    text.dispose()
+  })
+
   test('expands ordered color layers at the base placement with palette and foreground RGBA', async () => {
     const outline = vi.fn()
     const colorLayers = vi.fn()
@@ -100,6 +210,9 @@ describe('public Text lifecycle', () => {
     expect([...text.geometry.getAttribute('glyphColor').array].slice(0, 8)).toEqual([
       12, 34, 56, 128, 0, 255, 0, 255,
     ])
+    expect(
+      [...text.geometry.getAttribute('glyphSdf').array].filter((_, index) => index % 3 === 2),
+    ).toEqual([0, 0])
 
     text.styleColors = { accent: 0x0000ff }
     await text.sync()
@@ -109,6 +222,47 @@ describe('public Text lifecycle', () => {
       12, 34, 56, 128, 0, 0, 255, 255,
     ])
     text.dispose()
+  })
+
+  test('leaves COLR and blank glyphs ineligible for outline and shadow limits', async () => {
+    const layout = resolvedLayout('A', { glyphIds: [7] })
+    const color = new Text({
+      layout,
+      fonts: new Map([
+        [
+          'font',
+          font({
+            colorLayers: [
+              { glyphId: 10, color: { red: 255, green: 0, blue: 0, alpha: 255 } },
+              { glyphId: 11, color: 'foreground' },
+            ],
+          }),
+        ],
+      ]),
+      outline: { width: 10, color: 0xffffff },
+      shadow: { offsetX: 10, offsetY: -10, softness: 10, color: 0 },
+      sdfSize: 16,
+    })
+    await color.sync()
+    expect(
+      [...color.geometry.getAttribute('glyphSdf').array].filter((_, index) => index % 3 === 2),
+    ).toEqual([0, 0])
+    expect(color.geometry.boundingBox?.min.toArray()).toEqual([
+      layout.blockBounds.left,
+      layout.blockBounds.bottom,
+      0,
+    ])
+
+    const blank = new Text({
+      layout,
+      fonts: new Map([['font', font({ outline: emptyOutline })]]),
+      outline: { width: 10, color: 0xffffff },
+      sdfSize: 16,
+    })
+    await blank.sync()
+    expect(blank.geometry.instanceCount).toBe(0)
+    color.dispose()
+    blank.dispose()
   })
 
   test('shares layer lookup, outlines, and atlas slots across repeated color glyphs', async () => {
@@ -145,6 +299,7 @@ describe('public Text lifecycle', () => {
   test('rejects malformed color layers atomically and permits recovery', async () => {
     let malformed = false
     const handle = {
+      facts: { unitsPerEm: 1000 },
       getOutline: () => rectangleOutline,
       getColorLayers(glyphId: number) {
         if (glyphId === 2 && malformed) return []
@@ -256,10 +411,10 @@ describe('public Text lifecycle', () => {
     })
     await text.sync()
     const firstBounds = [...text.geometry.getAttribute('glyphBounds').array].slice(0, 4)
-    expect(firstBounds[0]).toBeCloseTo(-0.2167, 3)
-    expect(firstBounds[1]).toBeCloseTo(-0.1167, 3)
-    expect(firstBounds[2]).toBeCloseTo(0.7167, 3)
-    expect(firstBounds[3]).toBeCloseTo(0.8167, 3)
+    expect(firstBounds[0]).toBeCloseTo(-0.225, 3)
+    expect(firstBounds[1]).toBeCloseTo(-0.125, 3)
+    expect(firstBounds[2]).toBeCloseTo(0.725, 3)
+    expect(firstBounds[3]).toBeCloseTo(0.825, 3)
     text.layout = resolvedLayout('A', { glyphIds: [7], variations: { wght: 700 } })
     await text.sync()
     expect(outline).toHaveBeenCalledTimes(2)
@@ -370,6 +525,7 @@ describe('public Text lifecycle', () => {
     const calls: number[] = []
     let rejectGlyph = true
     const handle = {
+      facts: { unitsPerEm: 1000 },
       getOutline(glyphId: number) {
         calls.push(glyphId)
         if (rejectGlyph && glyphId === 3) throw new Error('broken glyph')

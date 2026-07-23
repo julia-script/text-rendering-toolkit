@@ -95,15 +95,18 @@ export interface TextColorGlyphLayer {
  * The structural subset of `@webgpu-text/font` used by the renderer.
  *
  * @remarks
- * A real `FontHandle` satisfies this directly. Only two members are needed:
- * outlines are pulled lazily, and `getColorLayers` is optional — a font without
- * it renders every glyph through the ordinary monochrome path.
+ * A real `FontHandle` satisfies this directly. Units per em give renderer-owned
+ * resources a glyph-independent padding scale, outlines are pulled lazily, and
+ * `getColorLayers` is optional — a font without it renders every glyph through
+ * the ordinary monochrome path.
  *
  * Typed structurally so the renderer never imports the font package at runtime,
  * which keeps the layers independent and makes the renderer testable with
  * synthetic outlines.
  */
 export interface TextFont {
+  /** Stable font facts needed to convert configured em padding to font units. */
+  readonly facts: { readonly unitsPerEm: number }
   /** Returns a glyph's contours, optionally at specific variation coordinates. */
   getOutline(glyphId: number, variations?: Readonly<Record<string, number>>): TextGlyphOutline
   /** Returns a glyph's color layers, or `null` when it is not a color glyph. */
@@ -124,6 +127,41 @@ export interface TextResourcesOptions {
    * @defaultValue `64`
    */
   readonly sdfSize?: number
+  /**
+   * Padding reserved around every glyph, in em units; finite and positive.
+   *
+   * @remarks
+   * Fixed for the owner's lifetime. Increase this when outline or shadow paint
+   * needs more physical room; increase `sdfSize` separately when it needs more
+   * texel resolution.
+   *
+   * @defaultValue `0.125`
+   */
+  readonly sdfPadding?: number
+}
+
+/** One outer SDF outline applied to ordinary glyphs. */
+export interface TextOutline {
+  /** Width in layout units. Zero disables the outline. */
+  readonly width: number
+  /** Outline color, independent from the glyph fill. */
+  readonly color: ColorRepresentation
+  /** Outline opacity from `0` through `1`. @defaultValue `1` */
+  readonly opacity?: number
+}
+
+/** One offset, SDF-softened visual drop shadow applied to ordinary glyphs. */
+export interface TextShadow {
+  /** Horizontal offset in layout units; positive moves the shadow right. */
+  readonly offsetX: number
+  /** Vertical offset in layout units; positive moves the shadow up. */
+  readonly offsetY: number
+  /** Outward distance-field falloff in layout units; not a Gaussian blur. */
+  readonly softness: number
+  /** Shadow color, independent from the glyph fill and outline. */
+  readonly color: ColorRepresentation
+  /** Shadow opacity from `0` through `1`. @defaultValue `1` */
+  readonly opacity?: number
 }
 
 /**
@@ -198,6 +236,27 @@ export interface TextOptionsBase {
    * @defaultValue `null`
    */
   readonly clipRect?: LayoutBounds | null
+  /**
+   * One outer outline for ordinary glyphs, or `null` to disable it.
+   *
+   * @remarks
+   * Width uses layout units and must fit the selected resources' SDF padding.
+   * COLR v0 layers are intentionally left unchanged.
+   *
+   * @defaultValue `null`
+   */
+  readonly outline?: TextOutline | null
+  /**
+   * One offset, softened visual drop shadow for ordinary glyphs, or `null`.
+   *
+   * @remarks
+   * Offset and softness use layout units and must fit the selected resources'
+   * SDF padding. Softness is a distance-field falloff, not a Gaussian blur;
+   * COLR v0 layers are intentionally left unchanged.
+   *
+   * @defaultValue `null`
+   */
+  readonly shadow?: TextShadow | null
 }
 
 /**
