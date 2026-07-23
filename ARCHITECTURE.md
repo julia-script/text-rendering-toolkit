@@ -41,8 +41,9 @@ curved or configurable physical materials, and batching remain separate
 follow-ups. The production standard
 variant now promotes the validated front-facing planar seam with glyph-shaped
 cast and received shadows through ordinary Three.js scene flags. Font-byte
-acquisition is caller-owned: no core package
-accepts URLs or performs network fetching. The layout package turns raw text or fully
+acquisition is caller-owned today: byte/handle input is the primary path, and no
+shipped core operation requires network fetching. A URL convenience may be added
+later, but never as the main or only path. The layout package turns raw text or fully
 resolved runs into `LayoutResult`; the first renderer accepts only that completed
 handoff rather than implementing a partial raw-text policy.
 
@@ -446,7 +447,7 @@ The workspace can publish four packages from one repository and version them tog
 | `FontParser.js` GSUB/GPOS, joining, glyph mapping, and kerning | `font` shaping adapter | Replace with HarfBuzz shaping; retain representative old outputs only for comparison and intentional-difference review |
 | `FontParser.js` outline cache | `font` outline adapter | Preserve lazy/cache behavior with direct numeric HarfBuzz callbacks and a glyph/variation cache; never use its SVG round-trip |
 | `woff2otf.js`, generated Typr factory, and Typr sources | local reference only | Do not port into the production runtime. V1 accepts normalized TTF/OTF and rejects WOFF/WOFF2 explicitly; decoder evaluation is separate follow-up work |
-| `FontResolver.js` | implemented `text-layout` fallback policy plus future application adapters | Preserve only pure ordered selection/fallback over caller handles; applications own byte acquisition, while optional helpers may own URL/cache convenience outside the core path |
+| `FontResolver.js` | implemented `text-layout` fallback policy plus future application adapters | Preserve only pure ordered selection/fallback over caller handles; applications own byte acquisition, while optional helpers may add URL/cache convenience that never becomes the required path |
 | `Typesetter.js` | `text-layout` | Split run shaping, line construction, bidi placement, result assembly, and interaction data while preserving fixtures |
 | `selectionUtils.js` | `text-layout` | Port as pure helpers over `LayoutResult` |
 | CPU behavior behind `SDFGenerator.js` | `sdf` | Port the MIT-licensed CPU encoder with its notice and golden fixtures; expose pure typed-array input/output; delete WebGL and canvas paths |
@@ -494,7 +495,7 @@ support remain unproven.
 2. Only `three-webgpu-text` may import `three`.
 3. Only `text-layout` decides line placement, caret geometry, and visual fragmentation of source-ranged line decorations.
 4. Only `sdf` defines SDF encoding; only the renderer decodes it in TSL.
-5. Applications own font-byte acquisition. Any future URL/cache helper and workers are optional adapters around pure operations, never prerequisites or core-package behavior.
+5. Byte/handle input always works: applications can acquire font bytes by their own policy and pass them in. Any future URL/cache helper and workers are optional conveniences around pure operations, never prerequisites — fetching must never become the main or only path.
 6. Global mutable configuration and process-wide singleton atlases are prohibited.
 7. Every package must have at least one direct consumer example that imports no higher layer.
 8. A new package requires an independently useful public capability, not merely a convenient folder boundary.
@@ -514,9 +515,10 @@ then invokes `layoutResolvedText()` with a stable explicit break plan.
 
 This split is accepted for semantic reuse and transferability, not promised
 speed. The one-call `layoutText()` convenience may compose both stages, while
-`layoutResolvedText()` remains the expert boundary. No stage accepts URLs,
+`layoutResolvedText()` remains the expert boundary. Today no stage accepts URLs,
 fetches bytes, discovers browser/system fonts, owns handles, or contains
-renderer state. `bidi-js@1.0.3`, `unicode-script@1.2.0`, and
+renderer state; a future fetch convenience would stay optional rather than
+becoming the required entry. `bidi-js@1.0.3`, `unicode-script@1.2.0`, and
 `linebreak@1.1.0` are pinned production revisions. Line breaking uses Unicode
 13 data and deliberately excludes CSS/locale tailoring, dictionary
 segmentation, and hyphenation; limitations and observations are recorded in the
