@@ -4,13 +4,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "prebuild": "node scripts/sync-repository-docs.ts",
-    "predev": "node scripts/sync-repository-docs.ts",
+    "prebuild": "node scripts/sync-repository-docs.ts && node scripts/build-api-reference.ts",
+    "predev": "node scripts/sync-repository-docs.ts && node scripts/build-api-reference.ts",
     "build": "next build",
     "dev": "next dev",
     "start": "next start",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "api": "node scripts/build-api-reference.ts"
   },
   "dependencies": {
     "@webgpu-text/font": "workspace:^",
@@ -33,6 +34,8 @@
     "@types/react-dom": "19.2.3",
     "@types/three": "0.185.1",
     "tailwindcss": "4.3.3",
+    "typedoc": "0.28.20",
+    "typedoc-plugin-markdown": "4.12.0",
     "typescript": "5.9.3",
     "vitest": "4.1.10"
   }

@@ -1,0 +1,48 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPointStrategy": "packages",
+  "entryPoints": [
+    "../../packages/font",
+    "../../packages/layout",
+    "../../packages/sdf",
+    "../../packages/three"
+  ],
+  "out": "content/docs/api",
+  "plugin": [
+    "typedoc-plugin-markdown",
+    "./scripts/typedoc-drop-inherited.mjs"
+  ],
+  "readme": "none",
+  "githubPages": false,
+  "hideGenerator": true,
+  "excludeInternal": true,
+  "excludePrivate": true,
+  "excludeExternals": true,
+  "sort": [
+    "kind",
+    "alphabetical"
+  ],
+  "kindSortOrder": [
+    "Function",
+    "Class",
+    "Interface",
+    "TypeAlias",
+    "Variable",
+    "Enum",
+    "Reference"
+  ],
+  "fileExtension": ".mdx",
+  "entryFileName": "index",
+  "mergeReadme": false,
+  "hidePageHeader": true,
+  "hideBreadcrumbs": true,
+  "useCodeBlocks": true,
+  "expandObjects": true,
+  "parametersFormat": "table",
+  "interfacePropertiesFormat": "list",
+  "classPropertiesFormat": "list",
+  "typeAliasPropertiesFormat": "list",
+  "propertyMembersFormat": "list",
+  "enumMembersFormat": "table",
+  "disableGit": true
+}

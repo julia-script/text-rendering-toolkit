@@ -126,8 +126,16 @@ export interface TextResourcesOptions {
   readonly sdfSize?: number
 }
 
-/** Options common to both the owned-resources and shared-resources forms. */
-interface TextOptionsBase {
+/**
+ * Options common to both the owned-resources and shared-resources forms of
+ * {@link TextOptions}.
+ *
+ * @remarks
+ * Exported so generated API documentation can resolve these properties; use
+ * {@link TextOptions} when constructing a {@link Text}, since it also carries
+ * the `resources`/`sdfSize` exclusivity rule.
+ */
+export interface TextOptionsBase {
   /**
    * The completed layout to render.
    *

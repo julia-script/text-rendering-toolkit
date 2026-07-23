@@ -4,6 +4,8 @@
 **/.next/
 **/.source/
 /apps/docs/public/repository/
+/apps/docs/content/docs/api/
+/apps/docs/content/docs/.api-stage/
 /coverage/
 **/.turbo/
 **/.vitest-attachments/

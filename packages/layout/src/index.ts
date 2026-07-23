@@ -17,7 +17,7 @@
  * post-layout steps over a {@link LayoutResult}, so selection and styling
  * changes never require reshaping.
  *
- * The application owns every {@link FontHandle}: this package receives an
+ * The application owns every font handle: this package receives an
  * explicit {@link FontRegistry} and never fetches, caches, mutates, or disposes
  * fonts. Its output is a set of glyph *references* — font key, glyph id,
  * variations, scale, position — with no outlines, SDF pixels, atlas slots, or

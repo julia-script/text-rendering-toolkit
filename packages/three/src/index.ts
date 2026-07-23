@@ -41,6 +41,7 @@ export type {
   TextGlyphOutline,
   TextMaterial,
   TextOptions,
+  TextOptionsBase,
   TextResourcesOptions,
   TextRgbaColor,
 } from './types.js'
