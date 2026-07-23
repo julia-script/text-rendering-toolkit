@@ -6,7 +6,7 @@ export function baseOptions(): BaseLayoutProps {
       title: 'WebGPU Text',
     },
     searchToggle: {
-      enabled: false,
+      enabled: true,
     },
   }
 }
