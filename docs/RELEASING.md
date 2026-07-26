@@ -42,10 +42,16 @@ granular token:
 ```sh
 pnpm install --frozen-lockfile
 pnpm release:candidate
-pnpm release:publish
+NPM_CONFIG_PROVENANCE=false pnpm --dir packages/font publish --access public --publish-branch main
+NPM_CONFIG_PROVENANCE=false pnpm --dir packages/sdf publish --access public --publish-branch main
+NPM_CONFIG_PROVENANCE=false pnpm --dir packages/layout publish --access public --publish-branch main
+NPM_CONFIG_PROVENANCE=false pnpm --dir packages/three publish --access public --publish-branch main
 ```
 
-The dependency-safe publication order is:
+The first publication is deliberately serial because npm may require an
+interactive proof-of-presence approval. Use pnpm rather than npm directly so
+`workspace:` dependencies are converted to registry-safe semver ranges. The
+dependency-safe publication order is:
 
 1. `@text-rendering-toolkit/font`
 2. `@text-rendering-toolkit/sdf`
