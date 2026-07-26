@@ -1,6 +1,6 @@
 {
   "name": "@text-rendering-toolkit/layout",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Renderer-neutral multilingual text preparation, layout, carets, selections, and decorations.",
   "license": "MIT",
   "repository": {

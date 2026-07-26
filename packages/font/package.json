@@ -1,6 +1,6 @@
 {
   "name": "@text-rendering-toolkit/font",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Font parsing, shaping, coverage, and numeric glyph outlines for text rendering.",
   "license": "MIT",
   "repository": {
