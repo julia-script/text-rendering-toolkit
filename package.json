@@ -10,15 +10,17 @@
   "scripts": {
     "build": "turbo run build",
     "changeset": "changeset",
-    "check": "biome check . && turbo run typecheck test",
+    "check": "biome check . && turbo run typecheck test && pnpm test:scripts",
     "check:write": "biome check --write .",
     "docs:build": "turbo run build --filter=@text-rendering-toolkit/docs",
     "docs:dev": "turbo run build --filter=@text-rendering-toolkit/docs^... && pnpm --filter @text-rendering-toolkit/docs dev",
     "format": "biome format --write .",
     "release:candidate": "pnpm build && vitest run release-candidate/validate.test.ts",
     "release:publish": "changeset publish",
+    "release:publish:ci": "node .github/scripts/publish-with-oidc-guard.mjs",
     "release:version": "changeset version",
     "test": "turbo run test",
+    "test:scripts": "node --test \".github/scripts/*.test.mjs\"",
     "typecheck": "turbo run typecheck"
   },
   "devDependencies": {

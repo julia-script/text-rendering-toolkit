@@ -12,3 +12,7 @@
 **/test/__screenshots__/
 /.release-candidate/
 .DS_Store
+
+# Releases authenticate with short-lived OIDC credentials; a committed .npmrc
+# would reintroduce the long-lived token the release path deliberately avoids.
+.npmrc
