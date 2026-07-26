@@ -6,6 +6,9 @@ packages:
   - experiments/text-preparation
   - experiments/color-glyph-boundary
   - experiments/browser-text-decoration-boundary
+allowBuilds:
+  esbuild: true
+  sharp: true
 minimumReleaseAgeExclude:
   - '@next/env@16.2.11'
   - '@next/swc-darwin-arm64@16.2.11'
