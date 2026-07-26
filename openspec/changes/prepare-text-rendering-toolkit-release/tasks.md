@@ -54,6 +54,6 @@
 - [x] 7.1 Reconfirm GitHub CLI is authenticated as `julia-script`, the target repository exists as an empty public repository, and `origin` is canonical.
 - [x] 7.2 Commit the verified release-preparation changes so the public default branch will contain the complete rename and workflow setup.
 - [x] 7.3 Verify the public `julia-script/text-rendering-toolkit` repository with GitHub CLI and push `main` through its canonical `origin`.
-- [ ] 7.4 Verify repository visibility, canonical remote, default branch, README rendering, and the first GitHub Actions results.
+- [x] 7.4 Verify repository visibility, canonical remote, default branch, README rendering, and the first GitHub Actions results.
 - [x] 7.5 Confirm no `@text-rendering-toolkit` package was published during release preparation; separate owner authorization has now been granted for the subsequent first-publication bootstrap and trusted-publisher activation.
-- [ ] 7.6 Commit and push the experiment cleanup, then verify canonical CI and Release PR workflows succeed on the final `main`.
+- [x] 7.6 Commit and push the experiment cleanup, then verify canonical CI and Release PR workflows succeed on the final `main`.
