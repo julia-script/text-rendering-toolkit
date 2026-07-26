@@ -42,5 +42,16 @@
       "quoteStyle": "single",
       "semicolons": "asNeeded"
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": [
+        "experiments/webgpu-rendering-seam/artifacts/lit-text-shadow-seam.json",
+        "experiments/webgpu-rendering-seam/artifacts/three-webgpu-text-core.json"
+      ],
+      "formatter": {
+        "enabled": false
+      }
+    }
+  ]
 }
