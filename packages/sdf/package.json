@@ -1,6 +1,6 @@
 {
   "name": "@text-rendering-toolkit/sdf",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Deterministic CPU signed-distance-field generation from numeric glyph outlines.",
   "license": "MIT",
   "repository": {
