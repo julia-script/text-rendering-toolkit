@@ -3,6 +3,9 @@
 Releases are automated. Record changes with changesets, then merge the version pull
 request — that merge is the authorization to publish, and no other event publishes.
 
+To apply this same setup to another pnpm + Changesets monorepo, see
+[porting-trusted-publishing.md](./porting-trusted-publishing.md).
+
 ```
   PR with a changeset merged to main
         │
