@@ -2,9 +2,9 @@
 
 ## Decision
 
-**Go with two independent production changes.** `@webgpu-text/layout` should
+**Go with two independent production changes.** `@text-rendering-toolkit/layout` should
 resolve styled UTF-16 decoration ranges into immutable analytic line segments.
-`@webgpu-text/three` should add outline and one drop shadow by decoding the
+`@text-rendering-toolkit/three-webgpu` should add outline and one drop shadow by decoding the
 existing glyph SDF again, without changing outline lookup, SDF generation, or
 atlas identity.
 
@@ -15,7 +15,7 @@ either feature from a public package.
 
 The private experiment used only public production-package APIs. It derived
 line fragments through `getSelectionRects()`, tessellated them without Three,
-generated real glyph SDFs through `@webgpu-text/sdf`, and rendered the accepted
+generated real glyph SDFs through `@text-rendering-toolkit/sdf`, and rendered the accepted
 paint model through Three.js 0.185.1 on actual WebGPU.
 
 The deterministic corpus covers solid, dotted, and wavy underline plus solid
@@ -168,10 +168,10 @@ shadow until a dedicated semantic fixture chooses the behavior.
 | Concern | Owner | Reason |
 | --- | --- | --- |
 | logical decoration spans | application / layout input | follows source ranges and styling |
-| visual line fragmentation | `@webgpu-text/layout` | depends on wrapping, bidi, carets, and line metrics |
-| analytic decoration segments | `@webgpu-text/layout` | reusable by every renderer |
+| visual line fragmentation | `@text-rendering-toolkit/layout` | depends on wrapping, bidi, carets, and line metrics |
+| analytic decoration segments | `@text-rendering-toolkit/layout` | reusable by every renderer |
 | segment tessellation | renderer | backend-specific triangles, paths, or draw calls |
-| glyph outline and shadow | `@webgpu-text/three` | SDF decoding, atlas padding, clipping, and GPU bounds |
+| glyph outline and shadow | `@text-rendering-toolkit/three-webgpu` | SDF decoding, atlas padding, clipping, and GPU bounds |
 | outline/SDF resource identity | existing font/SDF/resource path | unchanged by appearance |
 
 ## Rejected alternatives
@@ -194,7 +194,7 @@ shadow until a dedicated semantic fixture chooses the behavior.
 ### `implement-renderer-neutral-text-decorations`
 
 Add independent styled ranges and immutable analytic segments to
-`@webgpu-text/layout`. Acceptance requires solid, dotted, and wavy underline;
+`@text-rendering-toolkit/layout`. Acceptance requires solid, dotted, and wavy underline;
 solid strikethrough; explicit color distinct from glyph fill; current
 foreground; automatic compact metrics plus numeric overrides; stable phase;
 optional bounds-only skip ink; UTF-16, wrapping, bidi, mixed-font, mixed-size,
@@ -203,7 +203,7 @@ and preparation identities must stay stable for appearance-only changes.
 
 ### `implement-three-sdf-outline-and-shadow`
 
-Add ordinary-glyph outline and one drop shadow to `@webgpu-text/three` by
+Add ordinary-glyph outline and one drop shadow to `@text-rendering-toolkit/three-webgpu` by
 reusing the existing SDF and atlas slot in both unlit and planar-lit materials.
 Acceptance requires independent RGBA controls, validated padding limits,
 expanded bounds, existing clipping, no appearance-driven outline/SDF/atlas
@@ -216,10 +216,10 @@ Neither production change depends on the other.
 ## Reproduction and evidence
 
 ```sh
-pnpm --filter @webgpu-text/browser-text-decoration-boundary-experiment observations:record
-pnpm --filter @webgpu-text/browser-text-decoration-boundary-experiment test
-pnpm --filter @webgpu-text/browser-text-decoration-boundary-experiment test:browser
-pnpm --filter @webgpu-text/browser-text-decoration-boundary-experiment typecheck
+pnpm --filter @text-rendering-toolkit/browser-text-decoration-boundary-experiment observations:record
+pnpm --filter @text-rendering-toolkit/browser-text-decoration-boundary-experiment test
+pnpm --filter @text-rendering-toolkit/browser-text-decoration-boundary-experiment test:browser
+pnpm --filter @text-rendering-toolkit/browser-text-decoration-boundary-experiment typecheck
 ```
 
 Machine-readable evidence is in

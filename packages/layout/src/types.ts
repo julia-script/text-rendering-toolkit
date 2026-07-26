@@ -4,7 +4,7 @@ import type {
   FontHandle,
   TextDirection,
   VariationCoordinates,
-} from '@webgpu-text/font'
+} from '@text-rendering-toolkit/font'
 
 /**
  * Half-open JavaScript UTF-16 source range: `start` inclusive, `end` exclusive.

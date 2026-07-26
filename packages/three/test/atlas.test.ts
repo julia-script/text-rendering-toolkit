@@ -1,4 +1,4 @@
-import type { SdfBitmap } from '@webgpu-text/sdf'
+import type { SdfBitmap } from '@text-rendering-toolkit/sdf'
 import { expect, test, vi } from 'vitest'
 import { RgbaGlyphAtlas } from '../src/atlas.js'
 

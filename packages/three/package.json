@@ -1,10 +1,35 @@
 {
-  "name": "@webgpu-text/three",
-  "version": "0.0.0",
-  "private": true,
+  "name": "@text-rendering-toolkit/three-webgpu",
+  "version": "0.1.0",
+  "description": "Three.js WebGPU text rendering for renderer-neutral Text Rendering Toolkit layouts.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/julia-script/text-rendering-toolkit.git",
+    "directory": "packages/three"
+  },
+  "homepage": "https://github.com/julia-script/text-rendering-toolkit#readme",
+  "bugs": {
+    "url": "https://github.com/julia-script/text-rendering-toolkit/issues"
+  },
+  "keywords": [
+    "text-rendering",
+    "typography",
+    "three.js",
+    "webgpu",
+    "signed-distance-field",
+    "sdf",
+    "3d"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "type": "module",
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
   "exports": {
     ".": {
@@ -19,11 +44,11 @@
   },
   "devDependencies": {
     "@types/three": "0.185.1",
-    "@webgpu-text/font": "workspace:^"
+    "@text-rendering-toolkit/font": "workspace:^"
   },
   "dependencies": {
-    "@webgpu-text/layout": "workspace:^",
-    "@webgpu-text/sdf": "workspace:^"
+    "@text-rendering-toolkit/layout": "workspace:^",
+    "@text-rendering-toolkit/sdf": "workspace:^"
   },
   "peerDependencies": {
     "three": "^0.185.1"

@@ -1,9 +1,9 @@
 import { readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { loadFont } from '@webgpu-text/font'
-import { layoutPreparedText, prepareText } from '@webgpu-text/layout'
-import { Text } from '@webgpu-text/three'
+import { loadFont } from '@text-rendering-toolkit/font'
+import { layoutPreparedText, prepareText } from '@text-rendering-toolkit/layout'
+import { Text } from '@text-rendering-toolkit/three-webgpu'
 import { describe, expect, test } from 'vitest'
 import { ColrV0TextResources } from '../src/colr-v0.js'
 

@@ -1,5 +1,5 @@
 {
-  "name": "@webgpu-text/three-webgpu-basic-example",
+  "name": "@text-rendering-toolkit/three-webgpu-basic-example",
   "version": "0.0.0-private",
   "private": true,
   "type": "module",
@@ -9,9 +9,9 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@webgpu-text/font": "workspace:^",
-    "@webgpu-text/layout": "workspace:^",
-    "@webgpu-text/three": "workspace:^",
+    "@text-rendering-toolkit/font": "workspace:^",
+    "@text-rendering-toolkit/layout": "workspace:^",
+    "@text-rendering-toolkit/three-webgpu": "workspace:^",
     "three": "0.185.1"
   },
   "devDependencies": {

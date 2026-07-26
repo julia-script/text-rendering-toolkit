@@ -9,7 +9,7 @@ fonts are renamed `ColorGlyphValidation`, contain only the corpus recorded in
 as validation evidence.
 
 The fonts are generated with `nanoemoji 0.15.0`, also Apache-2.0 licensed. Run
-`pnpm --filter @webgpu-text/color-glyph-boundary-experiment fixtures:acquire`
+`pnpm --filter @text-rendering-toolkit/color-glyph-boundary-experiment fixtures:acquire`
 to verify every source hash and reproduce all four binaries.
 
 Apache License 2.0: https://www.apache.org/licenses/LICENSE-2.0

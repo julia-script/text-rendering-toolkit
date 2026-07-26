@@ -1,6 +1,6 @@
-import { loadFont } from '@webgpu-text/font'
-import { layoutText } from '@webgpu-text/layout'
-import { Text } from '@webgpu-text/three'
+import { loadFont } from '@text-rendering-toolkit/font'
+import { layoutText } from '@text-rendering-toolkit/layout'
+import { Text } from '@text-rendering-toolkit/three-webgpu'
 import { afterEach, describe, expect, test } from 'vitest'
 import { commands, page } from 'vitest/browser'
 

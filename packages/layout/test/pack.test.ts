@@ -24,7 +24,7 @@ function pack(root: string, destination: string): string {
 }
 
 it('ships ESM runtime and type exports usable with the public font package', () => {
-  const temporary = mkdtempSync(resolve(tmpdir(), 'webgpu-text-layout-pack-'))
+  const temporary = mkdtempSync(resolve(tmpdir(), 'text-rendering-toolkit-layout-pack-'))
   try {
     const fontArchive = pack(fontRoot, resolve(temporary, 'font'))
     const layoutArchive = pack(packageRoot, resolve(temporary, 'layout'))
@@ -37,8 +37,8 @@ it('ships ESM runtime and type exports usable with the public font package', () 
           private: true,
           type: 'module',
           dependencies: {
-            '@webgpu-text/font': `file:${fontArchive}`,
-            '@webgpu-text/layout': `file:${layoutArchive}`,
+            '@text-rendering-toolkit/font': `file:${fontArchive}`,
+            '@text-rendering-toolkit/layout': `file:${layoutArchive}`,
           },
         },
         null,
@@ -47,22 +47,22 @@ it('ships ESM runtime and type exports usable with the public font package', () 
     )
     writeFileSync(
       resolve(consumer, 'pnpm-workspace.yaml'),
-      `packages:\n  - .\noverrides:\n  '@webgpu-text/font': file:${fontArchive}\n`,
+      `packages:\n  - .\noverrides:\n  '@text-rendering-toolkit/font': file:${fontArchive}\n`,
     )
     execFileSync('pnpm', ['install', '--ignore-scripts'], {
       cwd: consumer,
       stdio: 'pipe',
     })
 
-    const installed = resolve(consumer, 'node_modules/@webgpu-text/layout')
+    const installed = resolve(consumer, 'node_modules/@text-rendering-toolkit/layout')
     expect(existsSync(resolve(installed, 'dist/index.js'))).toBe(true)
     expect(existsSync(resolve(installed, 'dist/index.d.ts'))).toBe(true)
     expect(existsSync(resolve(installed, 'THIRD_PARTY_NOTICES.md'))).toBe(true)
 
     const source = `
-      import { deriveTextDecorations, layoutResolvedText, layoutText, getSelectionRects, prepareText } from '@webgpu-text/layout'
-      import type { FontHandle } from '@webgpu-text/font'
-      import type { DecorationSpan, LineBreakOpportunity, PreparedText, ResolvedLayoutInput } from '@webgpu-text/layout'
+      import { deriveTextDecorations, layoutResolvedText, layoutText, getSelectionRects, prepareText } from '@text-rendering-toolkit/layout'
+      import type { FontHandle } from '@text-rendering-toolkit/font'
+      import type { DecorationSpan, LineBreakOpportunity, PreparedText, ResolvedLayoutInput } from '@text-rendering-toolkit/layout'
 
       const input: ResolvedLayoutInput = {
         text: '', paragraphLevel: 0, defaultMetrics: { ascender: 8, descender: -2, lineGap: 0, decorationMetrics: { underlinePosition: -1, underlineThickness: 0.5, strikethroughPosition: 3, strikethroughThickness: 0.5 } },

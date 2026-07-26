@@ -1,4 +1,4 @@
-import type { SdfBitmap, SdfViewBox } from '@webgpu-text/sdf'
+import type { SdfBitmap, SdfViewBox } from '@text-rendering-toolkit/sdf'
 import { DataTexture, LinearFilter, NoColorSpace, RGBAFormat, UnsignedByteType } from 'three/webgpu'
 
 /** A glyph's place in the atlas, or a record that it needs none. */

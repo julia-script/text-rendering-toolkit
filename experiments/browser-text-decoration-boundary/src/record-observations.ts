@@ -1,8 +1,8 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
-import { loadFont } from '@webgpu-text/font'
-import { generateSdf } from '@webgpu-text/sdf'
+import { loadFont } from '@text-rendering-toolkit/font'
+import { generateSdf } from '@text-rendering-toolkit/sdf'
 
 import { planSdfPaint } from './index.js'
 
@@ -131,7 +131,7 @@ write('candidate-decision.json', {
   kind: 'browser-text-decoration-boundary-decision',
   outcome: 'go',
   neutralDecoration: {
-    owner: '@webgpu-text/layout follow-up',
+    owner: '@text-rendering-toolkit/layout follow-up',
     representation: 'independent spans resolved to immutable analytic line segments',
     styles: ['solid', 'dotted', 'wavy'],
     color: 'explicit RGBA independent from glyph fill with current-foreground convenience',
@@ -139,7 +139,7 @@ write('candidate-decision.json', {
     skipInk: 'none default; bounds-only opt-in; defer outline-aware auto',
   },
   glyphPaint: {
-    owner: '@webgpu-text/three follow-up',
+    owner: '@text-rendering-toolkit/three-webgpu follow-up',
     representation: 'one reused SDF with appearance-only outline and one shadow',
     limit: 'paint extent must fit resource padding or synchronization rejects before commit',
     colrV0: 'defer composed-silhouette stroke until a dedicated semantic fixture exists',

@@ -1,4 +1,4 @@
-import { generateSdf, SdfCommand } from '@webgpu-text/sdf'
+import { generateSdf, SdfCommand } from '@text-rendering-toolkit/sdf'
 import * as ThreeTSL from 'three/tsl'
 import {
   AmbientLight,

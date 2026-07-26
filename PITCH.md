@@ -1,4 +1,4 @@
-# WebGPU Text — Pitch
+# Text Rendering Toolkit — Pitch
 
 A small family of independently usable packages that turn font bytes and Unicode
 text into GPU-rendered glyphs on Three.js `WebGPURenderer`. It stands on the
@@ -17,7 +17,7 @@ useful on its own, and every dependency arrow points one way.
 
 ## The parts
 
-### `@webgpu-text/font` — parse, shape, outline
+### `@text-rendering-toolkit/font` — parse, shape, outline
 
 Font bytes in, reusable font facts out. Wraps HarfBuzz (vendored WASM) behind a
 stable `FontHandle` so you get real OpenType shaping — cmap, GSUB/GPOS,
@@ -27,7 +27,7 @@ HarfBuzz pointer. Deterministic disposal releases every owned WASM object. It
 knows nothing about URLs, layout, SDFs, browsers, or Three.js. **Useful alone
 for:** anyone who needs correct shaping or metrics in Node or the browser.
 
-### `@webgpu-text/layout` — resolve, wrap, place, select
+### `@text-rendering-toolkit/layout` — resolve, wrap, place, select
 
 Styled Unicode text in, positioned glyphs and interaction geometry out. Owns the
 two-stage boundary the whole design rests on: `prepareText()` does the
@@ -40,7 +40,7 @@ segments as pure analytic geometry. No SDFs, no atlases, no GPU, no Three.js.
 **Useful alone for:** editors, canvas/SVG/DOM renderers, measurement,
 server-side preprocessing.
 
-### `@webgpu-text/sdf` — outline to pixels
+### `@text-rendering-toolkit/sdf` — outline to pixels
 
 An arbitrary vector outline in, a one-channel signed-distance-field bitmap out.
 A pure CPU encoder derived from the MIT `webgl-sdf-generator`, with deterministic
@@ -49,7 +49,7 @@ encoding metadata — never an atlas, canvas, or texture. It doesn't know what a
 font or a glyph is. **Useful alone for:** any renderer that wants SDF coverage
 from shapes it already has.
 
-### `@webgpu-text/three` — the composed renderer
+### `@text-rendering-toolkit/three-webgpu` — the composed renderer
 
 A completed `LayoutResult` and a map of font handles in, a Three.js `Mesh` out.
 This is the *only* package that imports Three or owns GPU resources. It
@@ -131,7 +131,7 @@ and only one package is ever revision-locked to Three.js.
 - **Three.js / WebGPU app developers** who need production-quality multilingual,
   colored, and shadowed text and have outgrown WebGL-era text libraries.
 - **Editor and tooling builders** who need shaping, layout, carets, and selection
-  geometry with no GPU dependency — consuming `@webgpu-text/layout` directly.
+  geometry with no GPU dependency — consuming `@text-rendering-toolkit/layout` directly.
 - **Renderer authors** (canvas, SVG, native, custom GPU) who want a
   renderer-neutral layout result or a pure SDF encoder without adopting Three.
 - **Library and framework integrators** (e.g. React Three Fiber) who want a
@@ -148,7 +148,7 @@ and only one package is ever revision-locked to Three.js.
   layout, and SDF encoding pass, and real-font text renders on actual Apple Metal
   WebGPU (never WebGL fallback as passing evidence).
 - **Boundaries stay clean:** lower layers never import higher ones, only
-  `@webgpu-text/three` imports Three, and `LayoutResult` remains free of outlines,
+  `@text-rendering-toolkit/three-webgpu` imports Three, and `LayoutResult` remains free of outlines,
   SDF pixels, atlas indices, and Three objects.
 - **Multilingual fidelity:** mixed LTR/RTL, script itemization, caller-font
   fallback, COLR v0 color glyphs, and analytic decorations render correctly

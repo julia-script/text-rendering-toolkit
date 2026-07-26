@@ -1,4 +1,4 @@
-import type { LayoutBounds, LayoutResult } from '@webgpu-text/layout'
+import type { LayoutBounds, LayoutResult } from '@text-rendering-toolkit/layout'
 import type {
   ColorRepresentation,
   MeshBasicNodeMaterial,
@@ -92,7 +92,7 @@ export interface TextColorGlyphLayer {
 }
 
 /**
- * The structural subset of `@webgpu-text/font` used by the renderer.
+ * The structural subset of `@text-rendering-toolkit/font` used by the renderer.
  *
  * @remarks
  * A real `FontHandle` satisfies this directly. Units per em give renderer-owned
@@ -178,7 +178,7 @@ export interface TextOptionsBase {
    * The completed layout to render.
    *
    * @remarks
-   * Produced by `@webgpu-text/layout`. It is consumed as-is and never expanded
+   * Produced by `@text-rendering-toolkit/layout`. It is consumed as-is and never expanded
    * or replaced, so the same result stays valid for measurement, selection, and
    * other renderer-neutral use.
    */

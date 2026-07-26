@@ -36,7 +36,7 @@ observation is optional and requires an explicitly supplied reference checkout.
 | text, direction, language, font size, letter spacing, line height, width, wrapping, alignment, indentation, anchors | layout request/policy | Preserve as normalized fixture inputs |
 | style, size, language, variation, and vertical-offset ranges | layout run boundaries | Replace start-keyed mutable maps with half-open UTF-16 spans and stable style keys |
 | font URLs, weights/styles used for selection, Unicode fallback service, loaded font cache | application acquisition plus future provider/itemizer policy | Represent only resolved font keys/runs. Applications own byte acquisition; core libraries do not fetch. Defer provider/itemizer policy and any optional helper. |
-| `forEachGlyph` glyph IDs, positions, advances, clusters, metrics | `@webgpu-text/font` plus resolved-run seam | Replace shaping with explicit public HarfBuzz runs; synthetic fixtures inject controlled equivalents |
+| `forEachGlyph` glyph IDs, positions, advances, clusters, metrics | `@text-rendering-toolkit/font` plus resolved-run seam | Replace shaping with explicit public HarfBuzz runs; synthetic fixtures inject controlled equivalents |
 | line construction, hard/soft breaks, baseline selection, visual bidi placement | layout policy | Preserve or deliberately revise per classified fixture |
 | caret positions and selection rectangles | layout result plus pure helpers | Preserve intent with valid UTF-16 boundaries and derive selections from caret/line data |
 | glyph paths and path bounds | lazy font outline access | Exclude paths; retain only positioned visible bounds and stable font/glyph identity |
@@ -116,7 +116,7 @@ flowchart LR
 - **Normative policy:** `policy-fixtures.json` uses controlled synthetic runs,
   so wrapping and placement changes are not disguised by font revisions.
 - **Public font integration:** `font-integration.json` records explicit run
-  plans shaped through `@webgpu-text/font`, including Latin, Arabic,
+  plans shaped through `@text-rendering-toolkit/font`, including Latin, Arabic,
   Devanagari, Khmer, combining marks, supplementary text, fallback, variable
   axes, and mixed direction.
 - **Legacy provenance:** `troika-observations.json` records only normalized
@@ -169,10 +169,10 @@ From the repository root:
 
 ```sh
 node test-fixtures/layout/generate-policy-fixtures.mjs
-pnpm --filter @webgpu-text/font build
+pnpm --filter @text-rendering-toolkit/font build
 node test-fixtures/layout/generate-font-integration.mjs
-pnpm --filter @webgpu-text/layout build
-pnpm --filter @webgpu-text/layout test
+pnpm --filter @text-rendering-toolkit/layout build
+pnpm --filter @text-rendering-toolkit/layout test
 ```
 
 Regenerating the synthetic corpus must be byte-for-byte deterministic. Updating

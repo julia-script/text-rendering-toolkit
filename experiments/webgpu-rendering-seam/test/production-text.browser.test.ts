@@ -1,11 +1,11 @@
-import { type FontHandle, loadFont } from '@webgpu-text/font'
+import { type FontHandle, loadFont } from '@text-rendering-toolkit/font'
 import {
   getSelectionRects,
   layoutResolvedText,
   type ResolvedLayoutInput,
   type ResolvedShapedRun,
-} from '@webgpu-text/layout'
-import { Text, type TextFont, TextResources } from '@webgpu-text/three'
+} from '@text-rendering-toolkit/layout'
+import { Text, type TextFont, TextResources } from '@text-rendering-toolkit/three-webgpu'
 import {
   AmbientLight,
   BoxGeometry,
@@ -469,7 +469,7 @@ afterEach(() => {
   document.body.replaceChildren()
 })
 
-describe('production @webgpu-text/three actual-WebGPU evidence', () => {
+describe('production @text-rendering-toolkit/three-webgpu actual-WebGPU evidence', () => {
   test('lights, shadows, updates, and disposes public real-font text', async () => {
     await page.viewport(WIDTH + 24, HEIGHT + 24)
     const harness = await createHarness()

@@ -134,7 +134,8 @@ async function main() {
         schemaVersion: 1,
         kind: 'harfbuzz-color-bridge',
         source: `harfbuzzjs@${wrapperRevision}`,
-        buildCommand: 'pnpm --filter @webgpu-text/color-glyph-boundary-experiment bridge:build',
+        buildCommand:
+          'pnpm --filter @text-rendering-toolkit/color-glyph-boundary-experiment bridge:build',
         configDelta: [
           'undef HB_NO_COLOR',
           'undef HB_NO_PAINT',

@@ -1,11 +1,35 @@
 {
-  "name": "@webgpu-text/sdf",
-  "version": "0.0.0",
-  "private": true,
+  "name": "@text-rendering-toolkit/sdf",
+  "version": "0.1.0",
+  "description": "Deterministic CPU signed-distance-field generation from numeric glyph outlines.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/julia-script/text-rendering-toolkit.git",
+    "directory": "packages/sdf"
+  },
+  "homepage": "https://github.com/julia-script/text-rendering-toolkit#readme",
+  "bugs": {
+    "url": "https://github.com/julia-script/text-rendering-toolkit/issues"
+  },
+  "keywords": [
+    "text-rendering",
+    "typography",
+    "signed-distance-field",
+    "sdf",
+    "font-rendering",
+    "glyphs",
+    "cpu"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "type": "module",
   "files": [
     "dist",
     "README.md",
+    "LICENSE",
     "THIRD_PARTY_NOTICES.md",
     "LICENSE.webgl-sdf-generator.txt"
   ],
@@ -21,6 +45,6 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
-    "@webgpu-text/font": "workspace:^"
+    "@text-rendering-toolkit/font": "workspace:^"
   }
 }

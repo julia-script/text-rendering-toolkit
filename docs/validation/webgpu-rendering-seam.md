@@ -6,7 +6,7 @@ Change: `prove-webgpu-rendering-seam`
 
 ## Decision
 
-The renderer seam is viable enough to promote into a production `@webgpu-text/three` design. Three.js 0.185.1 can render one instanced unit quad per glyph, address RGBA-packed SDF atlas slots, decode coverage through TSL, apply per-instance color and material opacity, clip, orient, curve, upload post-render texture and attribute mutations, and release owned resources on an actual WebGPU backend.
+The renderer seam is viable enough to promote into a production `@text-rendering-toolkit/three-webgpu` design. Three.js 0.185.1 can render one instanced unit quad per glyph, address RGBA-packed SDF atlas slots, decode coverage through TSL, apply per-instance color and material opacity, clip, orient, curve, upload post-render texture and attribute mutations, and release owned resources on an actual WebGPU backend.
 
 This is a renderer-boundary decision, not a finished renderer. The experiment intentionally does not load fonts, shape or lay out text, generate SDFs at runtime, allocate/grow an atlas, run workers, expose a public API, or support WebGL.
 
@@ -90,7 +90,7 @@ The spike supports the following production split. These are internal boundaries
 | Renderer input | Renderer-neutral glyph bounds, flat atlas slot, normalized color, atlas bytes/dimensions/cell size, and material-wide appearance values. A flat slot maps to `cell = floor(slot / 4)` and `channel = slot % 4`. |
 | Instanced geometry | Own one indexed unit quad plus typed `glyphBounds`, `glyphSlot`, and normalized `glyphColor` instance attributes. Update attributes in place and mark only changed buffers dirty. |
 | TSL material | Own atlas coordinate/channel selection, SDF edge decoding, `fwidth` antialiasing, transparent coverage, unlit color, opacity, clip rectangle, orientation, and cylindrical placement. Do not rewrite shader strings. |
-| Atlas update | The renderer owns RGBA packing and the `DataTexture`. `@webgpu-text/sdf` ends at one-channel `SdfBitmap`; texture mutation/replacement and `needsUpdate` stay renderer-private. |
+| Atlas update | The renderer owns RGBA packing and the `DataTexture`. `@text-rendering-toolkit/sdf` ends at one-channel `SdfBitmap`; texture mutation/replacement and `needsUpdate` stay renderer-private. |
 | Backend validation | Browser validation requires `navigator.gpu`, a usable adapter, and the pinned backend diagnostic. Production rendering should not silently advertise WebGL as supported; the diagnostic remains isolated because its stability is not guaranteed. |
 | Disposal | A production text object owns and disposes its geometry/material and releases atlas references. The renderer-level atlas owner disposes its texture/cache. The application—not each text object—owns the shared Three renderer and canvas. |
 
@@ -123,4 +123,4 @@ None of these failures invalidated the renderer seam. Each has a bounded respons
 
 ## Promotion guidance
 
-Promote concepts, not the experiment package wholesale. The next renderer change should first extract a private multi-cell slot-addressing fixture and the three resource factories—geometry, material, and texture update—into `@webgpu-text/three`. It should keep atlas allocation and high-level `Text` synchronization out until real `LayoutResult` and `SdfBitmap` contracts exist. The private experiment remains the pinned upgrade gate for Three.js and Chromium behavior.
+Promote concepts, not the experiment package wholesale. The next renderer change should first extract a private multi-cell slot-addressing fixture and the three resource factories—geometry, material, and texture update—into `@text-rendering-toolkit/three-webgpu`. It should keep atlas allocation and high-level `Text` synchronization out until real `LayoutResult` and `SdfBitmap` contracts exist. The private experiment remains the pinned upgrade gate for Three.js and Chromium behavior.

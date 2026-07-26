@@ -1,4 +1,4 @@
-import { type FontHandle, loadFont } from '@webgpu-text/font'
+import { type FontHandle, loadFont } from '@text-rendering-toolkit/font'
 
 const FONT_ASSETS = [
   ['latin', '/fonts/NotoSans-wdth-wght.ttf'],

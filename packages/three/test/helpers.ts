@@ -3,7 +3,7 @@ import {
   layoutResolvedText,
   type ResolvedLayoutInput,
   type ResolvedShapedRun,
-} from '@webgpu-text/layout'
+} from '@text-rendering-toolkit/layout'
 import type { TextColorGlyphLayer, TextFont, TextGlyphOutline } from '../src/index.js'
 
 export const rectangleOutline: TextGlyphOutline = {

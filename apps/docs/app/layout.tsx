@@ -8,19 +8,19 @@ const siteUrl = new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:30
 export const metadata: Metadata = {
   metadataBase: siteUrl,
   title: {
-    default: 'WebGPU Text',
-    template: '%s · WebGPU Text',
+    default: 'Text Rendering Toolkit',
+    template: '%s · Text Rendering Toolkit',
   },
   description:
     'Shape multilingual text, lay it out, generate CPU SDFs, and render with Three.js WebGPU.',
   openGraph: {
-    title: 'WebGPU Text',
+    title: 'Text Rendering Toolkit',
     description: 'Text, from bytes to pixels.',
     images: [{ url: '/og.png', width: 1731, height: 909 }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'WebGPU Text',
+    title: 'Text Rendering Toolkit',
     description: 'Text, from bytes to pixels.',
     images: ['/og.png'],
   },

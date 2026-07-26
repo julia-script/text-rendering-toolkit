@@ -1,4 +1,4 @@
-# Third-party notices for `@webgpu-text/sdf`
+# Third-party notices for `@text-rendering-toolkit/sdf`
 
 The CPU distance-field implementation in `src/generate.ts` is adapted from the
 JavaScript path flattening and SDF generation functions published in

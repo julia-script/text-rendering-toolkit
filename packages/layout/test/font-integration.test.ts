@@ -1,12 +1,17 @@
 import { createHash } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
-import { type FontFacts, loadFont, type ShapedRun, type ShapeInput } from '@webgpu-text/font'
+import {
+  type FontFacts,
+  loadFont,
+  type ShapedRun,
+  type ShapeInput,
+} from '@text-rendering-toolkit/font'
 import {
   canonicalFixtureJson,
   deriveTextDecorations,
   layoutResolvedText,
   type ResolvedShapedRun,
-} from '@webgpu-text/layout'
+} from '@text-rendering-toolkit/layout'
 import { afterAll, describe, expect, test } from 'vitest'
 
 interface IntegrationRun {
@@ -92,7 +97,7 @@ describe('public font integration evidence', () => {
     const document = await integrationDocument()
     const manifest = await readFile(new URL('fixtures.json', fontRoot))
     expect(document.schemaVersion).toBe(1)
-    expect(document.source).toBe('@webgpu-text/font public entry point')
+    expect(document.source).toBe('@text-rendering-toolkit/font public entry point')
     expect(createHash('sha256').update(manifest).digest('hex')).toBe(document.fontManifest.sha256)
   })
 

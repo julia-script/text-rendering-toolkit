@@ -67,9 +67,9 @@ test('keeps normal layout source independent of reference and higher layers', as
     await Promise.all(files.map((file) => readFile(new URL(file, sourceRoot), 'utf8')))
   ).join('\n')
   expect(source).not.toMatch(/(?:from|import\().*(?:old\/|experiments\/)/)
-  expect(source).not.toMatch(/@webgpu-text\/(?:sdf|three)/)
-  expect(source).not.toMatch(/@webgpu-text\/font\/(?:src|internal)/)
-  expect(source).not.toMatch(/import\s+(?!type\b)[^'"]*['"]@webgpu-text\/font['"]/)
+  expect(source).not.toMatch(/@text-rendering-toolkit\/(?:sdf|three)/)
+  expect(source).not.toMatch(/@text-rendering-toolkit\/font\/(?:src|internal)/)
+  expect(source).not.toMatch(/import\s+(?!type\b)[^'"]*['"]@text-rendering-toolkit\/font['"]/)
   expect(source).not.toMatch(
     /(?:three\/webgpu|\bwindow\.|HTMLCanvasElement|\bdocument\.(?:createElement|body|fonts|querySelector)|\bfetch\s*\()/,
   )

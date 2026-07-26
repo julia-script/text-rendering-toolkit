@@ -1,4 +1,4 @@
-import type { LayoutBounds } from '@webgpu-text/layout'
+import type { LayoutBounds } from '@text-rendering-toolkit/layout'
 import * as ThreeTSL from 'three/tsl'
 import {
   Box3,

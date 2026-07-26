@@ -1,4 +1,4 @@
-# Roadmap — WebGPU Text (working title)
+# Roadmap — Text Rendering Toolkit (working title)
 
 > Direction, not commitment — Now is committed; Next is planned; Later is exploration.
 > Only Now items may be promised. This document changes as we learn.
@@ -11,11 +11,11 @@ Build a small, production-quality family of text-processing packages culminating
 
 The result is deliberately greenfield: strict TypeScript source, native ESM packages, explicit data contracts between layers, promise-based synchronization, TSL node materials, and no compatibility commitment to `troika-three-text`, `WebGLRenderer`, CommonJS, or UMD.
 
-**Current objective achieved:** representative multilingual text now renders through `WebGPURenderer` using a WebGL-free runtime, backed by deterministic layout/SDF tests, a real-font actual-WebGPU fixture, strict TypeScript checks, and a public-only consumer example. `LayoutResult` is the completed renderer-neutral handoff, so Three performs no shaping, line layout, caret, or selection policy. The Three package now ships both its default unlit material and an opt-in construction-fixed planar standard material with glyph-shaped cast and received shadows. `@webgpu-text/layout` now turns ordinary raw text into the same handoff through reusable serializable preparation, explicit caller-font fallback, and HarfBuzz shaping. Multiple independent `Text` objects can borrow one explicit `TextResources`, reusing same-handle glyph/SDF work and one growable atlas without coupling preparation to Three. COLR v0 palette-zero glyphs now flow lazily from caller-owned font bytes through ordered layer outlines and per-instance RGBA without changing preparation or layout identity. The four packages also assemble into one audited local release candidate whose tarballs pass an isolated external consumer check; public release work is intentionally paused while the packages are consumed locally.
+**Current objective achieved:** representative multilingual text now renders through `WebGPURenderer` using a WebGL-free runtime, backed by deterministic layout/SDF tests, a real-font actual-WebGPU fixture, strict TypeScript checks, and a public-only consumer example. `LayoutResult` is the completed renderer-neutral handoff, so Three performs no shaping, line layout, caret, or selection policy. The Three package now ships both its default unlit material and an opt-in construction-fixed planar standard material with glyph-shaped cast and received shadows. `@text-rendering-toolkit/layout` now turns ordinary raw text into the same handoff through reusable serializable preparation, explicit caller-font fallback, and HarfBuzz shaping. Multiple independent `Text` objects can borrow one explicit `TextResources`, reusing same-handle glyph/SDF work and one growable atlas without coupling preparation to Three. COLR v0 palette-zero glyphs now flow lazily from caller-owned font bytes through ordered layer outlines and per-instance RGBA without changing preparation or layout identity. The four packages also assemble into one audited local release candidate whose tarballs pass an isolated external consumer check; public release work is intentionally paused while the packages are consumed locally.
 
-`@webgpu-text/layout` also owns a completed renderer-neutral decoration boundary: it derives immutable solid/dotted/wavy underline and solid strikethrough segments from independent UTF-16 spans after layout, with stable per-span automatic font metrics, numeric overrides, independent paint, deterministic phase, clipping, and optional bounds-only skip ink. The same output is consumed by package tests, a typed-array adapter, and the non-Three SVG documentation inspector, which refines automatic skipping against its already-owned outlines without reshaping text.
+`@text-rendering-toolkit/layout` also owns a completed renderer-neutral decoration boundary: it derives immutable solid/dotted/wavy underline and solid strikethrough segments from independent UTF-16 spans after layout, with stable per-span automatic font metrics, numeric overrides, independent paint, deterministic phase, clipping, and optional bounds-only skip ink. The same output is consumed by package tests, a typed-array adapter, and the non-Three SVG documentation inspector, which refines automatic skipping against its already-owned outlines without reshaping text.
 
-`@webgpu-text/three` now also paints ordinary SDF glyphs with one independent-color outer outline and one offset, SDF-softened visual shadow in either material variant. Both effects reuse the existing atlas slot and update atomically through `Text.sync()`. Construction-fixed em-based `sdfPadding` controls physical paint room independently from `sdfSize` resolution; excessive paint rejects without mutating the accepted frame. COLR v0 layers remain deliberately unchanged rather than exposing their internal layer seams, and shadow softness is distance-field falloff rather than Gaussian browser blur.
+`@text-rendering-toolkit/three-webgpu` now also paints ordinary SDF glyphs with one independent-color outer outline and one offset, SDF-softened visual shadow in either material variant. Both effects reuse the existing atlas slot and update atomically through `Text.sync()`. Construction-fixed em-based `sdfPadding` controls physical paint room independently from `sdfSize` resolution; excessive paint rejects without mutating the accepted frame. COLR v0 layers remain deliberately unchanged rather than exposing their internal layer seams, and shadow softness is distance-field falloff rather than Gaussian browser blur.
 
 ## Where we are starting
 
@@ -63,15 +63,15 @@ The green nodes contain the behavior we want to preserve. The red nodes encode t
 
 | Existing area | Target package | Greenfield treatment |
 |---|---|---|
-| `FontParser` parsing, metrics, shaping and outlines | `@scope/font` | Preserve its contracts and fixtures, but replace the Typr-derived parser and partial shaper with a HarfBuzzjs-backed font engine |
-| `FontResolver` | future `@scope/text-layout` selection policy plus application adapters | Preserve pure fallback ideas while leaving byte acquisition to the application; any URL/cache helper remains optional and never the primary path |
-| `Typesetter` | `@scope/text-layout` | Split shaping orchestration, line layout, bidi placement, result assembly, and interaction data |
-| Selection and caret utilities | `@scope/text-layout` | Port as pure helpers over renderer-neutral layout results |
-| CPU behavior behind `SDFGenerator` | `@scope/sdf` | Port the MIT-licensed CPU encoder with its copyright and permission notice; expose pure outline-to-typed-array generation and remove canvas/WebGL paths |
-| Atlas allocation and byte packing | `@scope/three-webgpu-text` | Renderer owns slots, RGBA packing, growth, dirty tracking, cache/eviction policy, `DataTexture` upload, and disposal |
+| `FontParser` parsing, metrics, shaping and outlines | `@text-rendering-toolkit/font` | Preserve its contracts and fixtures, but replace the Typr-derived parser and partial shaper with a HarfBuzzjs-backed font engine |
+| `FontResolver` | future `@text-rendering-toolkit/layout` selection policy plus application adapters | Preserve pure fallback ideas while leaving byte acquisition to the application; any URL/cache helper remains optional and never the primary path |
+| `Typesetter` | `@text-rendering-toolkit/layout` | Split shaping orchestration, line layout, bidi placement, result assembly, and interaction data |
+| Selection and caret utilities | `@text-rendering-toolkit/layout` | Port as pure helpers over renderer-neutral layout results |
+| CPU behavior behind `SDFGenerator` | `@text-rendering-toolkit/sdf` | Port the MIT-licensed CPU encoder with its copyright and permission notice; expose pure outline-to-typed-array generation and remove canvas/WebGL paths |
+| Atlas allocation and byte packing | `@text-rendering-toolkit/three-webgpu` | Renderer owns slots, RGBA packing, growth, dirty tracking, cache/eviction policy, `DataTexture` upload, and disposal |
 | `TextBuilder` | Decomposed across layout, SDF, and renderer | Do not port intact; it currently mixes global configuration, workers, atlas state, Three textures, SDF requests, and quad construction |
-| `GlyphsGeometry`, `Text`, and render-quad logic | `@scope/three-webgpu-text` | Port or redesign around explicit layout/SDF contracts and promise synchronization |
-| `TextDerivedMaterial` | `@scope/three-webgpu-text` | Do not port GLSL rewriting; re-express supported behavior in TSL |
+| `GlyphsGeometry`, `Text`, and render-quad logic | `@text-rendering-toolkit/three-webgpu` | Port or redesign around explicit layout/SDF contracts and promise synchronization |
+| `TextDerivedMaterial` | `@text-rendering-toolkit/three-webgpu` | Do not port GLSL rewriting; re-express supported behavior in TSL |
 | `BatchedText` | Deferred renderer work | Revisit only after ordinary text benchmarks demonstrate a need |
 | Worker module behavior | Package-specific subpath adapters | Use normal ESM workers around pure layout and SDF operations; do not create a worker package |
 | Rollup, Lerna, UMD and generated factory builds | Drop | The new workspace is ESM-only and independently built |
@@ -86,7 +86,7 @@ The project will begin as one repository containing four independently publishab
 │   ├── font/
 │   ├── text-layout/
 │   ├── sdf/
-│   └── three-webgpu-text/
+│   └── three-webgpu/
 ├── examples/
 │   ├── layout-only/
 │   ├── sdf-only/
@@ -108,10 +108,10 @@ The packages can version together initially. We will not create separate package
 
 ```mermaid
 flowchart LR
-    Font["@scope/font<br/>parse, shape, outline"]
-    Layout["@scope/text-layout<br/>resolve, bidi, wrap, position, carets"]
-    Sdf["@scope/sdf<br/>outline to one-channel pixels"]
-    Renderer["@scope/three-webgpu-text<br/>Text mesh, owned atlas, geometry and TSL"]
+    Font["@text-rendering-toolkit/font<br/>parse, shape, outline"]
+    Layout["@text-rendering-toolkit/layout<br/>resolve, bidi, wrap, position, carets"]
+    Sdf["@text-rendering-toolkit/sdf<br/>outline to one-channel pixels"]
+    Renderer["@text-rendering-toolkit/three-webgpu<br/>Text mesh, owned atlas, geometry and TSL"]
     Three["three/webgpu"]
 
     Layout --> Font
@@ -126,7 +126,7 @@ flowchart LR
     class Layout,Renderer composed
 ```
 
-The dependency direction is a project rule: lower layers never import renderer layers, and only `three-webgpu-text` imports Three.js.
+The dependency direction is a project rule: lower layers never import renderer layers, and only `three-webgpu` imports Three.js.
 
 ### Future runtime architecture
 
@@ -138,7 +138,7 @@ flowchart LR
     Font --> Layout[Wrapping, bidi, placement and carets]
     Layout --> Result[LayoutResult with positioned glyphs and fontUnitScale]
 
-    Result --> Renderer[three-webgpu-text adapter]
+    Result --> Renderer[three-webgpu adapter]
     Result --> Misses[Renderer finds atlas misses]
     Misses --> Font
     Font --> Outlines[Lazy glyph outlines]
@@ -165,7 +165,7 @@ The CPU/GPU boundary and package boundaries are explicit: font and layout produc
 
 ### Atlas model
 
-Troika packs four glyph SDFs into the RGBA channels of each atlas square. We will preserve that representation, but the implementation belongs entirely to `@scope/three-webgpu-text`; `@scope/sdf` returns only one-channel `SdfBitmap` values:
+Troika packs four glyph SDFs into the RGBA channels of each atlas square. We will preserve that representation, but the implementation belongs entirely to `@text-rendering-toolkit/three-webgpu`; `@text-rendering-toolkit/sdf` returns only one-channel `SdfBitmap` values:
 
 ```mermaid
 flowchart TD
@@ -192,7 +192,7 @@ sequenceDiagram
     participant Layout as text-layout
     participant Font as font
     participant Text
-    participant Renderer as three-webgpu-text
+    participant Renderer as three-webgpu
     participant SDF as sdf worker
     participant Atlas
     participant Three as WebGPURenderer
@@ -223,7 +223,7 @@ Concurrent calls to `sync()` will coalesce behind the latest requested state. A 
 Each package must expose a useful direct API. Representative lower-level usage is documented in [ARCHITECTURE.md](ARCHITECTURE.md); the composed renderer API should remain small and unsurprising:
 
 ```ts
-import { Text, TextResources } from '@scope/three-webgpu-text'
+import { Text, TextResources } from '@text-rendering-toolkit/three-webgpu'
 
 const resources = new TextResources()
 
@@ -280,6 +280,7 @@ archive. The next proposal should select one bounded remaining item.
 - Extend appearance beyond browser-like text paint — why it matters: curvature and additional dedicated physical-material variants are specialized effects and remain lower priority than ordinary text fidelity.
 - Move SDF generation to WebGPU compute — why it matters: complex fonts or large first-use glyph sets may expose CPU generation latency; revisit only with profiling evidence.
 - Improve atlas residency and eviction — why it matters: long-lived applications may accumulate unused glyphs; revisit when memory measurements show a practical ceiling.
+- Revisit SDF paint-capacity and padding ergonomics — why it matters: callers currently choose `sdfPadding` in em units and must reason about outline and shadow capacity themselves; explore a capacity query, explicit appearance budget, or clearer diagnostics in a separate API change.
 - Extend font-container coverage — why it matters: WOFF/WOFF2 decoding requires additional contracts; variable TrueType axes are already validated. Revisit decoder costs after the ordinary TTF/OTF path is stable.
 - Publish optional framework integrations — why it matters: easier adoption in React Three Fiber or other ecosystems; revisit after the core API is stable.
 - Authorize a public release — why it matters: package identity, licensing, version, canonical metadata, npm access, and provenance are already bounded, but intentionally paused while the project is consumed locally.
@@ -296,7 +297,7 @@ archive. The next proposal should select one bounded remaining item.
 
 ## Open questions
 
-- Should we adopt the recommended project name **WebGPU Text**, repository `webgpu-text`, and packages `@webgpu-text/font`, `@webgpu-text/layout`, `@webgpu-text/sdf`, and `@webgpu-text/three`? The exact package names are currently unused, but npm scope ownership still needs confirmation.
+- Should we adopt the recommended project name **Text Rendering Toolkit**, repository `text-rendering-toolkit`, and packages `@text-rendering-toolkit/font`, `@text-rendering-toolkit/layout`, `@text-rendering-toolkit/sdf`, and `@text-rendering-toolkit/three-webgpu`? The exact package names are currently unused, but npm scope ownership still needs confirmation.
 - Which license and initial coordinated version should cover the new project's original code and first public package family?
 - Which canonical repository metadata, npm access policy, and provenance workflow should the first release use?
 - Which CI environment can reproduce the validated Chrome for Testing 149 WebGPU launch currently proven on macOS/Apple Metal?
@@ -313,7 +314,7 @@ archive. The next proposal should select one bounded remaining item.
 - **Cleanup:** `FontHandle.dispose()` deterministically destroys its owned HarfBuzz objects; worker termination remains the deterministic whole-engine boundary for the singleton WASM runtime.
 - **Worker model:** use ordinary ESM workers with serializable public contracts, not Troika’s generated worker-factory mechanism.
 - **SDF provenance:** the CPU implementation adapts `webgl-sdf-generator@1.1.1`, retains its copyright and full MIT notice, records exact npm provenance and local changes, and excludes SVG parsing, WebGL, canvas, framebuffer, and worker paths.
-- **Atlas ownership:** `@scope/sdf` returns only `SdfBitmap`; `@scope/three-webgpu-text` owns the complete atlas implementation and GPU lifecycle.
+- **Atlas ownership:** `@text-rendering-toolkit/sdf` returns only `SdfBitmap`; `@text-rendering-toolkit/three-webgpu` owns the complete atlas implementation and GPU lifecycle.
 - **Renderer kernel:** promote one instanced unit quad, typed bounds/flat-slot/color attributes, renderer-owned RGBA `DataTexture`, and an unlit TSL material for cell/channel addressing, SDF coverage, opacity, clipping, orientation, and curvature. Do not port shader rewriting.
 - **Renderer validation:** pin Three.js 0.185.1 for the first implementation and rerun the private actual-WebGPU experiment before widening or changing the revision. WebGL fallback is never passing evidence.
 - **Renderer ownership:** production text objects own their geometry and material. `TextResources` owns texture/cache state; a text disposes default private resources but only borrows injected resources. Applications dispose a shared resource after all borrowers, and separately own the shared Three renderer and canvas.
@@ -331,27 +332,27 @@ archive. The next proposal should select one bounded remaining item.
 ## Changelog
 
 - 2026-07-22: Implemented Three SDF outline and one visual shadow. The public unlit and planar-lit `Text` paths now expose nullable independent-color appearance records, reuse one cached nonlinear SDF and stable atlas slot, update material controls and directional bounds atomically, clip the composed result, and reject excessive paint before geometry, material, layout, or shared resources mutate. Construction-fixed `sdfPadding` reserves em-based physical room separately from `sdfSize` resolution. Package, docs, packed-consumer, Latin/Arabic actual-WebGPU, and mixed COLR evidence pass; color layers remain unchanged and shadow softness remains non-Gaussian distance-field falloff. The completed card left **Next** and the change is ready to archive.
-- 2026-07-22: Implemented renderer-neutral text decorations. `@webgpu-text/font` now exposes deterministic bounded underline/strikethrough metrics, `LayoutResult` retains only their scaled range/default context, and `deriveTextDecorations()` returns immutable solid/dotted/wavy underline or solid strikethrough segments with independent RGBA/current foreground, numeric overrides, clipping, phase preservation, and optional bounds-only skip ink. Automatic metrics stay stable across fallback Arabic and color-emoji runs within one span, while the non-Three SVG inspector demonstrates renderer-owned exact outline skipping around descenders. Multilingual/mixed-metric fixtures, packed/browser ESM paths, a typed-array consumer, and COLR coexistence cover the boundary without changing preparation, glyph, line, caret, or selection identity. The completed card left **Now**; Three SDF outline/shadow and remaining browser-grade line breaking stay independent **Next** items.
+- 2026-07-22: Implemented renderer-neutral text decorations. `@text-rendering-toolkit/font` now exposes deterministic bounded underline/strikethrough metrics, `LayoutResult` retains only their scaled range/default context, and `deriveTextDecorations()` returns immutable solid/dotted/wavy underline or solid strikethrough segments with independent RGBA/current foreground, numeric overrides, clipping, phase preservation, and optional bounds-only skip ink. Automatic metrics stay stable across fallback Arabic and color-emoji runs within one span, while the non-Three SVG inspector demonstrates renderer-owned exact outline skipping around descenders. Multilingual/mixed-metric fixtures, packed/browser ESM paths, a typed-array consumer, and COLR coexistence cover the boundary without changing preparation, glyph, line, caret, or selection identity. The completed card left **Now**; Three SDF outline/shadow and remaining browser-grade line breaking stay independent **Next** items.
 - 2026-07-22: Validated the browser-text decoration boundary. Selected two independent production changes: renderer-neutral layout segments for solid/dotted/wavy underline and strikethrough with independent color, and Three-only ordinary-glyph outline plus one shadow from an unchanged SDF/atlas slot. Actual Chrome 149 on Apple Metal reused one 64 × 64 texture across unlit/planar-lit borrowers and appearance updates, rejected excessive paint before mutation, and preserved COLR decoration coexistence while deferring composed-silhouette color-glyph paint. Completed shared-resource and COLR cards left **Now**; renderer-neutral decorations entered **Now**, with Three SDF paint in **Next**.
-- 2026-07-22: Shipped public COLR v0 color glyphs. `@webgpu-text/font` now owns lazy bounded palette-zero COLR/CPAL resolution with immutable RGBA/current-foreground layers, and `@webgpu-text/three` expands those layers after unchanged layout into shared ordinary SDF slots and RGBA instances. The accepted emoji corpus passes deterministic integration, clean packed consumption, docs build, and actual unlit/planar-lit WebGPU evidence with alpha, reuse, recovery, and lifecycle coverage; COLR v1, bitmap, SVG, and automatic emoji preference remain deferred.
+- 2026-07-22: Shipped public COLR v0 color glyphs. `@text-rendering-toolkit/font` now owns lazy bounded palette-zero COLR/CPAL resolution with immutable RGBA/current-foreground layers, and `@text-rendering-toolkit/three-webgpu` expands those layers after unchanged layout into shared ordinary SDF slots and RGBA instances. The accepted emoji corpus passes deterministic integration, clean packed consumption, docs build, and actual unlit/planar-lit WebGPU evidence with alpha, reuse, recovery, and lifecycle coverage; COLR v1, bitmap, SVG, and automatic emoji preference remain deferred.
 - 2026-07-21: Validated the color-glyph boundary across reproducibly derived COLR v0, COLR v1, sbix, and SVG fixtures. Selected COLR v0 (46/50) for the first production increment, measured a working universal HarfBuzz color bridge at +31,884 WASM bytes, preferred a bounded COLR/CPAL reader, preserved `LayoutResult`, and rendered mixed monochrome/color text through actual Three WebGPU with shared reuse and semantic pixels. Color glyphs remain unshipped pending the scoped production follow-up.
 - 2026-07-21: Integrated the bounded Unicode line-break opportunity slice. `PreparedText` schema version 2 now carries immutable UTF-16 opportunities from pinned `linebreak@1.1.0` Unicode 13 data; raw composition provisionally lays out, exactly measures adjacent candidates, memoizes fragment shapes per call, and reshapes final lines. The pure resolved core accepts optional explicit opportunities while omission retains legacy whitespace behavior. CJK, punctuation, emoji/ZWJ/RI, mandatory controls, mixed bidi, Arabic boundary reshaping, clean-package, browser-module, and bounded performance evidence are covered. Browser-grade line breaking remains in progress because CSS/locale tailoring, dictionary segmentation, hyphenation, newer Unicode data, and complete parity are excluded.
 - 2026-07-21: Added explicit shared renderer resources. Independent lit and unlit `Text` objects can borrow one `TextResources`, reuse resource-local same-handle glyph/SDF work and stable slots, observe atlas growth without resynchronizing existing borrowers, and retain private convenience ownership by default. Actual Apple Metal WebGPU evidence grew a borrower through slot 43 with 0 changed pixels in the existing text. Public release work is paused; browser-grade line breaking is now the next priority, followed by color glyphs and browser-like decoration/paint.
 - 2026-07-21: Validated the first local package-family release candidate. All four tarballs pass packed-manifest/content audits and an external clean-consumer TypeScript/runtime check covering HarfBuzz WASM, multilingual preparation/layout, CPU SDF, and Three.js synchronization without workspace links. Publication remains blocked on package identity/scope, project license, public version, canonical metadata, npm access, and provenance decisions.
-- 2026-07-21: Implemented production renderer-neutral raw-text preparation in `@webgpu-text/layout`. Added reusable serializable `prepareText()`, explicit-font `layoutPreparedText()`, one-call `layoutText()`, pinned Unicode 13 bidi and Unicode 17 script dependencies, structured failures, lazy outlines, canonical multilingual conformance, clean-package validation, and browser ESM evidence while preserving caller font ownership and the existing resolved expert API.
+- 2026-07-21: Implemented production renderer-neutral raw-text preparation in `@text-rendering-toolkit/layout`. Added reusable serializable `prepareText()`, explicit-font `layoutPreparedText()`, one-call `layoutText()`, pinned Unicode 13 bidi and Unicode 17 script dependencies, structured failures, lazy outlines, canonical multilingual conformance, clean-package validation, and browser ESM evidence while preserving caller font ownership and the existing resolved expert API.
 - 2026-07-21: Reconciled the roadmap after archiving `validate-text-preparation-boundary`. All twelve OpenSpec changes are archived, no delivery change is active, and completed cards were cleared from **Now**. Production renderer-neutral raw-text preparation remains the leading **Next** candidate; no scope or priority pivot was inferred.
 - 2026-07-21: Validated renderer-neutral raw-text preparation over fifteen canonical cases. Accepted a reusable serializable `PreparedText` boundary, explicit caller-font fallback, `bidi-js@1.0.3`, Unicode 17 script data, and unchanged public HarfBuzz/layout composition; recorded that shaping dominates measured execution and deferred complete breaking/reshaping, bidi affinity, workers, fetching, emoji/color fonts, and batching.
 - 2026-07-21: Integrated construction-fixed planar standard-material text into the production Three package. Reused the existing renderer kernel, added constant normals and the proven visible-side SDF shadow mask, updated the public example and package consumer, and validated real Latin/Arabic lighting, glyph-shaped cast/receive shadows, a 14-to-15-glyph update, fallback rejection, and repeatable disposal on Apple Metal WebGPU.
 - 2026-07-21: Established `LayoutResult` as the reusable renderer-neutral handoff. Added per-glyph `fontUnitScale`, changed Three to accept completed layout, removed layout/selection execution and font-facts coupling from the renderer, and revalidated unchanged real-font multi-cell output on actual Apple Metal WebGPU.
 - 2026-07-21: Validated front-facing planar standard-material text and glyph-shaped cast/receive shadows on actual Apple Metal WebGPU. The public seam uses ordinary normals plus shared position/color/opacity nodes, a binary SDF shadow mask, and an explicit visible shadow side; production API and real-font integration remain the next bounded change.
-- 2026-07-21: Implemented resolved-input `@webgpu-text/three` with atomic promise synchronization, caller-owned structural font handles, lazy outline/SDF caching, per-object multi-cell RGBA atlas growth, instanced unlit TSL rendering, style colors, opacity, clipping, selections, disposal, clean package installation, a public-only example, and actual-WebGPU Latin/Arabic visual evidence on Three.js 0.185.1.
-- 2026-07-21: Implemented dependency-free `@webgpu-text/sdf` with typed numeric outlines, deterministic CPU distance generation, exact synthetic golden conformance, public-font interoperability, independent package validation, and attributed `webgl-sdf-generator@1.1.1` provenance. Workers, caching, atlases, GPU generation, and renderer orchestration remain separate work.
+- 2026-07-21: Implemented resolved-input `@text-rendering-toolkit/three-webgpu` with atomic promise synchronization, caller-owned structural font handles, lazy outline/SDF caching, per-object multi-cell RGBA atlas growth, instanced unlit TSL rendering, style colors, opacity, clipping, selections, disposal, clean package installation, a public-only example, and actual-WebGPU Latin/Arabic visual evidence on Three.js 0.185.1.
+- 2026-07-21: Implemented dependency-free `@text-rendering-toolkit/sdf` with typed numeric outlines, deterministic CPU distance generation, exact synthetic golden conformance, public-font interoperability, independent package validation, and attributed `webgl-sdf-generator@1.1.1` provenance. Workers, caching, atlases, GPU generation, and renderer orchestration remain separate work.
 - 2026-07-21: Implemented the pure resolved-run layout core with exact synthetic conformance, public-font seam coverage, validated ESM/type packaging, and explicit caller ownership of font-byte acquisition. Automatic itemization/fallback, complete Unicode line breaking, reshaping, workers, and bidi affinity remain follow-ups.
 - 2026-07-21: Validated the renderer-neutral layout-policy boundary with nineteen deterministic synthetic fixtures, eleven public-font runs, complete preserve/change classification, and an `old/`-independent handoff. Automatic itemization and production layout remain the next separate change.
-- 2026-07-20: Implemented standalone `@webgpu-text/font` with owned TTF/OTF input, font facts and coverage, explicit-run HarfBuzz shaping, operation-scoped variations, cached numeric outlines, deterministic disposal, package-install validation, and attributed vendored runtime/fixtures. The next bounded slice is layout-policy fixture capture.
+- 2026-07-20: Implemented standalone `@text-rendering-toolkit/font` with owned TTF/OTF input, font facts and coverage, explicit-run HarfBuzz shaping, operation-scoped variations, cached numeric outlines, deterministic disposal, package-install validation, and attributed vendored runtime/fixtures. The next bounded slice is layout-policy fixture capture.
 - 2026-07-20: Completed the actual-WebGPU rendering seam spike on Three.js 0.185.1 and Chrome for Testing 149. Validated instanced RGBA SDF rendering, semantic antialiasing/color/transform observations, post-render texture and attribute uploads, fallback rejection, and repeated disposal; bounded promotion to the renderer kernel and deferred multi-cell atlas evidence to its first production follow-up.
 - 2026-07-20: Completed the HarfBuzzjs validation spike. Confirmed exact cross-runtime shaping, UTF-16 clusters, variable-font facts, TTF/OTF support, and ESM workers; rejected direct WOFF/WOFF2 input, direct numeric outlines through published 1.4.0, and deterministic in-process disposal; selected normalized TTF/OTF input and worker termination as v1 boundaries.
 - 2026-07-20: Replaced the planned Typr-derived production backend with HarfBuzzjs; added a font-engine validation spike covering complex shaping, UTF-16 clusters, lazy numeric outlines, font formats, WASM lifecycle, and allocation behavior; retained Troika/Typr only as attributed references and fixture sources.
-- 2026-07-20: Resolved lazy outline access and renderer-owned atlas design; initially selected an attributed Typr-derived compatibility backend (superseded by the HarfBuzzjs decision above) and an attributed CPU-only port of `webgl-sdf-generator`; added `@webgpu-text/*` as the recommended naming scheme.
+- 2026-07-20: Resolved lazy outline access and renderer-owned atlas design; initially selected an attributed Typr-derived compatibility backend (superseded by the HarfBuzzjs decision above) and an attributed CPU-only port of `webgl-sdf-generator`; added `@text-rendering-toolkit/*` as the recommended naming scheme.
 - 2026-07-20: Reframed the target as four independently consumable packages—font, text layout, SDF, and Three WebGPU rendering—after auditing the actual module responsibilities and identifying `TextBuilder` as the principal coupling point.
 - 2026-07-20: Created. Committed to a WebGPU-only, strict-TypeScript, ESM-only package; prioritized the rendering seam before the behavioral port; explicitly deferred batching, lit materials, and compute SDF generation.

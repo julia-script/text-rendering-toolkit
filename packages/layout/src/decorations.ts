@@ -1,4 +1,4 @@
-import type { RgbaColor } from '@webgpu-text/font'
+import type { RgbaColor } from '@text-rendering-toolkit/font'
 import { getSelectionRects } from './selection.js'
 import type {
   DecorationBounds,

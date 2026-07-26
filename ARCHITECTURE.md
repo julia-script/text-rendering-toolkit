@@ -22,9 +22,9 @@ The most important deliberate departure is font shaping. Troika’s custom Typr-
 ## Implementation status
 
 The greenfield pnpm/Turborepo/Biome/Vitest baseline and all four first
-production cores are implemented and validated: `@webgpu-text/font`, resolved
-`@webgpu-text/layout`, CPU `@webgpu-text/sdf`, and layout-result
-`@webgpu-text/three`. The renderer consumes completed renderer-neutral layout,
+production cores are implemented and validated: `@text-rendering-toolkit/font`, resolved
+`@text-rendering-toolkit/layout`, CPU `@text-rendering-toolkit/sdf`, and layout-result
+`@text-rendering-toolkit/three-webgpu`. The renderer consumes completed renderer-neutral layout,
 caller-owned structural font handles,
 lazy numeric outlines, deterministic SDFs, private convenience resources or
 an explicitly shared growing RGBA atlas,
@@ -34,7 +34,7 @@ lifecycle.
 
 Automatic script/direction itemization, default Unicode 13 line-break
 opportunities, exact line-fragment reshaping, and explicit caller-font fallback
-are now production `@webgpu-text/layout` operations through `prepareText()`,
+are now production `@text-rendering-toolkit/layout` operations through `prepareText()`,
 `layoutPreparedText()`, and `layoutText()`. CSS/locale tailoring, dictionary
 segmentation, hyphenation, newer line-break data, bidi caret affinity, workers, atlas eviction,
 curved or configurable physical materials, and batching remain separate
@@ -128,10 +128,10 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    Font["@scope/font"]
-    Layout["@scope/text-layout"]
-    Sdf["@scope/sdf"]
-    Renderer["@scope/three-webgpu-text"]
+    Font["@text-rendering-toolkit/font"]
+    Layout["@text-rendering-toolkit/layout"]
+    Sdf["@text-rendering-toolkit/sdf"]
+    Renderer["@text-rendering-toolkit/three-webgpu"]
     Three["three/webgpu"]
     Bidi["bidi-js"]
     Script["Unicode Script data"]
@@ -158,16 +158,16 @@ The arrows are deliberately one-way. In particular:
 - `font` knows nothing about layout, workers, SDFs, browsers, or Three.js.
 - `text-layout` knows nothing about SDFs, atlases, GPU textures, or Three.js.
 - `sdf` knows nothing about fonts, text, layout, browsers, or Three.js.
-- `three-webgpu-text` is the only package that depends on Three.js or owns GPU resources.
+- `three-webgpu` is the only package that depends on Three.js or owns GPU resources.
 - No separate shared-types package is introduced. The tiny outline bridge is structural TypeScript data, avoiding a fifth package whose only job is to break dependency cycles.
 
 ## Naming direction
 
 The recommended descriptive naming scheme is:
 
-- Project and repository: **WebGPU Text** / `webgpu-text`
-- npm scope: `@webgpu-text`
-- Packages: `@webgpu-text/font`, `@webgpu-text/layout`, `@webgpu-text/sdf`, and `@webgpu-text/three`
+- Project and repository: **Text Rendering Toolkit** / `text-rendering-toolkit`
+- npm scope: `@text-rendering-toolkit`
+- Packages: `@text-rendering-toolkit/font`, `@text-rendering-toolkit/layout`, `@text-rendering-toolkit/sdf`, and `@text-rendering-toolkit/three-webgpu`
 
 The shorter package names work because the scope supplies the context. The umbrella name mentions WebGPU even though the lower packages are renderer-neutral; it describes the project that publishes them, not their runtime requirements. Registry checks found no currently published packages at those exact four names, but npm scope ownership still needs to be confirmed before treating the names as available.
 
@@ -175,7 +175,7 @@ Two reasonable alternatives are `@glyph-pipeline/*`, which is technically descri
 
 ## Package responsibilities
 
-### `@scope/font`
+### `@text-rendering-toolkit/font`
 
 **Purpose:** turn font bytes and Unicode text runs into reusable font facts, shaped glyphs, and outlines.
 
@@ -197,7 +197,7 @@ Two reasonable alternatives are `@glyph-pipeline/*`, which is technically descri
 
 The important correction from the old naming is that “font loading,” “font shaping,” and “outline access” are distinct public operations even though one internal HarfBuzz face supports all three. `FontHandle` is an operational handle, not a promise to expose HarfBuzz or a mutable JavaScript object graph of every font table. The name deliberately avoids collision with the browser’s global `FontFace` class. The implemented package accepts owned TTF/OTF bytes, shapes explicit directional/script runs, applies variations per operation, caches numeric outlines lazily, and disposes every owned HarfBuzz object deterministically.
 
-### `@scope/text-layout`
+### `@text-rendering-toolkit/layout`
 
 **Purpose:** turn styled Unicode text into positioned glyphs and interaction geometry.
 
@@ -229,12 +229,12 @@ This package is useful by itself for editors, DOM/canvas renderers, hit testing,
 
 Its policy boundary is fixed by three separate evidence layers: controlled
 synthetic resolved runs are the normative layout oracle, public
-`@webgpu-text/font` results prove the shaped-run seam, and normalized Troika
+`@text-rendering-toolkit/font` results prove the shaped-run seam, and normalized Troika
 observations explain which behavior is preserved or changed. Keeping those
 layers separate prevents a HarfBuzz/font revision from silently rewriting
 wrapping, alignment, caret, or selection policy.
 
-### `@scope/sdf`
+### `@text-rendering-toolkit/sdf`
 
 **Purpose:** convert arbitrary vector outlines into renderer-neutral signed-distance-field pixels.
 
@@ -254,7 +254,7 @@ wrapping, alignment, caret, or selection policy.
 
 The preserved `SDFGenerator.js` is mostly scheduling and WebGL/canvas integration. The implemented CPU encoder adapts only the MIT-licensed `webgl-sdf-generator@1.1.1` numeric behavior, preserves its copyright and license, and records the derivation in package and root notices. SVG parsing, WebGL, canvas, framebuffer, and worker paths are excluded.
 
-### `@scope/three-webgpu-text`
+### `@text-rendering-toolkit/three-webgpu`
 
 **Purpose:** render completed layout data as a convenient Three.js `WebGPURenderer` scene object.
 
@@ -300,10 +300,10 @@ The exact TypeScript names are provisional; the separation is not.
 ```mermaid
 sequenceDiagram
     participant App
-    participant Font as @scope/font
-    participant Layout as @scope/text-layout
-    participant SDF as @scope/sdf
-    participant Three as @scope/three-webgpu-text
+    participant Font as @text-rendering-toolkit/font
+    participant Layout as @text-rendering-toolkit/layout
+    participant SDF as @text-rendering-toolkit/sdf
+    participant Three as @text-rendering-toolkit/three-webgpu
     participant GPU as Three WebGPURenderer
 
     App->>App: acquire bytes by application policy
@@ -333,7 +333,7 @@ consume the same result and choose a different outline or raster strategy.
 ### Parse and shape a font only
 
 ```ts
-import { loadFont } from '@webgpu-text/font'
+import { loadFont } from '@text-rendering-toolkit/font'
 
 const font = await loadFont(await fontBytes.arrayBuffer())
 const run = font.shape({
@@ -350,7 +350,7 @@ font.dispose()
 ### Lay out text without rendering it
 
 ```ts
-import { layoutResolvedText } from '@webgpu-text/layout'
+import { layoutResolvedText } from '@text-rendering-toolkit/layout'
 
 // The application acquires bytes, selects fonts, itemizes, shapes, and scales
 // runs before this pure call. See packages/layout/README.md for the full shape.
@@ -361,7 +361,7 @@ The production package also supports reusable raw-text preparation without
 moving font acquisition into the package:
 
 ```ts
-import { layoutPreparedText, prepareText } from '@webgpu-text/layout'
+import { layoutPreparedText, prepareText } from '@text-rendering-toolkit/layout'
 
 const prepared = prepareText({
   text: 'Hello مرحبا',
@@ -378,7 +378,7 @@ const result = layoutPreparedText(prepared, fonts)
 ### Generate an SDF from an arbitrary outline
 
 ```ts
-import { generateSdf } from '@scope/sdf'
+import { generateSdf } from '@text-rendering-toolkit/sdf'
 
 const bitmap = generateSdf({
   outline,
@@ -392,7 +392,7 @@ const bitmap = generateSdf({
 ### Use the complete Three.js WebGPU layer
 
 ```ts
-import { Text } from '@scope/three-webgpu-text'
+import { Text } from '@text-rendering-toolkit/three-webgpu'
 
 const text = new Text({
   layout: layoutResolvedText(resolvedLayoutInput),
@@ -418,7 +418,7 @@ scene.add(text)
 │   ├── sdf/
 │   │   ├── src/
 │   │   └── test/
-│   └── three-webgpu-text/
+│   └── three-webgpu/
 │       ├── src/
 │       └── test/
 ├── examples/
@@ -451,21 +451,21 @@ The workspace can publish four packages from one repository and version them tog
 | `Typesetter.js` | `text-layout` | Split run shaping, line construction, bidi placement, result assembly, and interaction data while preserving fixtures |
 | `selectionUtils.js` | `text-layout` | Port as pure helpers over `LayoutResult` |
 | CPU behavior behind `SDFGenerator.js` | `sdf` | Port the MIT-licensed CPU encoder with its notice and golden fixtures; expose pure typed-array input/output; delete WebGL and canvas paths |
-| Atlas allocation currently in `TextBuilder.js` | `three-webgpu-text` | Own byte packing, cache policy, growth, dirty tracking, GPU residency, and texture lifecycle entirely in the renderer |
-| Layout invocation in `TextBuilder.js` | `three-webgpu-text` orchestration | Replace callbacks and globals with injected package APIs and promises |
-| Quad calculation in `TextBuilder.js` | `three-webgpu-text` | Derive render bounds from `LayoutResult` and atlas slots |
-| `GlyphsGeometry.js` | `three-webgpu-text` | Port instanced geometry and typed attributes |
-| `TextDerivedMaterial.js` | `three-webgpu-text` | Rewrite behavior in TSL; do not port GLSL injection machinery |
-| `Text.js` | `three-webgpu-text` | Redesign as the high-level façade with explicit ownership and disposal |
+| Atlas allocation currently in `TextBuilder.js` | `three-webgpu` | Own byte packing, cache policy, growth, dirty tracking, GPU residency, and texture lifecycle entirely in the renderer |
+| Layout invocation in `TextBuilder.js` | `three-webgpu` orchestration | Replace callbacks and globals with injected package APIs and promises |
+| Quad calculation in `TextBuilder.js` | `three-webgpu` | Derive render bounds from `LayoutResult` and atlas slots |
+| `GlyphsGeometry.js` | `three-webgpu` | Port instanced geometry and typed attributes |
+| `TextDerivedMaterial.js` | `three-webgpu` | Rewrite behavior in TSL; do not port GLSL injection machinery |
+| `Text.js` | `three-webgpu` | Redesign as the high-level façade with explicit ownership and disposal |
 | `BatchedText.js` | deferred renderer work | Revisit only after benchmarks establish the need |
 
 ## Worker and environment rules
 
 Workers are execution adapters, not a fifth domain package:
 
-- `text-layout` may expose `@scope/text-layout/worker` while keeping the synchronous engine usable in Node.js and tests.
-- `sdf` may expose `@scope/sdf/worker` while keeping the pure encoder callable directly.
-- `three-webgpu-text` chooses whether to use those worker adapters and owns cancellation/coalescing across an object’s `sync()` calls.
+- `text-layout` may expose `@text-rendering-toolkit/layout/worker` while keeping the synchronous engine usable in Node.js and tests.
+- `sdf` may expose `@text-rendering-toolkit/sdf/worker` while keeping the pure encoder callable directly.
+- `three-webgpu` chooses whether to use those worker adapters and owns cancellation/coalescing across an object’s `sync()` calls.
 - Lower-level packages must not reference `window`, `document`, canvas, WebGL, WebGPU, or Three.js at module evaluation time.
 - Worker messages carry public typed contracts or transferable typed arrays, not private class instances.
 
@@ -476,7 +476,7 @@ Each package gets tests at its own contract:
 - `font`: binary fixtures, metrics, coverage, Latin/Arabic/Indic/Khmer shaping clusters, advances, offsets, variation behavior, and numeric outlines; the spike also records WASM startup and repeated-shaping memory behavior.
 - `text-layout`: deterministic multilingual glyph placement, wrapping, bidi, bounds, carets, and selection fixtures.
 - `sdf`: golden pixel fixtures and encoding invariants, with no GPU required.
-- `three-webgpu-text`: atlas packing/growth invariants, browser-rendered visual fixtures, texture lifecycle tests, synchronization races, and disposal.
+- `three-webgpu`: atlas packing/growth invariants, browser-rendered visual fixtures, texture lifecycle tests, synchronization races, and disposal.
 
 Cross-package integration fixtures cover only the contracts between packages. This prevents renderer failures from being mistaken for parser failures and allows each lower layer to be validated without a GPU.
 
@@ -492,7 +492,7 @@ support remain unproven.
 ## Architectural rules for future changes
 
 1. A lower-level package cannot import a higher-level package.
-2. Only `three-webgpu-text` may import `three`.
+2. Only `three-webgpu` may import `three`.
 3. Only `text-layout` decides line placement, caret geometry, and visual fragmentation of source-ranged line decorations.
 4. Only `sdf` defines SDF encoding; only the renderer decodes it in TSL.
 5. Byte/handle input always works: applications can acquire font bytes by their own policy and pass them in. Any future URL/cache helper and workers are optional conveniences around pure operations, never prerequisites — fetching must never become the main or only path.
@@ -568,7 +568,7 @@ This keeps ordinary measurement, caret, and hit-testing use cases from paying ou
 
 ### Keep atlas ownership in the renderer
 
-`sdf` ends at `SdfBitmap`. `three-webgpu-text` owns allocation, channel packing, growth, dirty tracking, eviction, `DataTexture` upload, and disposal. This keeps the reusable SDF package small and lets renderer-specific performance work evolve without changing the SDF contract.
+`sdf` ends at `SdfBitmap`. `three-webgpu` owns allocation, channel packing, growth, dirty tracking, eviction, `DataTexture` upload, and disposal. This keeps the reusable SDF package small and lets renderer-specific performance work evolve without changing the SDF contract.
 
 ### Use the proven TSL/WebGPU rendering kernel
 
@@ -743,4 +743,4 @@ The CPU SDF implementation is derived from `webgl-sdf-generator@1.1.1`, whose [p
 
 ## Decisions still open
 
-- Whether to adopt the recommended `WebGPU Text` / `@webgpu-text/{font,layout,sdf,three}` naming scheme or choose one of the alternative scopes.
+- Whether to adopt the recommended `Text Rendering Toolkit` / `@text-rendering-toolkit/{font,layout,sdf,three}` naming scheme or choose one of the alternative scopes.

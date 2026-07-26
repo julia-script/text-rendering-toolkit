@@ -77,9 +77,9 @@ describe('lit WebGPU rendering seam resources', () => {
       expect(source).not.toMatch(prohibited)
     }
     expect(Object.keys(packageJson.dependencies).sort()).toEqual([
-      '@webgpu-text/font',
-      '@webgpu-text/layout',
-      '@webgpu-text/three',
+      '@text-rendering-toolkit/font',
+      '@text-rendering-toolkit/layout',
+      '@text-rendering-toolkit/three-webgpu',
       'three',
     ])
     expect(fileURLToPath(root)).toContain('experiments/webgpu-rendering-seam')

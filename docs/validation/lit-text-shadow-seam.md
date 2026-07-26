@@ -95,5 +95,5 @@ normal maps, environment maps, colored/transmitted shadows, strokes, outlines,
 or a public material-selection API.
 
 The evidence justifies a bounded follow-up for one dedicated planar standard
-material variant in `@webgpu-text/three`. That proposal must choose the public
+material variant in `@text-rendering-toolkit/three-webgpu`. That proposal must choose the public
 API and production lifecycle integration; this spike deliberately does not.

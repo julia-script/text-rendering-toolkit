@@ -3,7 +3,7 @@
  * Fumadocs.
  *
  * TypeDoc emits plain markdown with no frontmatter, scope-prefixed directories
- * (`@webgpu-text/layout`), and `.mdx`-suffixed relative links. Fumadocs needs
+ * (`@text-rendering-toolkit/layout`), and `.mdx`-suffixed relative links. Fumadocs needs
  * frontmatter for titles and search, dislikes `@` in route segments, and
  * resolves links without the file extension. This script runs TypeDoc into a
  * staging directory, rewrites the tree there, and swaps it into place once it
@@ -18,10 +18,17 @@ import { resolve } from 'node:path'
 
 const appRoot = resolve(import.meta.dirname, '..')
 const apiRoot = resolve(appRoot, 'content/docs/api')
-const scope = '@webgpu-text'
+const scope = '@text-rendering-toolkit'
 
 /** Package slugs in the order they should appear in the sidebar. */
 const packages = ['font', 'layout', 'sdf', 'three'] as const
+
+const packageNames: Record<(typeof packages)[number], string> = {
+  font: 'font',
+  layout: 'layout',
+  sdf: 'sdf',
+  three: 'three-webgpu',
+}
 
 /** Human-facing titles and blurbs for each generated package section. */
 const packageMeta: Record<(typeof packages)[number], { title: string; description: string }> = {
@@ -73,10 +80,10 @@ rmSync(stageRoot, { force: true, recursive: true })
 execFileSync('npx', ['typedoc', '--out', stageRoot], { cwd: appRoot, stdio: 'inherit' })
 
 // TypeDoc nests packages under the npm scope; Fumadocs routes read better
-// without an "@webgpu-text" segment, so lift each package up one level.
+// without an "@text-rendering-toolkit" segment, so lift each package up one level.
 const scopeRoot = resolve(stageRoot, scope)
 for (const name of packages) {
-  renameSync(resolve(scopeRoot, name), resolve(stageRoot, name))
+  renameSync(resolve(scopeRoot, packageNames[name]), resolve(stageRoot, name))
 }
 rmSync(scopeRoot, { force: true, recursive: true })
 rmSync(resolve(stageRoot, '_media'), { force: true, recursive: true })
@@ -125,7 +132,10 @@ For task-oriented documentation, start with [Packages](/docs/packages); this
 section is the exhaustive surface.
 
 ${packages
-  .map((name) => `- [\`${scope}/${name}\`](/docs/api/${name}) — ${packageMeta[name].description}`)
+  .map(
+    (name) =>
+      `- [\`${scope}/${packageNames[name]}\`](/docs/api/${name}) — ${packageMeta[name].description}`,
+  )
   .join('\n')}
 `,
 )

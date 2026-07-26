@@ -6,7 +6,7 @@ import {
   layoutResolvedText,
   type ResolvedLayoutInput,
   validateLayoutFixtureDocument,
-} from '@webgpu-text/layout'
+} from '@text-rendering-toolkit/layout'
 import { describe, expect, test } from 'vitest'
 
 const fixtureUrl = new URL('../../../test-fixtures/layout/policy-fixtures.json', import.meta.url)

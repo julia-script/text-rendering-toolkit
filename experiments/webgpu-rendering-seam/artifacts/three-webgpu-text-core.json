@@ -75,7 +75,12 @@
     "lit": true,
     "metalness": 0,
     "roughness": 0.9,
-    "publicNodes": ["positionNode", "colorNode", "opacityNode", "maskShadowNode"]
+    "publicNodes": [
+      "positionNode",
+      "colorNode",
+      "opacityNode",
+      "maskShadowNode"
+    ]
   },
   "fixtureFonts": "NotoSans-wdth-wght.ttf + NotoSansArabic-wdth-wght.ttf",
   "frameSha256": "b18a2f7f0e0e65eb228aa168105ad548e29a537503a193a9f03d1076d1d13de8"

@@ -146,10 +146,10 @@ scalable, so layout font size changes geometry scale and need not duplicate the
 underlying layer SDF. The foreground sentinel must use the style's effective
 foreground rather than CPAL bytes.
 
-`@webgpu-text/font` owns validation and COLR/CPAL interpretation. It must not
-expose arbitrary tables or HarfBuzz pointers. `@webgpu-text/layout` owns no
-color data and stays unchanged. `@webgpu-text/sdf` stays unchanged and receives
-ordinary layer outlines. `@webgpu-text/three` owns layer expansion/composition,
+`@text-rendering-toolkit/font` owns validation and COLR/CPAL interpretation. It must not
+expose arbitrary tables or HarfBuzz pointers. `@text-rendering-toolkit/layout` owns no
+color data and stays unchanged. `@text-rendering-toolkit/sdf` stays unchanged and receives
+ordinary layer outlines. `@text-rendering-toolkit/three-webgpu` owns layer expansion/composition,
 shared resource reuse, material color, failure atomicity, and GPU disposal.
 
 ## Deliberately unsupported
@@ -186,12 +186,12 @@ the monochrome atlas path.
 ## Reproduction
 
 ```sh
-pnpm --filter @webgpu-text/color-glyph-boundary-experiment fixtures:acquire
-pnpm --filter @webgpu-text/color-glyph-boundary-experiment bridge:build
-pnpm --filter @webgpu-text/color-glyph-boundary-experiment observations:record
-pnpm --filter @webgpu-text/color-glyph-boundary-experiment test
-pnpm --filter @webgpu-text/color-glyph-boundary-experiment test:browser
-pnpm --filter @webgpu-text/color-glyph-boundary-experiment typecheck
+pnpm --filter @text-rendering-toolkit/color-glyph-boundary-experiment fixtures:acquire
+pnpm --filter @text-rendering-toolkit/color-glyph-boundary-experiment bridge:build
+pnpm --filter @text-rendering-toolkit/color-glyph-boundary-experiment observations:record
+pnpm --filter @text-rendering-toolkit/color-glyph-boundary-experiment test
+pnpm --filter @text-rendering-toolkit/color-glyph-boundary-experiment test:browser
+pnpm --filter @text-rendering-toolkit/color-glyph-boundary-experiment typecheck
 ```
 
 The bridge build needs Git, Emscripten, and network access. Fixture generation

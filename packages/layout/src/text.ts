@@ -1,4 +1,4 @@
-import type { FontHandle } from '@webgpu-text/font'
+import type { FontHandle } from '@text-rendering-toolkit/font'
 import { TextPreparationError } from './errors.js'
 import { isMandatoryBreakControl } from './internal/break-controls.js'
 import { layoutResolvedText } from './layout.js'

@@ -1,5 +1,5 @@
 import { readFile, writeFile } from 'node:fs/promises'
-import { type FontHandle, loadFont } from '@webgpu-text/font'
+import { type FontHandle, loadFont } from '@text-rendering-toolkit/font'
 import { canonicalPreparationFixtureJson, validatePreparationFixtureDocument } from './fixture.js'
 import { prepareText } from './prepare.js'
 import { layoutPreparedText } from './resolve.js'

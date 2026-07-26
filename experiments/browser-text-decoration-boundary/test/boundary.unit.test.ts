@@ -1,4 +1,4 @@
-import type { LayoutResult } from '@webgpu-text/layout'
+import type { LayoutResult } from '@text-rendering-toolkit/layout'
 import { describe, expect, test } from 'vitest'
 
 import {

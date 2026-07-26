@@ -3,11 +3,11 @@ title: SDF
 description: Convert a numeric outline into a deterministic one-channel signed-distance bitmap on the CPU.
 ---
 
-`@webgpu-text/sdf` is independent of fonts, text, canvases, and renderers. Give it an outline, a view
+`@text-rendering-toolkit/sdf` is independent of fonts, text, canvases, and renderers. Give it an outline, a view
 box, output dimensions, and encoding parameters; it returns an `SdfBitmap` containing a typed array.
 
 ```ts
-import { generateSdf } from '@webgpu-text/sdf'
+import { generateSdf } from '@text-rendering-toolkit/sdf'
 
 const bitmap = generateSdf({
   outline,

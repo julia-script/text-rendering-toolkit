@@ -1,7 +1,7 @@
 'use client'
 
-import { layoutText } from '@webgpu-text/layout'
-import { Text, TextResources } from '@webgpu-text/three'
+import { layoutText } from '@text-rendering-toolkit/layout'
+import { Text, TextResources } from '@text-rendering-toolkit/three-webgpu'
 import { useEffect, useRef, useState } from 'react'
 import { Color, OrthographicCamera, Scene, WebGPURenderer } from 'three/webgpu'
 import { errorMessage, loadDemoFonts } from './demo-fonts'

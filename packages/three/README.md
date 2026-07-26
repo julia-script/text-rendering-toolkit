@@ -1,4 +1,4 @@
-# `@webgpu-text/three`
+# `@text-rendering-toolkit/three-webgpu`
 
 Resolved text rendering for Three.js `WebGPURenderer`, using instanced TSL
 materials and private or explicitly shared renderer resources.
@@ -10,9 +10,9 @@ acquisition, itemization, font selection, shaping, and layout. Pass a completed
 renderer-neutral `LayoutResult` and a map of caller-owned `FontHandle` values:
 
 ```ts
-import { loadFont } from '@webgpu-text/font'
-import { getSelectionRects, layoutResolvedText } from '@webgpu-text/layout'
-import { Text, TextResources } from '@webgpu-text/three'
+import { loadFont } from '@text-rendering-toolkit/font'
+import { getSelectionRects, layoutResolvedText } from '@text-rendering-toolkit/layout'
+import { Text, TextResources } from '@text-rendering-toolkit/three-webgpu'
 
 const response = await fetch('/fonts/NotoSans-Regular.ttf')
 const font = await loadFont(await response.arrayBuffer())
@@ -125,7 +125,7 @@ Calls queued in the same microtask share one promise and commit only the newest
 captured state. A failed update rejects without replacing the last successfully
 rendered state. `layoutResult` is `null` before the first successful sync and is
 the exact renderer-neutral result committed by that sync. Selection and other
-interaction policy remain direct `@webgpu-text/layout` operations.
+interaction policy remain direct `@text-rendering-toolkit/layout` operations.
 
 ## Shared resources and ownership
 
@@ -159,7 +159,7 @@ Color layers use the same monochrome SDF cache and atlas; their palette or foreg
 
 ## Supported now
 
-- completed multilingual `LayoutResult` data from `@webgpu-text/layout`;
+- completed multilingual `LayoutResult` data from `@text-rendering-toolkit/layout`;
 - lazy numeric outlines from structurally compatible public font handles;
 - ordered COLR v0 palette-zero layers, CPAL alpha, current foreground, and ordinary fallback;
 - deterministic CPU SDF generation and private or explicitly shared RGBA atlas growth;
@@ -181,7 +181,7 @@ UMD, or Troika API compatibility.
 ## Validation
 
 ```sh
-pnpm --filter @webgpu-text/three test
+pnpm --filter @text-rendering-toolkit/three-webgpu test
 pnpm --dir experiments/webgpu-rendering-seam test:browser -- production-text.browser.test.ts
 ```
 

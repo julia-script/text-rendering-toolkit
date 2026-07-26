@@ -1,5 +1,5 @@
 {
-  "name": "@webgpu-text/docs",
+  "name": "@text-rendering-toolkit/docs",
   "version": "0.0.0-private",
   "private": true,
   "type": "module",
@@ -14,10 +14,10 @@
     "api": "node scripts/build-api-reference.ts"
   },
   "dependencies": {
-    "@webgpu-text/font": "workspace:^",
-    "@webgpu-text/layout": "workspace:^",
-    "@webgpu-text/sdf": "workspace:^",
-    "@webgpu-text/three": "workspace:^",
+    "@text-rendering-toolkit/font": "workspace:^",
+    "@text-rendering-toolkit/layout": "workspace:^",
+    "@text-rendering-toolkit/sdf": "workspace:^",
+    "@text-rendering-toolkit/three-webgpu": "workspace:^",
     "fumadocs-core": "16.11.5",
     "fumadocs-mdx": "15.2.0",
     "fumadocs-ui": "16.11.5",

@@ -1,4 +1,4 @@
-# `@webgpu-text/sdf`
+# `@text-rendering-toolkit/sdf`
 
 Pure, synchronous CPU signed-distance-field generation from numeric vector
 outlines. The package is strict TypeScript, ESM-only, independently installable,
@@ -7,7 +7,7 @@ and has no production dependencies or browser globals.
 ## Usage
 
 ```ts
-import { generateSdf, SdfCommand } from '@webgpu-text/sdf'
+import { generateSdf, SdfCommand } from '@text-rendering-toolkit/sdf'
 
 const bitmap = generateSdf({
   outline: {
@@ -54,7 +54,7 @@ units. Quadratic and cubic curves use the pinned deterministic subdivision
 policy. Multiple contours use non-zero winding, so reversing an inner contour
 creates a hole. Empty or fully degenerate geometry returns all-zero pixels.
 
-Public `@webgpu-text/font` `GlyphOutline` objects are structurally compatible:
+Public `@text-rendering-toolkit/font` `GlyphOutline` objects are structurally compatible:
 
 ```ts
 const outline = font.getOutline(glyphId, variations)

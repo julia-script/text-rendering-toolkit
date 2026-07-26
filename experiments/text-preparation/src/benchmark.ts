@@ -1,6 +1,6 @@
 import { readFile, writeFile } from 'node:fs/promises'
 import { performance } from 'node:perf_hooks'
-import { type FontHandle, loadFont } from '@webgpu-text/font'
+import { type FontHandle, loadFont } from '@text-rendering-toolkit/font'
 import { prepareText } from './prepare.js'
 import { layoutPreparedText, layoutText } from './resolve.js'
 import type { PreparationFixtureDocument } from './types.js'

@@ -1,5 +1,5 @@
 {
-  "name": "@webgpu-text/harfbuzz-font-engine-experiment",
+  "name": "@text-rendering-toolkit/harfbuzz-font-engine-experiment",
   "version": "0.0.0-private",
   "private": true,
   "type": "module",

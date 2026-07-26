@@ -1,4 +1,4 @@
-# Third-party notices for `@webgpu-text/font`
+# Third-party notices for `@text-rendering-toolkit/font`
 
 ## HarfBuzzjs 1.4.0
 

@@ -1,6 +1,6 @@
-import { type FontHandle, loadFont } from '@webgpu-text/font'
-import { layoutResolvedText, type ResolvedLayoutInput } from '@webgpu-text/layout'
-import { Text, TextResources } from '@webgpu-text/three'
+import { type FontHandle, loadFont } from '@text-rendering-toolkit/font'
+import { layoutResolvedText, type ResolvedLayoutInput } from '@text-rendering-toolkit/layout'
+import { Text, TextResources } from '@text-rendering-toolkit/three-webgpu'
 import {
   AmbientLight,
   Color,
@@ -86,7 +86,7 @@ async function start(canvas: HTMLCanvasElement) {
   camera.position.z = 3
   const resources = new TextResources({ sdfSize: 64, sdfPadding: 0.125 })
   const title = new Text({
-    layout: layoutResolvedText(resolveSingleRun(font, 'WebGPU Text', 0.45)),
+    layout: layoutResolvedText(resolveSingleRun(font, 'Text Rendering Toolkit', 0.45)),
     fonts: new Map([['body', font]]),
     resources,
     lit: true,

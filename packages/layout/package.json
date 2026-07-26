@@ -1,11 +1,35 @@
 {
-  "name": "@webgpu-text/layout",
-  "version": "0.0.0",
-  "private": true,
+  "name": "@text-rendering-toolkit/layout",
+  "version": "0.1.0",
+  "description": "Renderer-neutral multilingual text preparation, layout, carets, selections, and decorations.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/julia-script/text-rendering-toolkit.git",
+    "directory": "packages/layout"
+  },
+  "homepage": "https://github.com/julia-script/text-rendering-toolkit#readme",
+  "bugs": {
+    "url": "https://github.com/julia-script/text-rendering-toolkit/issues"
+  },
+  "keywords": [
+    "text-rendering",
+    "typography",
+    "text-layout",
+    "unicode",
+    "bidi",
+    "line-breaking",
+    "carets"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "type": "module",
   "files": [
     "dist",
     "README.md",
+    "LICENSE",
     "THIRD_PARTY_NOTICES.md"
   ],
   "exports": {
@@ -21,7 +45,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@webgpu-text/font": "workspace:^",
+    "@text-rendering-toolkit/font": "workspace:^",
     "bidi-js": "1.0.3",
     "linebreak": "1.1.0",
     "unicode-script": "1.2.0"

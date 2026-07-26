@@ -6,7 +6,7 @@ description: Load caller-owned font bytes and turn raw multilingual text into po
 Install only the layers you need. This first example needs the font and layout packages:
 
 ```sh
-pnpm add @webgpu-text/font @webgpu-text/layout
+pnpm add @text-rendering-toolkit/font @text-rendering-toolkit/layout
 ```
 
 ## Bring your own bytes
@@ -15,8 +15,8 @@ The font package does not fetch URLs. Your application decides whether font byte
 `fetch`, a file picker, a database, or an application cache.
 
 ```ts
-import { loadFont } from '@webgpu-text/font'
-import { layoutText } from '@webgpu-text/layout'
+import { loadFont } from '@text-rendering-toolkit/font'
+import { layoutText } from '@text-rendering-toolkit/layout'
 
 const response = await fetch('/fonts/NotoSans-wdth-wght.ttf')
 if (!response.ok) throw new Error(`Font request failed: ${response.status}`)
@@ -42,7 +42,7 @@ font.dispose()
 ```
 
 `layout` is ordinary renderer-neutral data. You can inspect it, cache it, send it to your own
-renderer, or pass it to `@webgpu-text/three`.
+renderer, or pass it to `@text-rendering-toolkit/three-webgpu`.
 
 ## Next
 

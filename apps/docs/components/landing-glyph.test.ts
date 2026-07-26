@@ -1,4 +1,4 @@
-import { OutlineCommand } from '@webgpu-text/font'
+import { OutlineCommand } from '@text-rendering-toolkit/font'
 import { describe, expect, it } from 'vitest'
 import { outlineGeometry } from './outline-path'
 

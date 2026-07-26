@@ -3,11 +3,11 @@ title: Font
 description: Parse caller-owned bytes, shape explicit runs, inspect coverage, and request outlines.
 ---
 
-`@webgpu-text/font` owns one HarfBuzz-backed font handle. It accepts bytes—not a URL—and exposes
+`@text-rendering-toolkit/font` owns one HarfBuzz-backed font handle. It accepts bytes—not a URL—and exposes
 font facts, coverage checks, shaping, and lazy glyph outlines.
 
 ```ts
-import { loadFont } from '@webgpu-text/font'
+import { loadFont } from '@text-rendering-toolkit/font'
 
 const font = await loadFont(bytes)
 const shaped = font.shape({

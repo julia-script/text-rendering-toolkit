@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { type GlyphOutline, loadFont, OutlineCommand } from '@webgpu-text/font'
+import { type GlyphOutline, loadFont, OutlineCommand } from '@text-rendering-toolkit/font'
 import { expect, test } from 'vitest'
 import { generateSdf, type SdfOutline } from '../src/index.js'
 

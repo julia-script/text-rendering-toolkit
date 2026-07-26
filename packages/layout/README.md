@@ -1,4 +1,4 @@
-# `@webgpu-text/layout`
+# `@text-rendering-toolkit/layout`
 
 Pure, renderer-neutral preparation and layout of raw text or already resolved
 shaped runs. The package is strict TypeScript and ESM-only. It has no font
@@ -11,14 +11,14 @@ Applications acquire font bytes however they want and keep ownership of every
 `FontHandle`. The layout package only receives an explicit key-to-handle map:
 
 ```ts
-import { loadFont } from '@webgpu-text/font'
+import { loadFont } from '@text-rendering-toolkit/font'
 import {
   deriveTextDecorations,
   getSelectionRects,
   layoutPreparedText,
   layoutText,
   prepareText,
-} from '@webgpu-text/layout'
+} from '@text-rendering-toolkit/layout'
 
 const latin = await loadFont(latinBytes)
 const arabic = await loadFont(arabicBytes)
@@ -81,8 +81,8 @@ require rerunning the canonical corpus.
 ## Expert resolved-run usage
 
 ```ts
-import { getSelectionRects, layoutResolvedText } from '@webgpu-text/layout'
-import type { ResolvedLayoutInput } from '@webgpu-text/layout'
+import { getSelectionRects, layoutResolvedText } from '@text-rendering-toolkit/layout'
+import type { ResolvedLayoutInput } from '@text-rendering-toolkit/layout'
 
 const input: ResolvedLayoutInput = {
   text: 'Hi',
@@ -160,7 +160,7 @@ whitespace policy. The resolved core remains pure and does not import
 `layoutResolvedText()` deliberately starts after font acquisition, font
 selection, fallback, script/direction itemization, and shaping. The application
 obtains font bytes by any mechanism it chooses, passes those bytes to
-`@webgpu-text/font`, and translates shaped runs into `ResolvedShapedRun`
+`@text-rendering-toolkit/font`, and translates shaped runs into `ResolvedShapedRun`
 values. Neither core package accepts a URL or calls `fetch`.
 
 Font facts and shaped glyph measurements are in font units. Scale them exactly

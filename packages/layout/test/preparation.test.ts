@@ -1,6 +1,11 @@
 import { createHash } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
-import { type FontHandle, loadFont, type ShapedRun, type ShapeInput } from '@webgpu-text/font'
+import {
+  type FontHandle,
+  loadFont,
+  type ShapedRun,
+  type ShapeInput,
+} from '@text-rendering-toolkit/font'
 import {
   type FontRegistry,
   getSelectionRects,
@@ -12,7 +17,7 @@ import {
   type PrepareTextInput,
   prepareText,
   TextPreparationError,
-} from '@webgpu-text/layout'
+} from '@text-rendering-toolkit/layout'
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 
 interface ExpectedError {

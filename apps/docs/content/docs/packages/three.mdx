@@ -3,11 +3,11 @@ title: Three.js WebGPU
 description: Render LayoutResult values with private or explicitly shared Three.js resources.
 ---
 
-`@webgpu-text/three` is the optional renderer frontend. It accepts completed layout data and a map
+`@text-rendering-toolkit/three-webgpu` is the optional renderer frontend. It accepts completed layout data and a map
 of font handles that can provide outlines.
 
 ```ts
-import { Text, TextResources } from '@webgpu-text/three'
+import { Text, TextResources } from '@text-rendering-toolkit/three-webgpu'
 
 const resources = new TextResources({ sdfSize: 64, sdfPadding: 0.125 })
 const text = new Text({
@@ -50,7 +50,7 @@ never becomes visible. A rejected update leaves the last frame intact. `sdfPaddi
 em units and controls physical reserve, while `sdfSize` independently controls resolution. Public
 font handles already expose the required `facts.unitsPerEm`.
 
-COLR v0 layers from `@webgpu-text/font` are expanded only inside renderer resource planning. Their
+COLR v0 layers from `@text-rendering-toolkit/font` are expanded only inside renderer resource planning. Their
 ordinary outlines share the same monochrome SDF atlas, while palette-zero RGBA and current
 foreground remain per-instance appearance. The committed `LayoutResult` stays unchanged. Fonts
 without supported layers fall back to the base outline, and caller-supplied `fontKeys` order—not the

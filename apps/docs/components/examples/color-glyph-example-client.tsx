@@ -1,6 +1,10 @@
 'use client'
 
-import { type ColorGlyphPaint, type GlyphOutline, OutlineCommand } from '@webgpu-text/font'
+import {
+  type ColorGlyphPaint,
+  type GlyphOutline,
+  OutlineCommand,
+} from '@text-rendering-toolkit/font'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { errorMessage } from './demo-fonts'
 import { ExampleFrame } from './example-frame'

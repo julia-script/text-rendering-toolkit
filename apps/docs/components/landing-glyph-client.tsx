@@ -1,6 +1,11 @@
 'use client'
 
-import { type GlyphBounds, type GlyphOutline, loadFont, OutlineCommand } from '@webgpu-text/font'
+import {
+  type GlyphBounds,
+  type GlyphOutline,
+  loadFont,
+  OutlineCommand,
+} from '@text-rendering-toolkit/font'
 import type { CSSProperties } from 'react'
 import { useEffect, useState } from 'react'
 import { type OutlineGeometry, outlineGeometry } from './outline-path'
@@ -60,10 +65,10 @@ export function LandingGlyph() {
   return (
     <figure
       className="type-specimen live-specimen"
-      aria-label={`Live outlines for WebGPU Text: ${glyphs.length} glyphs, ${commands} path commands, ${contours} contours, ${controls} Bézier controls`}
+      aria-label={`Live outlines for Text Rendering Toolkit: ${glyphs.length} glyphs, ${commands} path commands, ${contours} contours, ${controls} Bézier controls`}
     >
       <div className="specimen-meta">
-        <span>LIVE / @webgpu-text/font</span>
+        <span>LIVE / @text-rendering-toolkit/font</span>
         <span>WEBGPU TEXT / NUMERIC OUTLINES</span>
       </div>
       <div className="curve-legend" aria-hidden="true">
@@ -78,7 +83,7 @@ export function LandingGlyph() {
       <svg
         className="landing-glyph"
         role="img"
-        aria-label="Animated WebGPU Text outlines with curve handles on the letter G"
+        aria-label="Animated Text Rendering Toolkit outlines with curve handles on the letter G"
         viewBox={viewBox}
       >
         <rect

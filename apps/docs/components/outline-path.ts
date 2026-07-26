@@ -1,4 +1,4 @@
-import { type GlyphOutline, OutlineCommand } from '@webgpu-text/font'
+import { type GlyphOutline, OutlineCommand } from '@text-rendering-toolkit/font'
 
 export interface OutlinePoint {
   readonly x: number

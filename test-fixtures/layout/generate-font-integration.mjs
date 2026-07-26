@@ -143,7 +143,7 @@ try {
 const manifest = await readFile(manifestUrl)
 const document = {
   schemaVersion: 1,
-  source: '@webgpu-text/font public entry point',
+  source: '@text-rendering-toolkit/font public entry point',
   fontManifest: {
     file: 'test-fixtures/fonts/harfbuzz-validation/fixtures.json',
     sha256: createHash('sha256').update(manifest).digest('hex'),

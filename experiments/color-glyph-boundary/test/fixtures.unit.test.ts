@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { loadFont } from '@webgpu-text/font'
+import { loadFont } from '@text-rendering-toolkit/font'
 import { describe, expect, test } from 'vitest'
 import { COLOR_FORMATS, type FixtureEvidence, validateObservation } from '../src/schema.js'
 import {

@@ -36,6 +36,7 @@ interface PackageManifest {
   readonly name: string
   readonly version: string
   readonly private?: boolean
+  readonly description?: unknown
   readonly exports?: Readonly<Record<string, unknown>>
   readonly dependencies?: Readonly<Record<string, string>>
   readonly optionalDependencies?: Readonly<Record<string, string>>
@@ -43,6 +44,9 @@ interface PackageManifest {
   readonly repository?: unknown
   readonly homepage?: unknown
   readonly license?: unknown
+  readonly bugs?: unknown
+  readonly keywords?: unknown
+  readonly publishConfig?: unknown
 }
 
 interface PackageEvidence {
@@ -95,6 +99,12 @@ const workspaceRoot = resolve(validationRoot, '..')
 const candidateRoot = resolve(workspaceRoot, '.release-candidate')
 const archiveRoot = resolve(candidateRoot, 'packages')
 const packageIds: readonly PackageId[] = ['font', 'layout', 'sdf', 'three']
+const packageNames: Readonly<Record<PackageId, string>> = {
+  font: '@text-rendering-toolkit/font',
+  layout: '@text-rendering-toolkit/layout',
+  sdf: '@text-rendering-toolkit/sdf',
+  three: '@text-rendering-toolkit/three-webgpu',
+}
 const fontFixtures = resolve(workspaceRoot, 'test-fixtures/fonts/harfbuzz-validation')
 const colorFontFixtures = resolve(workspaceRoot, 'test-fixtures/fonts/color-glyph-validation')
 const expectedFiles: Readonly<Record<PackageId, readonly string[]>> = {
@@ -103,17 +113,19 @@ const expectedFiles: Readonly<Record<PackageId, readonly string[]>> = {
     'dist/index.d.ts',
     'dist/internal/vendor/harfbuzz.wasm',
     'README.md',
+    'LICENSE',
     'THIRD_PARTY_NOTICES.md',
   ],
-  layout: ['dist/index.js', 'dist/index.d.ts', 'README.md', 'THIRD_PARTY_NOTICES.md'],
+  layout: ['dist/index.js', 'dist/index.d.ts', 'README.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md'],
   sdf: [
     'dist/index.js',
     'dist/index.d.ts',
     'README.md',
+    'LICENSE',
     'THIRD_PARTY_NOTICES.md',
     'LICENSE.webgl-sdf-generator.txt',
   ],
-  three: ['dist/index.js', 'dist/index.d.ts', 'README.md'],
+  three: ['dist/index.js', 'dist/index.d.ts', 'README.md', 'LICENSE'],
 }
 
 function command(executable: string, args: readonly string[], cwd = workspaceRoot): string {
@@ -218,7 +230,7 @@ function auditPackages(packages: readonly PackedPackage[]): void {
 
   for (const packed of packages) {
     const { evidence, manifest } = packed
-    assert(evidence.name === `@webgpu-text/${evidence.id}`, `${evidence.id} has an unexpected name`)
+    assert(evidence.name === packageNames[evidence.id], `${evidence.id} has an unexpected name`)
     assert(
       manifest.name === evidence.name,
       `${evidence.name} pack metadata does not match its manifest`,
@@ -226,6 +238,48 @@ function auditPackages(packages: readonly PackedPackage[]): void {
     assert(
       manifest.version === evidence.version,
       `${evidence.name} pack metadata does not match its version`,
+    )
+    assert(manifest.private !== true, `${evidence.name} is still private`)
+    assert(
+      typeof manifest.description === 'string' && manifest.description.length > 0,
+      `${evidence.name} has no description`,
+    )
+    assert(manifest.license === 'MIT', `${evidence.name} does not declare MIT`)
+    assert(
+      manifest.homepage === 'https://github.com/julia-script/text-rendering-toolkit#readme',
+      `${evidence.name} has an unexpected homepage`,
+    )
+    assert(
+      manifest.repository !== null &&
+        typeof manifest.repository === 'object' &&
+        'type' in manifest.repository &&
+        manifest.repository.type === 'git' &&
+        'url' in manifest.repository &&
+        manifest.repository.url ===
+          'git+https://github.com/julia-script/text-rendering-toolkit.git' &&
+        'directory' in manifest.repository &&
+        manifest.repository.directory === `packages/${evidence.id}`,
+      `${evidence.name} has unexpected repository metadata`,
+    )
+    assert(
+      manifest.bugs !== null &&
+        typeof manifest.bugs === 'object' &&
+        'url' in manifest.bugs &&
+        manifest.bugs.url === 'https://github.com/julia-script/text-rendering-toolkit/issues',
+      `${evidence.name} has an unexpected issue tracker`,
+    )
+    assert(
+      Array.isArray(manifest.keywords) && manifest.keywords.length > 0,
+      `${evidence.name} has no search keywords`,
+    )
+    assert(
+      manifest.publishConfig !== null &&
+        typeof manifest.publishConfig === 'object' &&
+        'access' in manifest.publishConfig &&
+        manifest.publishConfig.access === 'public' &&
+        'provenance' in manifest.publishConfig &&
+        manifest.publishConfig.provenance === true,
+      `${evidence.name} does not request public npm access and provenance`,
     )
 
     const exported = rootExport(manifest)
@@ -263,7 +317,7 @@ function installConsumer(packages: readonly PackedPackage[], consumer: string): 
     resolve(consumer, 'package.json'),
     `${JSON.stringify(
       {
-        name: 'webgpu-text-release-candidate-consumer',
+        name: 'text-rendering-toolkit-release-candidate-consumer',
         private: true,
         type: 'module',
         dependencies: { ...dependencies, three: '0.185.1' },
@@ -311,7 +365,10 @@ function installConsumer(packages: readonly PackedPackage[], consumer: string): 
     assert(!isInside(realWorkspace, installed), `${manifest.name} resolved from the workspace`)
   }
   const wasm = realpathSync(
-    resolve(consumer, 'node_modules/@webgpu-text/font/dist/internal/vendor/harfbuzz.wasm'),
+    resolve(
+      consumer,
+      'node_modules/@text-rendering-toolkit/font/dist/internal/vendor/harfbuzz.wasm',
+    ),
   )
   assert(isInside(realConsumer, wasm), 'HarfBuzz WASM resolved outside the isolated consumer')
 }
@@ -319,35 +376,16 @@ function installConsumer(packages: readonly PackedPackage[], consumer: string): 
 function publicationGates(): readonly PublicationGate[] {
   return [
     {
-      id: 'package-names-and-scope',
-      status: 'blocked',
-      reason: 'Final package names and ownership of the @webgpu-text npm scope are unverified.',
-    },
-    {
-      id: 'project-license',
-      status: 'blocked',
-      reason: "The owner has not selected the license for this project's original code.",
-    },
-    {
-      id: 'public-version',
-      status: 'blocked',
-      reason: 'The coordinated package version remains the private placeholder 0.0.0.',
-    },
-    {
-      id: 'canonical-metadata',
-      status: 'blocked',
-      reason: 'Canonical repository and homepage metadata have not been selected.',
-    },
-    {
-      id: 'registry-access',
+      id: 'first-publication-authorization',
       status: 'blocked',
       reason:
-        'npm ownership, credentials, access settings, and a registry dry run remain unverified.',
+        'The owner has not separately authorized publication of the coordinated @text-rendering-toolkit 0.1.0 package family.',
     },
     {
-      id: 'provenance-policy',
+      id: 'trusted-publisher-activation',
       status: 'blocked',
-      reason: 'The npm provenance policy has not been selected.',
+      reason:
+        'npm trusted publishers and first-publication access must be configured and verified for all four canonical packages.',
     },
   ]
 }
@@ -355,8 +393,8 @@ function publicationGates(): readonly PublicationGate[] {
 test('validates the complete local release candidate', () => {
   rmSync(candidateRoot, { recursive: true, force: true })
   mkdirSync(archiveRoot, { recursive: true })
-  const unpackRoot = mkdtempSync(resolve(tmpdir(), 'webgpu-text-release-audit-'))
-  const consumer = mkdtempSync(resolve(tmpdir(), 'webgpu-text-release-consumer-'))
+  const unpackRoot = mkdtempSync(resolve(tmpdir(), 'text-rendering-toolkit-release-audit-'))
+  const consumer = mkdtempSync(resolve(tmpdir(), 'text-rendering-toolkit-release-consumer-'))
   const manifestPaths = packageIds.map((id) =>
     resolve(workspaceRoot, 'packages', id, 'package.json'),
   )

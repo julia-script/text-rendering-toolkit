@@ -1,4 +1,4 @@
-# WebGPU Text documentation
+# Text Rendering Toolkit documentation
 
 This private workspace is the reader-facing Fumadocs application and a browser integration consumer
 for the four public packages.
@@ -16,7 +16,7 @@ pnpm docs:build
 `http://localhost:3000`. After `docs:build`, serve the production result with:
 
 ```sh
-pnpm --filter @webgpu-text/docs start
+pnpm --filter @text-rendering-toolkit/docs start
 ```
 
 The docs application keeps TypeScript 5.9 as a local build dependency because Next.js 16.2 does

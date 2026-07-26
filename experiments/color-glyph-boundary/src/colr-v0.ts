@@ -1,5 +1,5 @@
-import type { LayoutResult, PositionedGlyph } from '@webgpu-text/layout'
-import { type TextFont, TextResources } from '@webgpu-text/three'
+import type { LayoutResult, PositionedGlyph } from '@text-rendering-toolkit/layout'
+import { type TextFont, TextResources } from '@text-rendering-toolkit/three-webgpu'
 import { colrV0Layers, cpalPalette } from './sfnt.js'
 
 export interface ColrV0Font {

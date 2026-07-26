@@ -1,7 +1,7 @@
 # CPU SDF fixtures
 
 `fixtures.json` is the normative synthetic pixel-policy corpus for
-`@webgpu-text/sdf`. It covers open lines, quadratic and cubic curves,
+`@text-rendering-toolkit/sdf`. It covers open lines, quadratic and cubic curves,
 orientation, multiple contours and holes, padding, clipping, empty/degenerate
 geometry, and exponential encoding.
 

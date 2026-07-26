@@ -1,5 +1,5 @@
-import type { PositionedGlyph } from '@webgpu-text/layout'
-import { generateSdf, type SdfBitmap, type SdfViewBox } from '@webgpu-text/sdf'
+import type { PositionedGlyph } from '@text-rendering-toolkit/layout'
+import { generateSdf, type SdfBitmap, type SdfViewBox } from '@text-rendering-toolkit/sdf'
 import { type DataTexture, Vector2 } from 'three/webgpu'
 
 import { type AtlasAddition, type AtlasPlan, type CachedGlyph, RgbaGlyphAtlas } from './atlas.js'

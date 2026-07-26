@@ -1,9 +1,9 @@
 import { readFile } from 'node:fs/promises'
 
-import { type FontHandle, loadFont } from '@webgpu-text/font'
-import { layoutPreparedText, prepareText } from '@webgpu-text/layout'
-import { generateSdf } from '@webgpu-text/sdf'
-import { Text, TextResources } from '@webgpu-text/three'
+import { type FontHandle, loadFont } from '@text-rendering-toolkit/font'
+import { layoutPreparedText, prepareText } from '@text-rendering-toolkit/layout'
+import { generateSdf } from '@text-rendering-toolkit/sdf'
+import { Text, TextResources } from '@text-rendering-toolkit/three-webgpu'
 
 const bytes = async (name: string): Promise<Uint8Array> => {
   const value = await readFile(new URL(name, import.meta.url))
@@ -66,7 +66,7 @@ try {
   })
   if (bitmap.pixels.length !== 256) throw new Error('SDF generation returned the wrong size')
 
-  const resources = new TextResources({ sdfSize: 32, sdfPadding: 0.2 })
+  const resources = new TextResources({ sdfSize: 32, sdfPadding: 0.31 })
   const text = new Text({
     layout,
     fonts,

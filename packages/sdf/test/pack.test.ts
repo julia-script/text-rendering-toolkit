@@ -9,7 +9,7 @@ const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const workspaceRoot = resolve(packageRoot, '../..')
 
 test('ships an independent ESM and TypeScript package', () => {
-  const temporary = mkdtempSync(resolve(tmpdir(), 'webgpu-text-sdf-pack-'))
+  const temporary = mkdtempSync(resolve(tmpdir(), 'text-rendering-toolkit-sdf-pack-'))
   try {
     execFileSync('pnpm', ['pack', '--pack-destination', temporary], {
       cwd: packageRoot,
@@ -29,7 +29,7 @@ test('ships an independent ESM and TypeScript package', () => {
       stdio: 'pipe',
     })
 
-    const installed = resolve(consumer, 'node_modules/@webgpu-text/sdf')
+    const installed = resolve(consumer, 'node_modules/@text-rendering-toolkit/sdf')
     for (const file of [
       'dist/index.js',
       'dist/index.d.ts',
@@ -43,8 +43,8 @@ test('ships an independent ESM and TypeScript package', () => {
     writeFileSync(
       resolve(consumer, 'main.ts'),
       `
-        import { generateSdf, SdfCommand } from '@webgpu-text/sdf'
-        import type { GenerateSdfInput } from '@webgpu-text/sdf'
+        import { generateSdf, SdfCommand } from '@text-rendering-toolkit/sdf'
+        import type { GenerateSdfInput } from '@text-rendering-toolkit/sdf'
         const input: GenerateSdfInput = {
           outline: {
             commands: Uint8Array.from([SdfCommand.MOVE_TO, SdfCommand.LINE_TO]),

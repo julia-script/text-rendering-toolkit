@@ -1,5 +1,5 @@
-import type { LayoutBounds, LayoutResult, PositionedGlyph } from '@webgpu-text/layout'
-import type { SdfViewBox } from '@webgpu-text/sdf'
+import type { LayoutBounds, LayoutResult, PositionedGlyph } from '@text-rendering-toolkit/layout'
+import type { SdfViewBox } from '@text-rendering-toolkit/sdf'
 import { Color, type ColorRepresentation, Mesh } from 'three/webgpu'
 
 import { DisposedTextError, InvalidTextInputError } from './errors.js'

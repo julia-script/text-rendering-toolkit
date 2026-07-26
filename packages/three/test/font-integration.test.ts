@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { loadFont } from '@webgpu-text/font'
+import { loadFont } from '@text-rendering-toolkit/font'
 import {
   deriveTextDecorations,
   getSelectionRects,
@@ -9,7 +9,7 @@ import {
   layoutResolvedText,
   prepareText,
   type ResolvedLayoutInput,
-} from '@webgpu-text/layout'
+} from '@text-rendering-toolkit/layout'
 import { expect, test, vi } from 'vitest'
 import { Text, type TextFont, TextResources } from '../src/index.js'
 

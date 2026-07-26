@@ -386,7 +386,7 @@ class FontHandleImplementation implements FontHandle {
  * Load a font from disk, use it, then release it.
  * ```typescript
  * import { readFile } from 'node:fs/promises'
- * import { loadFont } from '@webgpu-text/font'
+ * import { loadFont } from '@text-rendering-toolkit/font'
  *
  * const font = await loadFont(await readFile('NotoSans.ttf'))
  * try {

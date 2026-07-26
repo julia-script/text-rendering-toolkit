@@ -29,14 +29,17 @@ function pack(root: string, destination: string): string {
 }
 
 test('ships public ESM runtime and declarations to a clean consumer', () => {
-  const temporary = mkdtempSync(resolve(tmpdir(), 'webgpu-text-three-pack-'))
+  const temporary = mkdtempSync(resolve(tmpdir(), 'text-rendering-toolkit-three-pack-'))
   try {
     const packageNames = ['font', 'layout', 'sdf', 'three'] as const
     const archives = packageNames.map((name) =>
       pack(resolve(workspaceRoot, 'packages', name), resolve(temporary, name)),
     )
     const dependencies = Object.fromEntries(
-      packageNames.map((name, index) => [`@webgpu-text/${name}`, `file:${archives[index]}`]),
+      packageNames.map((name, index) => [
+        `@text-rendering-toolkit/${name === 'three' ? 'three-webgpu' : name}`,
+        `file:${archives[index]}`,
+      ]),
     )
     const consumer = resolve(temporary, 'consumer')
     mkdirSync(consumer)
@@ -61,7 +64,7 @@ test('ships public ESM runtime and declarations to a clean consumer', () => {
       resolve(consumer, 'node_modules/@types/three'),
     )
 
-    const installed = resolve(consumer, 'node_modules/@webgpu-text/three')
+    const installed = resolve(consumer, 'node_modules/@text-rendering-toolkit/three-webgpu')
     for (const file of ['dist/index.js', 'dist/index.d.ts', 'README.md']) {
       expect(existsSync(resolve(installed, file))).toBe(true)
     }
@@ -75,8 +78,8 @@ test('ships public ESM runtime and declarations to a clean consumer', () => {
     writeFileSync(
       resolve(consumer, 'main.ts'),
       `
-        import type { LayoutResult } from '@webgpu-text/layout'
-        import { Text, TextResources, InvalidTextInputError } from '@webgpu-text/three'
+        import type { LayoutResult } from '@text-rendering-toolkit/layout'
+        import { Text, TextResources, InvalidTextInputError } from '@text-rendering-toolkit/three-webgpu'
         import type {
           TextColorGlyphLayer,
           TextFont,
@@ -86,7 +89,7 @@ test('ships public ESM runtime and declarations to a clean consumer', () => {
           TextResourcesOptions,
           TextRgbaColor,
           TextShadow,
-        } from '@webgpu-text/three'
+        } from '@text-rendering-toolkit/three-webgpu'
         const red = { red: 255, green: 0, blue: 0, alpha: 128 } satisfies TextRgbaColor
         const layers = [{ glyphId: 1, color: red }] satisfies readonly TextColorGlyphLayer[]
         const font: TextFont = {

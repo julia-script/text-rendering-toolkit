@@ -1,6 +1,6 @@
-import { loadFont } from '@webgpu-text/font'
-import { layoutPreparedText, prepareText } from '@webgpu-text/layout'
-import { Text, type TextFont, TextResources } from '@webgpu-text/three'
+import { loadFont } from '@text-rendering-toolkit/font'
+import { layoutPreparedText, prepareText } from '@text-rendering-toolkit/layout'
+import { Text, type TextFont, TextResources } from '@text-rendering-toolkit/three-webgpu'
 import {
   AmbientLight,
   Color,

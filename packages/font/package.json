@@ -1,11 +1,35 @@
 {
-  "name": "@webgpu-text/font",
-  "version": "0.0.0",
-  "private": true,
+  "name": "@text-rendering-toolkit/font",
+  "version": "0.1.0",
+  "description": "Font parsing, shaping, coverage, and numeric glyph outlines for text rendering.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/julia-script/text-rendering-toolkit.git",
+    "directory": "packages/font"
+  },
+  "homepage": "https://github.com/julia-script/text-rendering-toolkit#readme",
+  "bugs": {
+    "url": "https://github.com/julia-script/text-rendering-toolkit/issues"
+  },
+  "keywords": [
+    "text-rendering",
+    "typography",
+    "font",
+    "harfbuzz",
+    "shaping",
+    "unicode",
+    "glyphs"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "type": "module",
   "files": [
     "dist",
     "README.md",
+    "LICENSE",
     "THIRD_PARTY_NOTICES.md"
   ],
   "exports": {

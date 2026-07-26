@@ -2,7 +2,7 @@
 
 ## Decision
 
-Production text decoration belongs to `@webgpu-text/layout` as a pure post-layout operation. `@webgpu-text/font` exposes only four bounded default-instance facts, layout scales and retains the smallest source-range context, and `deriveTextDecorations()` returns immutable analytic segments. Renderers own only the final drawing approximation.
+Production text decoration belongs to `@text-rendering-toolkit/layout` as a pure post-layout operation. `@text-rendering-toolkit/font` exposes only four bounded default-instance facts, layout scales and retains the smallest source-range context, and `deriveTextDecorations()` returns immutable analytic segments. Renderers own only the final drawing approximation.
 
 This promotes the accepted renderer-neutral half of the archived `validate-browser-text-decoration-boundary` experiment. Three SDF outline and shadow remain a separate change.
 

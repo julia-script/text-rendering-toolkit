@@ -1,4 +1,4 @@
-import type { FontHandle, VariationCoordinates } from '@webgpu-text/font'
+import type { FontHandle, VariationCoordinates } from '@text-rendering-toolkit/font'
 import type {
   HorizontalAnchor,
   LayoutAlignment,
@@ -8,7 +8,7 @@ import type {
   ResolvedLayoutInput,
   ResolvedShapedRun,
   VerticalAnchor,
-} from '@webgpu-text/layout'
+} from '@text-rendering-toolkit/layout'
 
 export type ParagraphDirection = 'auto' | 'ltr' | 'rtl'
 

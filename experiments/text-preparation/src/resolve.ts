@@ -1,11 +1,11 @@
-import type { FontHandle } from '@webgpu-text/font'
+import type { FontHandle } from '@text-rendering-toolkit/font'
 import {
   getSelectionRects,
   layoutResolvedText,
   type ResolvedGlyph,
   type ResolvedRunMetrics,
   type ResolvedShapedRun,
-} from '@webgpu-text/layout'
+} from '@text-rendering-toolkit/layout'
 import { PreparationError } from './errors.js'
 import { prepareText } from './prepare.js'
 import type {

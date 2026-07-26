@@ -1,7 +1,7 @@
 'use client'
 
-import { layoutText } from '@webgpu-text/layout'
-import { generateSdf, type SdfBitmap } from '@webgpu-text/sdf'
+import { layoutText } from '@text-rendering-toolkit/layout'
+import { generateSdf, type SdfBitmap } from '@text-rendering-toolkit/sdf'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { errorMessage } from './demo-fonts'
 import { ExampleFrame } from './example-frame'

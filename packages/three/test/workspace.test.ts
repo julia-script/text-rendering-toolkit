@@ -1,8 +1,8 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import * as layout from '@webgpu-text/layout'
-import * as sdf from '@webgpu-text/sdf'
+import * as layout from '@text-rendering-toolkit/layout'
+import * as sdf from '@text-rendering-toolkit/sdf'
 import { expect, test } from 'vitest'
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')

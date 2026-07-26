@@ -26,9 +26,9 @@ Regenerate the canonical preparation opportunities after an intentional adapter 
 revision, then review and run the focused corpus:
 
 ```sh
-pnpm --filter @webgpu-text/layout fixtures:record
-pnpm --filter @webgpu-text/layout test
-pnpm --filter @webgpu-text/text-preparation-experiment build
+pnpm --filter @text-rendering-toolkit/layout fixtures:record
+pnpm --filter @text-rendering-toolkit/layout test
+pnpm --filter @text-rendering-toolkit/text-preparation-experiment build
 ```
 
 Do not accept a generated diff solely because it is deterministic. Changes to Unicode revisions,

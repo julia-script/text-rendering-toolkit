@@ -2,7 +2,7 @@
 
 ## Decision
 
-Proceed with a production implementation in `@webgpu-text/layout` using two
+Proceed with a production implementation in `@text-rendering-toolkit/layout` using two
 synchronous operations plus one convenience composition:
 
 ```ts
@@ -146,7 +146,7 @@ conformance evidence.
 
 The browser-compatible ESM entry containing production preparation/layout,
 `bidi-js`, `unicode-script`, and `linebreak` is produced by `pnpm --filter
-@webgpu-text/text-preparation-experiment build`. The final minified browser-targeted
+@text-rendering-toolkit/text-preparation-experiment build`. The final minified browser-targeted
 ESM entry is 98,977 bytes raw and 32,562 bytes gzip on the validation checkout; the public
 font/layout packages remain normal ESM dependencies rather than copied private
 modules. These are observations, not a budget. Candidate dependencies remain
@@ -175,10 +175,10 @@ The private tests prove:
 Reproduce with:
 
 ```sh
-pnpm --filter @webgpu-text/text-preparation-experiment fixtures:record
-pnpm --filter @webgpu-text/text-preparation-experiment test
-pnpm --filter @webgpu-text/text-preparation-experiment benchmark
-pnpm --filter @webgpu-text/text-preparation-experiment build
+pnpm --filter @text-rendering-toolkit/text-preparation-experiment fixtures:record
+pnpm --filter @text-rendering-toolkit/text-preparation-experiment test
+pnpm --filter @text-rendering-toolkit/text-preparation-experiment benchmark
+pnpm --filter @text-rendering-toolkit/text-preparation-experiment build
 ```
 
 The Rolldown browser-platform bundle is the browser-compatible ESM check. The test path runs

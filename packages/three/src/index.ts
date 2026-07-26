@@ -8,7 +8,7 @@
  * SDF cache and atlas that several `Text` objects can share.
  *
  * The boundary starts *after* font acquisition, itemization, font selection,
- * shaping, and layout: supply a finished layout from `@webgpu-text/layout` plus
+ * shaping, and layout: supply a finished layout from `@text-rendering-toolkit/layout` plus
  * a map of caller-owned fonts. Nothing here fetches fonts, chooses fallbacks, or
  * measures text, and the supplied layout is never expanded or replaced — so the
  * same result stays usable for selection, carets, and measurement.

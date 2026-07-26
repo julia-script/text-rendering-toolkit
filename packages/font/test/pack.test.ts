@@ -16,7 +16,7 @@ const colorFixture = resolve(
 )
 
 it('ships a self-contained ESM package', () => {
-  const temporary = mkdtempSync(resolve(tmpdir(), 'webgpu-text-font-pack-'))
+  const temporary = mkdtempSync(resolve(tmpdir(), 'text-rendering-toolkit-font-pack-'))
   try {
     execFileSync('pnpm', ['pack', '--pack-destination', temporary], {
       cwd: packageRoot,
@@ -36,7 +36,7 @@ it('ships a self-contained ESM package', () => {
       stdio: 'pipe',
     })
 
-    const installed = resolve(consumer, 'node_modules/@webgpu-text/font')
+    const installed = resolve(consumer, 'node_modules/@text-rendering-toolkit/font')
     expect(existsSync(resolve(installed, 'dist/index.js'))).toBe(true)
     expect(existsSync(resolve(installed, 'dist/index.d.ts'))).toBe(true)
     expect(existsSync(resolve(installed, 'dist/internal/vendor/harfbuzz.wasm'))).toBe(true)
@@ -47,7 +47,7 @@ it('ships a self-contained ESM package', () => {
         '--eval',
         `
           import { readFile } from 'node:fs/promises'
-          import { loadFont } from '@webgpu-text/font'
+          import { loadFont } from '@text-rendering-toolkit/font'
           const bytes = await readFile(${JSON.stringify(fixture)})
           const font = await loadFont(new Uint8Array(bytes.buffer, bytes.byteOffset, bytes.byteLength))
           const run = font.shape({ text: 'office', direction: 'ltr', script: 'Latn', language: 'en' })

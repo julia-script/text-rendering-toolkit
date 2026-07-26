@@ -1,6 +1,6 @@
 # Third-party notices
 
-`@webgpu-text/layout` uses these unmodified runtime packages:
+`@text-rendering-toolkit/layout` uses these unmodified runtime packages:
 
 ## `bidi-js@1.0.3`
 

@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
-import { type FontHandle, loadFont } from '@webgpu-text/font'
+import { type FontHandle, loadFont } from '@text-rendering-toolkit/font'
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 import { PreparationError } from '../src/errors.js'
 import {

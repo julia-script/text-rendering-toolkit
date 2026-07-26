@@ -2,14 +2,14 @@ import { createHash } from 'node:crypto'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { type FontHandle, loadFont } from '@webgpu-text/font'
+import { type FontHandle, loadFont } from '@text-rendering-toolkit/font'
 import {
   getSelectionRects,
   type LayoutResult,
   layoutPreparedText,
   prepareText,
   type TextStyle,
-} from '@webgpu-text/layout'
+} from '@text-rendering-toolkit/layout'
 import { colorExportInventory, productionRuntimeInventory } from './runtime.js'
 import { type CandidateScore, type FixtureEvidence, validateObservation } from './schema.js'
 import {

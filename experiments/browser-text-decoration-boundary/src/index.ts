@@ -1,4 +1,8 @@
-import { getSelectionRects, type LayoutBounds, type LayoutResult } from '@webgpu-text/layout'
+import {
+  getSelectionRects,
+  type LayoutBounds,
+  type LayoutResult,
+} from '@text-rendering-toolkit/layout'
 
 export interface Rgba {
   readonly red: number

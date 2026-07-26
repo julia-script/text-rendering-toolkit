@@ -1,7 +1,7 @@
 # HarfBuzz font-engine experiment
 
 Private, disposable validation code for the HarfBuzzjs decision. This is not a
-published package or the implementation of `@scope/font`.
+published package or the implementation of `@text-rendering-toolkit/font`.
 
 ```sh
 npm install

@@ -20,7 +20,7 @@ Ordinary-glyph SDF outline and visual shadow integrated by:
 
 ## Result
 
-The production `@webgpu-text/three` public API renders completed
+The production `@text-rendering-toolkit/three-webgpu` public API renders completed
 renderer-neutral `LayoutResult` data for real-font Latin and Arabic text through
 Three.js 0.185.1 on an actual Apple Metal-backed WebGPU adapter. Text shaping and
 layout execute before the Three adapter receives the result. The fixture

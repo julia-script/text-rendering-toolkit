@@ -1,5 +1,5 @@
 {
-  "name": "@webgpu-text/text-preparation-experiment",
+  "name": "@text-rendering-toolkit/text-preparation-experiment",
   "version": "0.0.0-private",
   "private": true,
   "type": "module",
@@ -11,8 +11,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@webgpu-text/font": "workspace:^",
-    "@webgpu-text/layout": "workspace:^",
+    "@text-rendering-toolkit/font": "workspace:^",
+    "@text-rendering-toolkit/layout": "workspace:^",
     "bidi-js": "1.0.3",
     "unicode-script": "1.2.0"
   },

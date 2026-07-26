@@ -12,9 +12,9 @@ handles, and explicitly orders candidate fonts. Put the emoji font first only wh
 glyphs to win.
 
 ```ts
-import { loadFont } from '@webgpu-text/font'
-import { layoutText } from '@webgpu-text/layout'
-import { Text, TextResources } from '@webgpu-text/three'
+import { loadFont } from '@text-rendering-toolkit/font'
+import { layoutText } from '@text-rendering-toolkit/layout'
+import { Text, TextResources } from '@text-rendering-toolkit/three-webgpu'
 
 const [latinBytes, emojiBytes] = await Promise.all([
   fetch('/fonts/NotoSans.ttf').then((response) => response.arrayBuffer()),

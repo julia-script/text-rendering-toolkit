@@ -5,11 +5,11 @@ export default function HomePage() {
   return (
     <div className="landing">
       <header className="landing-nav">
-        <Link className="wordmark" href="/" aria-label="WebGPU Text home">
+        <Link className="wordmark" href="/" aria-label="Text Rendering Toolkit home">
           <span className="wordmark-mark" aria-hidden="true">
             W
           </span>
-          <span>WebGPU Text</span>
+          <span>Text Rendering Toolkit</span>
         </Link>
         <nav aria-label="Primary navigation">
           <Link href="/docs/concepts/pipeline">Pipeline</Link>
@@ -59,25 +59,25 @@ export default function HomePage() {
               <p className="package-number">01</p>
               <h3>Font</h3>
               <p>Parse caller-owned bytes, shape runs, inspect coverage, and request outlines.</p>
-              <code>@webgpu-text/font</code>
+              <code>@text-rendering-toolkit/font</code>
             </article>
             <article>
               <p className="package-number">02</p>
               <h3>Layout</h3>
               <p>Turn raw multilingual text into lines, positioned glyphs, carets, and bounds.</p>
-              <code>@webgpu-text/layout</code>
+              <code>@text-rendering-toolkit/layout</code>
             </article>
             <article>
               <p className="package-number">03</p>
               <h3>SDF</h3>
               <p>Generate renderer-ready signed-distance fields on the CPU, only when needed.</p>
-              <code>@webgpu-text/sdf</code>
+              <code>@text-rendering-toolkit/sdf</code>
             </article>
             <article>
               <p className="package-number">04</p>
               <h3>Three</h3>
               <p>Hand the result to a supplied Three.js WebGPU mesh—or keep your own renderer.</p>
-              <code>@webgpu-text/three</code>
+              <code>@text-rendering-toolkit/three-webgpu</code>
             </article>
           </div>
         </section>
@@ -95,7 +95,11 @@ export default function HomePage() {
               Understand the pipeline <span aria-hidden="true">→</span>
             </Link>
           </div>
-          <div className="handoff-diagram" aria-label="Pipeline from Unicode text to any renderer">
+          <div
+            className="handoff-diagram"
+            aria-label="Pipeline from Unicode text to any renderer"
+            role="img"
+          >
             <div>
               <span>INPUT</span>
               <strong>Unicode + font bytes</strong>
@@ -121,7 +125,7 @@ export default function HomePage() {
       </main>
 
       <footer className="landing-footer">
-        <span>WebGPU Text</span>
+        <span>Text Rendering Toolkit</span>
         <span>Font bytes → positioned glyphs → pixels</span>
       </footer>
     </div>

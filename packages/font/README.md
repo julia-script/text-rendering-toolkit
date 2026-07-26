@@ -1,4 +1,4 @@
-# `@webgpu-text/font`
+# `@text-rendering-toolkit/font`
 
 Renderer-neutral font loading, HarfBuzz shaping, font facts, coverage, and lazy numeric glyph outlines.
 
@@ -7,7 +7,7 @@ The package is strict TypeScript and ESM-only. It does not fetch URLs, perform p
 ## Usage
 
 ```ts
-import { loadFont } from '@webgpu-text/font'
+import { loadFont } from '@text-rendering-toolkit/font'
 
 const font = await loadFont(fontBytes)
 
