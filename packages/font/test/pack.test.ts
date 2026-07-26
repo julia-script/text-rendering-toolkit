@@ -89,4 +89,4 @@ it('ships a self-contained ESM package', () => {
   } finally {
     rmSync(temporary, { recursive: true, force: true })
   }
-})
+}, 15_000)

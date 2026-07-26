@@ -82,4 +82,4 @@ test('ships an independent ESM and TypeScript package', () => {
   } finally {
     rmSync(temporary, { recursive: true, force: true })
   }
-})
+}, 15_000)

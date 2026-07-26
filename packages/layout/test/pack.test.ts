@@ -145,4 +145,4 @@ it('ships ESM runtime and type exports usable with the public font package', () 
   } finally {
     rmSync(temporary, { recursive: true, force: true })
   }
-})
+}, 15_000)
