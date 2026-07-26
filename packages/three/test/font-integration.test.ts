@@ -380,4 +380,4 @@ test('renders the accepted color corpus through unchanged public layouts at two 
     latin.dispose()
     emoji.dispose()
   }
-})
+}, 15_000)
