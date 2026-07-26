@@ -103,6 +103,58 @@ test('validates dimensions, encoding, view box, and typed arrays', () => {
   }
 })
 
+test('rejects a request that is not a usable object before reading any field', () => {
+  const valid = rectangle()
+  const invalid: Array<[string, unknown]> = [
+    ['null', null],
+    ['undefined', undefined],
+    ['number', 42],
+    ['string', 'outline'],
+    ['missing outline', { ...valid, outline: undefined }],
+    ['null outline', { ...valid, outline: null }],
+    ['null viewBox', { ...valid, viewBox: null }],
+  ]
+  for (const [message, candidate] of invalid) {
+    expect(() => generateSdf(candidate as GenerateSdfInput), message).toThrow(InvalidSdfInputError)
+  }
+})
+
+test('reports an unreadable property as invalid input and keeps the original as cause', () => {
+  const valid = rectangle()
+  const boom = new Error('getter exploded')
+  const hostile = {
+    ...valid,
+    get width(): number {
+      throw boom
+    },
+  }
+  expect(() => generateSdf(hostile as GenerateSdfInput)).toThrow(InvalidSdfInputError)
+  try {
+    generateSdf(hostile as GenerateSdfInput)
+    expect.unreachable('expected an InvalidSdfInputError')
+  } catch (error) {
+    expect(error).toBeInstanceOf(InvalidSdfInputError)
+    expect((error as Error).cause).toBe(boom)
+  }
+})
+
+test('samples the same field values it validated', () => {
+  // A getter that passes validation and then reports a larger raster would
+  // otherwise size the output by a value that was never checked.
+  const valid = rectangle()
+  let reads = 0
+  const shifting = {
+    ...valid,
+    get width(): number {
+      reads += 1
+      return reads <= 1 ? 4 : 64
+    },
+  }
+  const result = generateSdf(shifting as GenerateSdfInput)
+  expect(result.width).toBe(4)
+  expect(result.pixels.length).toBe(4 * result.height)
+})
+
 test('validates command data and leaves invalid input unchanged', () => {
   const cases: Array<[string, Uint8Array, Float32Array]> = [
     ['unknown', Uint8Array.from([9]), new Float32Array()],

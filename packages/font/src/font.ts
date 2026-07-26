@@ -254,7 +254,9 @@ class FontHandleImplementation implements FontHandle {
         features,
       )
     } catch (error) {
-      if (error instanceof TypeError) throw new InvalidShapingInputError(error.message)
+      if (error instanceof TypeError) {
+        throw new InvalidShapingInputError(error.message, { cause: error })
+      }
       throw error
     }
     const ends = clusterEnds(
@@ -381,6 +383,9 @@ class FontHandleImplementation implements FontHandle {
  *   container.
  * @throws {@link InvalidFontError} if the bytes are a font collection (`ttcf`), are
  *   not a recognizable SFNT, or are malformed, truncated, or without coverage.
+ *   Also thrown when the byte source cannot be read at all — a detached
+ *   `ArrayBuffer`, or a `Uint8Array` view onto one, as happens after the buffer
+ *   has been transferred to a worker.
  *
  * @example
  * Load a font from disk, use it, then release it.
@@ -436,6 +441,6 @@ export async function loadFont(source: FontSource): Promise<FontHandle> {
     face?.destroy()
     blob?.destroy()
     if (error instanceof InvalidFontError) throw error
-    throw new InvalidFontError()
+    throw new InvalidFontError(undefined, { cause: error })
   }
 }

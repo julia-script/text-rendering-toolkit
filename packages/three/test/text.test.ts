@@ -592,4 +592,36 @@ describe('public Text lifecycle', () => {
     resources.dispose()
     expect(() => new Text(base)).toThrow(DisposedTextResourcesError)
   })
+
+  test('rejects options that are not a usable object before reading any of them', () => {
+    const invalid: Array<[string, unknown]> = [
+      ['null', null],
+      ['undefined', undefined],
+      ['number', 16],
+      ['string', 'layout'],
+      ['missing layout', { fonts: new Map(), sdfSize: 16 }],
+      ['missing fonts', { layout: resolvedLayout(''), sdfSize: 16 }],
+    ]
+    for (const [message, candidate] of invalid) {
+      expect(() => new Text(candidate as TextOptions), message).toThrow(InvalidTextInputError)
+    }
+  })
+
+  test('reports unreadable options as invalid input and keeps the original as cause', () => {
+    const boom = new Error('getter exploded')
+    const hostile = {
+      layout: resolvedLayout(''),
+      fonts: new Map(),
+      get sdfSize(): number {
+        throw boom
+      },
+    }
+    try {
+      new Text(hostile as unknown as TextOptions)
+      expect.unreachable('expected an InvalidTextInputError')
+    } catch (error) {
+      expect(error).toBeInstanceOf(InvalidTextInputError)
+      expect((error as Error).cause).toBe(boom)
+    }
+  })
 })

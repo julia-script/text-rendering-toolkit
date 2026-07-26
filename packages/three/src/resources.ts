@@ -280,13 +280,25 @@ export class TextResources {
   readonly sdfPadding: number
 
   /**
-   * @param options - Optional SDF cell size and em padding.
-   * @throws {@link InvalidTextInputError} if `sdfSize` is not a safe integer
-   *   from `16` through `512`, or `sdfPadding` is not finite and positive.
+   * @param options - Optional SDF cell size and em padding. Omitting it is
+   *   valid; supplying a non-object is not.
+   * @throws {@link InvalidTextInputError} if the options are supplied but are
+   *   not an object, if `sdfSize` is not a safe integer from `16` through
+   *   `512`, or `sdfPadding` is not finite and positive. Also thrown when an
+   *   option cannot be read at all, with the original attached as `cause`.
    */
   constructor(options: TextResourcesOptions = {}) {
-    const sdfSize = options.sdfSize ?? DEFAULT_SDF_SIZE
-    const sdfPadding = options.sdfPadding ?? DEFAULT_SDF_PADDING
+    if (typeof options !== 'object' || options === null) {
+      throw invalid('options must be an object')
+    }
+    let sdfSize: number
+    let sdfPadding: number
+    try {
+      sdfSize = options.sdfSize ?? DEFAULT_SDF_SIZE
+      sdfPadding = options.sdfPadding ?? DEFAULT_SDF_PADDING
+    } catch (error) {
+      throw invalid('options properties could not be read', error)
+    }
     validateSdfSize(sdfSize)
     validateSdfPadding(sdfPadding)
     this.sdfSize = sdfSize

@@ -1,7 +1,9 @@
 import { createHash } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 import {
+  DisposedFontHandleError,
   type FontFacts,
+  InvalidShapingInputError,
   loadFont,
   type ShapedRun,
   type ShapeInput,
@@ -10,7 +12,9 @@ import {
   canonicalFixtureJson,
   deriveTextDecorations,
   layoutResolvedText,
+  layoutText,
   type ResolvedShapedRun,
+  TextPreparationError,
 } from '@text-rendering-toolkit/layout'
 import { afterAll, describe, expect, test } from 'vitest'
 
@@ -193,5 +197,63 @@ describe('public font integration evidence', () => {
     if (!firstRun) throw new Error('Missing integration observation')
     ;(firstRun.resolved as { glyphs: Array<{ glyphId: number }> }).glyphs[0].glyphId += 1
     expect(canonicalFixtureJson(JSON.parse(await readFile(policyUrl, 'utf8')))).toBe(before)
+  })
+})
+
+describe('font handle failures stay inside the layout error contract', () => {
+  const style = { key: 'default', fontKeys: ['f'], fontSize: 16, language: 'en' }
+  const input = { text: 'hi', style, layout: {} }
+
+  test('converts a font package error into code font-error, keeping the original as cause', async () => {
+    const handle = await font('NotoSans-wdth-wght.ttf')
+    // An unknown variation axis is rejected by the font package itself, so this
+    // exercises a real cross-package error rather than a stubbed one.
+    const attempt = () =>
+      layoutText(
+        { ...input, style: { ...style, variations: { ZZZZ: 1 } } },
+        new Map([['f', handle]]),
+      )
+    expect(attempt).toThrow(TextPreparationError)
+    try {
+      attempt()
+      expect.unreachable('expected a TextPreparationError')
+    } catch (error) {
+      expect(error).toBeInstanceOf(TextPreparationError)
+      const failure = error as TextPreparationError
+      expect(failure.code).toBe('font-error')
+      expect(failure.cause).toBeInstanceOf(InvalidShapingInputError)
+      expect(failure.attemptedFontKeys).toEqual(['f'])
+    }
+  })
+
+  test('converts a disposed handle rather than leaking DisposedFontHandleError', async () => {
+    const handle = await loadFont(
+      new Uint8Array(await readFile(new URL('NotoSans-wdth-wght.ttf', fontRoot))),
+    )
+    handle.dispose()
+    try {
+      layoutText(input, new Map([['f', handle]]))
+      expect.unreachable('expected a TextPreparationError')
+    } catch (error) {
+      expect(error).toBeInstanceOf(TextPreparationError)
+      expect((error as TextPreparationError).code).toBe('font-error')
+      expect((error as TextPreparationError).cause).toBeInstanceOf(DisposedFontHandleError)
+    }
+  })
+
+  test('converts a non-conforming handle supplied by the registry', async () => {
+    const registry = {
+      get: () => {
+        throw new Error('registry exploded')
+      },
+    }
+    try {
+      layoutText(input, registry as never)
+      expect.unreachable('expected a TextPreparationError')
+    } catch (error) {
+      expect(error).toBeInstanceOf(TextPreparationError)
+      expect((error as TextPreparationError).code).toBe('font-error')
+      expect((error as Error).cause).toBeInstanceOf(Error)
+    }
   })
 })

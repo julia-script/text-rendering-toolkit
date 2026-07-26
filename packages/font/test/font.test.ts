@@ -290,6 +290,16 @@ describe('font loading and facts', () => {
     collection.set(new TextEncoder().encode('ttcf'))
     await expect(loadFont(collection)).rejects.toThrow('Font collections are not supported')
 
+    // A transferred buffer is unreadable, which must surface as a font error
+    // rather than the allocation's own TypeError.
+    const transferred = new ArrayBuffer(64)
+    structuredClone(transferred, { transfer: [transferred] })
+    await expect(loadFont(transferred)).rejects.toBeInstanceOf(InvalidFontError)
+    const backing = new ArrayBuffer(64)
+    const view = new Uint8Array(backing)
+    structuredClone(backing, { transfer: [backing] })
+    await expect(loadFont(view)).rejects.toBeInstanceOf(InvalidFontError)
+
     const valid = await open(fixtures.latin)
     expect(valid.facts.coverageCount).toBeGreaterThan(0)
     valid.dispose()

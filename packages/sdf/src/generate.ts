@@ -39,8 +39,47 @@ interface Segment {
   readonly ordinal: number
 }
 
-function fail(message: string): never {
-  throw new InvalidSdfInputError(message)
+function fail(message: string, cause?: unknown): never {
+  throw new InvalidSdfInputError(message, cause === undefined ? undefined : { cause })
+}
+
+/**
+ * Copies the caller's input into a plain object before anything is validated.
+ *
+ * Every field is read exactly once, so a getter or `Proxy` trap cannot return
+ * one value to the validator and another to the sampling loop — which would
+ * otherwise emit a raster sized by a value that was never checked. Failures
+ * during the read are reported as invalid input rather than escaping as the
+ * caller's own error.
+ */
+function snapshotInput(input: GenerateSdfInput): GenerateSdfInput {
+  if (typeof input !== 'object' || input === null) {
+    fail('input must be an object')
+  }
+  let snapshot: GenerateSdfInput
+  try {
+    const { outline, viewBox, width, height, distance, exponent } = input
+    snapshot = { outline, viewBox, width, height, distance, exponent }
+  } catch (error) {
+    fail('input properties could not be read', error)
+  }
+  if (typeof snapshot.outline !== 'object' || snapshot.outline === null) {
+    fail('outline must be an object')
+  }
+  if (typeof snapshot.viewBox !== 'object' || snapshot.viewBox === null) {
+    fail('viewBox must be an object')
+  }
+  try {
+    const { commands, coordinates } = snapshot.outline
+    const { left, bottom, right, top } = snapshot.viewBox
+    return {
+      ...snapshot,
+      outline: { commands, coordinates },
+      viewBox: { left, bottom, right, top },
+    }
+  } catch (error) {
+    fail('input properties could not be read', error)
+  }
 }
 
 function positiveFinite(value: number, field: string): void {
@@ -363,15 +402,18 @@ function encode(distance: number, maximum: number, exponent: number): number {
  * All input is validated before the raster is allocated, so a bad request fails
  * fast without doing the expensive work.
  *
- * @param input - Geometry, sampling region, raster size, and encoding
+ * @param request - Geometry, sampling region, raster size, and encoding
  *   parameters.
  * @returns A newly allocated bitmap carrying its own decoding parameters.
- * @throws {@link InvalidSdfInputError} for a non-positive or non-integer
- *   `width`/`height`, an allocation exceeding the safe pixel limit, a
- *   zero-area or inverted `viewBox`, a non-positive `distance` or `exponent`,
+ * @throws {@link InvalidSdfInputError} for a request that is not an object or
+ *   whose `outline` or `viewBox` is not an object, a non-positive or
+ *   non-integer `width`/`height`, an allocation exceeding the safe pixel limit,
+ *   a zero-area or inverted `viewBox`, a non-positive `distance` or `exponent`,
  *   wrong typed-array types, an unknown opcode, a draw before a `MOVE_TO`, a
  *   `CLOSE_PATH` with no open contour, non-finite coordinates, or a coordinate
- *   array that is too short or has unused trailing values.
+ *   array that is too short or has unused trailing values. Also thrown when a
+ *   property cannot be read at all — a throwing getter or `Proxy` trap — with
+ *   the original failure attached as `cause`.
  *
  * @example
  * A centered square sampled into a 5×5 field, with a linear ramp.
@@ -417,7 +459,8 @@ function encode(distance: number, maximum: number, exponent: number): number {
  * })
  * ```
  */
-export function generateSdf(input: GenerateSdfInput): SdfBitmap {
+export function generateSdf(request: GenerateSdfInput): SdfBitmap {
+  const input = snapshotInput(request)
   const pixelCount = validateInput(input)
   const segments = flatten(input.outline)
   const pixels = new Uint8Array(pixelCount)

@@ -13,7 +13,9 @@ resources, instanced TSL rendering, validation evidence, and disposal.
 renderer-neutral `LayoutResult`, a caller-owned font registry keyed by the
 result's font identities, and baseline appearance options without fetching font
 bytes, executing text layout, deriving interaction geometry, or performing
-automatic itemization or fallback selection.
+automatic itemization or fallback selection. Construction MUST establish that
+the supplied options are a non-null object before reading any option from them,
+and MUST report a non-object argument with a public renderer error.
 
 #### Scenario: Construct prepared text
 - **WHEN** a caller constructs `Text` with a valid multilingual `LayoutResult` and
@@ -33,8 +35,20 @@ automatic itemization or fallback selection.
 - **THEN** it does not invoke layout, shaping, selection, caret, bidi, fallback,
   or line-breaking operations
 
+#### Scenario: Reject non-object construction options
+- **WHEN** a caller constructs `Text` with `null`, `undefined`, or a primitive in
+  place of an options object
+- **THEN** construction throws `InvalidTextInputError` and no option is read from
+  the argument
+
+#### Scenario: Reject construction options whose property access throws
+- **WHEN** a caller constructs `Text` with an options object whose property access
+  throws, such as a throwing getter or a `Proxy` trap
+- **THEN** construction throws `InvalidTextInputError` rather than propagating the
+  caller's error, and each option is read at most once
+
 ### Requirement: Expose reusable text renderer resources
-`@text-rendering-toolkit/three-webgpu` SHALL expose an explicit `TextResources` owner that can be supplied to multiple `Text` objects while keeping its cache, atlas representation, Three texture, and renderer bindings opaque.
+`@text-rendering-toolkit/three-webgpu` SHALL expose an explicit `TextResources` owner that can be supplied to multiple `Text` objects while keeping its cache, atlas representation, Three texture, and renderer bindings opaque. Construction MUST establish that the supplied options are a non-null object before reading any option from them, and MUST report a non-object argument with a public renderer error.
 
 #### Scenario: Share resources across text objects
 - **WHEN** a caller constructs one `TextResources` and supplies it to two or more text objects
@@ -52,6 +66,11 @@ automatic itemization or fallback selection.
 - **WHEN** a caller uses `TextResources` through the public package API
 - **THEN** the caller does not need access to SDF pixels, RGBA channel packing, atlas slots, texture dimensions, or TSL bindings
 - **AND** the owner does not acquire fonts, execute layout, or dispose caller-owned font handles
+
+#### Scenario: Reject non-object resource options
+- **WHEN** a caller constructs `TextResources` with `null` or a primitive in place of an options object
+- **THEN** construction throws `InvalidTextInputError` and no option is read from the argument
+- **AND** omitting the argument entirely remains valid, since the options parameter defaults to an empty object
 
 ### Requirement: Synchronize and update atomically
 `Text.sync()` MUST return a promise, coalesce requests pending in the same work

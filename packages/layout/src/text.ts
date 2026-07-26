@@ -40,6 +40,37 @@ function registry(fonts: FontRegistry): FontRegistry {
   return fonts
 }
 
+/**
+ * Runs a call against a caller-owned {@link FontHandle}, converting any failure
+ * into a {@link TextPreparationError} with `code: 'font-error'`.
+ *
+ * The font package's errors — a disposed handle, rejected variations or
+ * features — would otherwise escape as themselves, forcing callers of
+ * {@link layoutText} to catch types from a package they may not import. Keeping
+ * the original as `cause` preserves the detail without widening the contract.
+ */
+function usingFont<T>(
+  description: string,
+  range: { readonly start: number; readonly end: number; readonly fontKeys?: readonly string[] },
+  call: () => T,
+): T {
+  try {
+    return call()
+  } catch (error) {
+    if (error instanceof TextPreparationError) throw error
+    throw new TextPreparationError('font-error', `${description}: ${messageOf(error)}`, {
+      start: range.start,
+      end: range.end,
+      ...(range.fontKeys ? { attemptedFontKeys: range.fontKeys } : {}),
+      cause: error,
+    })
+  }
+}
+
+function messageOf(error: unknown): string {
+  return error instanceof Error ? error.message : String(error)
+}
+
 function registeredFonts(
   fontKeys: readonly string[],
   fonts: FontRegistry,
@@ -47,7 +78,11 @@ function registeredFonts(
   end: number,
 ): readonly { readonly fontKey: string; readonly font: FontHandle }[] {
   return fontKeys.map((fontKey) => {
-    const font = fonts.get(fontKey)
+    const font = usingFont(
+      `font registry lookup for ${fontKey} failed`,
+      { start, end, fontKeys },
+      () => fonts.get(fontKey),
+    )
     if (!font) {
       throw new TextPreparationError('missing-font', `font registry has no key ${fontKey}`, {
         start,
@@ -69,10 +104,15 @@ function selectFont(
   const candidates = registeredFonts(segment.fontKeys, fonts, start, end)
   const cluster = text.slice(start, end)
   for (const candidate of candidates) {
-    const covered = [...cluster].every(
-      (character) =>
-        COVERAGE_IGNORABLE.test(character) ||
-        candidate.font.supports(character.codePointAt(0) ?? -1),
+    const covered = usingFont(
+      `font ${candidate.fontKey} failed a coverage test`,
+      { start, end, fontKeys: segment.fontKeys },
+      () =>
+        [...cluster].every(
+          (character) =>
+            COVERAGE_IGNORABLE.test(character) ||
+            candidate.font.supports(character.codePointAt(0) ?? -1),
+        ),
     )
     if (covered) return candidate
   }
@@ -141,15 +181,23 @@ function shapeSegment(
   start = segment.start,
   end = segment.end,
 ): ResolvedShapedRun {
-  const scale = segment.fontSize / segment.font.facts.unitsPerEm
-  const shaped = segment.font.shape({
-    text: text.slice(start, end),
-    direction: segment.direction,
-    script: segment.script,
-    language: segment.language,
-    features: segment.features,
-    variations: segment.variations,
-  })
+  const { scale, shaped } = usingFont(
+    `font ${segment.fontKey} failed to shape text`,
+    { start, end, fontKeys: [segment.fontKey] },
+    () => {
+      const unitScale = segment.fontSize / segment.font.facts.unitsPerEm
+      const run = segment.font.shape({
+        text: text.slice(start, end),
+        direction: segment.direction,
+        script: segment.script,
+        language: segment.language,
+        features: segment.features,
+        variations: segment.variations,
+      })
+      if (!Array.isArray(run?.glyphs)) throw new TypeError('shape() did not return glyphs')
+      return { scale: unitScale, shaped: run }
+    },
+  )
   const glyphs: ResolvedGlyph[] = shaped.glyphs.map((glyph) => ({
     glyphId: glyph.glyphId,
     start: start + glyph.clusterStart,
@@ -172,7 +220,11 @@ function shapeSegment(
     fontKey: segment.fontKey,
     fontSize: segment.fontSize,
     fontUnitScale: scale,
-    metrics: scaledMetrics(segment.font, scale),
+    metrics: usingFont(
+      `font ${segment.fontKey} failed to report metrics`,
+      { start, end, fontKeys: [segment.fontKey] },
+      () => scaledMetrics(segment.font, scale),
+    ),
     variations: shaped.variations,
     glyphs,
   }
@@ -410,7 +462,11 @@ function defaultMetrics(
 ): ResolvedRunMetrics {
   const first = registeredFonts(style.fontKeys, fonts, 0, textLength)[0]
   if (!first) throw new TextPreparationError('missing-font', 'default style has no font keys')
-  return scaledMetrics(first.font, style.fontSize / first.font.facts.unitsPerEm)
+  return usingFont(
+    `font ${first.fontKey} failed to report metrics`,
+    { start: 0, end: textLength, fontKeys: style.fontKeys },
+    () => scaledMetrics(first.font, style.fontSize / first.font.facts.unitsPerEm),
+  )
 }
 
 /**
@@ -439,8 +495,12 @@ function defaultMetrics(
  * @returns The renderer-neutral layout.
  * @throws {@link TextPreparationError} with `code: 'invalid-input'` if the
  *   prepared value fails validation, `'missing-font'` if a named key is absent
- *   from the registry, or `'missing-coverage'` if no listed font covers a
- *   grapheme.
+ *   from the registry, `'missing-coverage'` if no listed font covers a
+ *   grapheme, or `'font-error'` if a registered handle itself failed — it was
+ *   disposed mid-layout, rejected the style's variations or features, or is not
+ *   a conforming {@link FontHandle}. Every failure from a font handle is
+ *   converted, so no error type from the font package escapes this call; the
+ *   original is attached as `cause`.
  *
  * @example
  * Prepare once, then lay out against two registries.
@@ -508,7 +568,9 @@ export function layoutPreparedText(prepared: PreparedText, fonts: FontRegistry):
  * @param fonts - Caller-owned map from font key to loaded handle.
  * @returns The renderer-neutral layout.
  * @throws {@link TextPreparationError} for invalid input, an unregistered font
- *   key, or a grapheme no listed font covers.
+ *   key, a grapheme no listed font covers, or a failure inside a registered
+ *   font handle (`code: 'font-error'`, original attached as `cause`). Branch on
+ *   {@link TextPreparationError.code}; no font-package error type escapes.
  *
  * @example
  * Wrap a sentence to a fixed width.

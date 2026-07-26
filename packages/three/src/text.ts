@@ -19,7 +19,14 @@ import {
   TextResources,
   textResourceBinding,
 } from './resources.js'
-import type { TextFont, TextMaterial, TextOptions, TextOutline, TextShadow } from './types.js'
+import type {
+  TextFont,
+  TextMaterial,
+  TextOptions,
+  TextOptionsBase,
+  TextOutline,
+  TextShadow,
+} from './types.js'
 
 const DEFAULT_COLOR = 0xffffff
 
@@ -47,6 +54,71 @@ interface BuiltState {
 
 function invalid(message: string, cause?: unknown): InvalidTextInputError {
   return new InvalidTextInputError(message, cause === undefined ? undefined : { cause })
+}
+
+/**
+ * A {@link TextOptions} flattened so every field is present, including the ones
+ * the public union leaves optional. Internal to the snapshot below.
+ */
+type SnapshotOptions = {
+  readonly [K in keyof TextOptionsBase]: TextOptionsBase[K] | undefined
+} & {
+  readonly layout: LayoutResult
+  readonly fonts: ReadonlyMap<string, TextFont>
+  readonly resources: TextResources | undefined
+  readonly sdfSize: number | undefined
+}
+
+/**
+ * Copies construction options into a plain object before any is validated.
+ *
+ * `super()` has to run before the instance exists, so the options are read once
+ * here rather than repeatedly through the constructor body. That keeps a
+ * throwing getter from escaping as the caller's own error, and stops a getter
+ * returning different values to the validator and to the assignments.
+ */
+function snapshotOptions(options: TextOptions): SnapshotOptions {
+  if (typeof options !== 'object' || options === null) {
+    throw invalid('options must be an object')
+  }
+  let snapshot: { readonly [K in keyof SnapshotOptions]: SnapshotOptions[K] | undefined }
+  try {
+    const {
+      layout,
+      fonts,
+      resources,
+      sdfSize,
+      lit,
+      color,
+      styleColors,
+      opacity,
+      clipRect,
+      outline,
+      shadow,
+    } = options
+    snapshot = {
+      layout,
+      fonts,
+      resources,
+      sdfSize,
+      lit,
+      color,
+      styleColors,
+      opacity,
+      clipRect,
+      outline,
+      shadow,
+    }
+  } catch (error) {
+    throw invalid('options properties could not be read', error)
+  }
+  if (typeof snapshot.layout !== 'object' || snapshot.layout === null) {
+    throw invalid('layout must be a LayoutResult')
+  }
+  if (typeof snapshot.fonts?.get !== 'function') {
+    throw invalid('fonts must be a readonly map')
+  }
+  return snapshot as SnapshotOptions
 }
 
 function validateOpacity(opacity: number): void {
@@ -321,15 +393,19 @@ export class Text extends Mesh<ReturnType<typeof createGlyphGeometry>, TextMater
    * Builds the mesh, its geometry, and its material, but renders nothing until
    * {@link Text.sync} is awaited.
    *
-   * @param options - Layout, fonts, appearance, and either shared `resources`
+   * @param request - Layout, fonts, appearance, and either shared `resources`
    *   or an owned `sdfSize`.
-   * @throws {@link InvalidTextInputError} if both `resources` and `sdfSize` are
+   * @throws {@link InvalidTextInputError} if the options are not an object, if
+   *   `layout` or `fonts` is missing, if both `resources` and `sdfSize` are
    *   given, if `resources` is not a {@link TextResources}, if `lit` is not a
-   *   boolean, or if `sdfSize` is outside `16`–`512`.
+   *   boolean, or if `sdfSize` is outside `16`–`512`. Also thrown when an
+   *   option cannot be read at all — a throwing getter or `Proxy` trap — with
+   *   the original failure attached as `cause`.
    * @throws {@link DisposedTextResourcesError} if the injected resources have
    *   already been disposed.
    */
-  constructor(options: TextOptions) {
+  constructor(request: TextOptions) {
+    const options = snapshotOptions(request)
     if (options.resources !== undefined && options.sdfSize !== undefined) {
       throw invalid('resources and sdfSize cannot be supplied together')
     }

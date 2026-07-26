@@ -31,8 +31,15 @@ export class InvalidLayoutInputError extends TypeError {
  * wiring bug. `'missing-coverage'` means every listed font was present but none
  * covered a grapheme, which is a content-and-font-choice problem and the one
  * worth handling at runtime, typically by retrying with a broader fallback.
+ * `'font-error'` means a registered {@link FontRegistry} handle itself failed —
+ * it was disposed mid-layout, rejected the style's variations or features, or
+ * is not a conforming handle; the original error is attached as `cause`.
  */
-export type TextPreparationErrorCode = 'invalid-input' | 'missing-font' | 'missing-coverage'
+export type TextPreparationErrorCode =
+  | 'invalid-input'
+  | 'missing-font'
+  | 'missing-coverage'
+  | 'font-error'
 
 /**
  * Thrown by {@link prepareText}, {@link layoutPreparedText}, and
@@ -73,7 +80,8 @@ export class TextPreparationError extends TypeError {
    * @param code - Machine-readable cause.
    * @param message - Human-readable detail; prefixed with
    *   `'Text preparation failed: '`.
-   * @param details - Optional source range and attempted font keys.
+   * @param details - Optional source range, attempted font keys, and the
+   *   underlying error when a font handle was at fault.
    */
   constructor(
     code: TextPreparationErrorCode,
@@ -82,9 +90,13 @@ export class TextPreparationError extends TypeError {
       readonly start?: number
       readonly end?: number
       readonly attemptedFontKeys?: readonly string[]
+      readonly cause?: unknown
     } = {},
   ) {
-    super(`Text preparation failed: ${message}`)
+    super(
+      `Text preparation failed: ${message}`,
+      ...('cause' in details ? [{ cause: details.cause }] : []),
+    )
     this.name = 'TextPreparationError'
     this.code = code
     this.start = details.start

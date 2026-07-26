@@ -28,9 +28,19 @@ export function copyAndClassifyFont(source: FontSource): {
   readonly bytes: ArrayBuffer
   readonly format: SupportedFontFormat
 } {
-  const view = source instanceof Uint8Array ? source : new Uint8Array(source)
-  const copy = new Uint8Array(view.byteLength)
-  copy.set(view)
+  // A detached buffer fails here rather than at any check we could run first:
+  // detachment is observable only by attempting the read, and probing for it
+  // separately would still race the copy.
+  let copy: Uint8Array<ArrayBuffer>
+  try {
+    const view = source instanceof Uint8Array ? source : new Uint8Array(source)
+    copy = new Uint8Array(view.byteLength)
+    copy.set(view)
+  } catch (error) {
+    throw new InvalidFontError('Font bytes could not be read; the buffer may be detached', {
+      cause: error,
+    })
+  }
 
   if (copy.byteLength < 12) throw new InvalidFontError()
   const marker = signature(copy)

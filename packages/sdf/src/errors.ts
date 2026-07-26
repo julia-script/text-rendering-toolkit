@@ -10,13 +10,18 @@
  *
  * Always raised *before* the raster is allocated, so an invalid request costs
  * nothing. The message names the specific field or command index at fault.
+ *
+ * When the input could not even be read — a throwing getter or a `Proxy` trap —
+ * the original failure is attached as `cause`.
  */
 export class InvalidSdfInputError extends TypeError {
   /**
    * @param message - What was invalid; prefixed with `'Invalid SDF input: '`.
+   * @param options - Standard error options; pass `cause` when converting an
+   *   underlying failure so the original is not lost.
    */
-  constructor(message: string) {
-    super(`Invalid SDF input: ${message}`)
+  constructor(message: string, options?: ErrorOptions) {
+    super(`Invalid SDF input: ${message}`, options)
     this.name = 'InvalidSdfInputError'
   }
 }

@@ -1,5 +1,5 @@
 import { expect, test, vi } from 'vitest'
-import { DisposedTextResourcesError, TextResources } from '../src/index.js'
+import { DisposedTextResourcesError, InvalidTextInputError, TextResources } from '../src/index.js'
 import { commitTextResources, planTextResources, textResourceBinding } from '../src/resources.js'
 import { emptyOutline, font, resolvedLayout } from './helpers.js'
 
@@ -85,6 +85,22 @@ test('caches non-drawing glyphs without slots', () => {
   planTextResources(resources, glyphs, new Map([['font', handle]]))
   expect(outline).toHaveBeenCalledOnce()
   resources.dispose()
+})
+
+test('rejects options that are not a usable object', () => {
+  const invalid: Array<[string, unknown]> = [
+    ['null', null],
+    ['number', 64],
+    ['string', 'sdfSize'],
+  ]
+  for (const [message, candidate] of invalid) {
+    expect(
+      () => new TextResources(candidate as ConstructorParameters<typeof TextResources>[0]),
+      message,
+    ).toThrow(InvalidTextInputError)
+  }
+  // Omitted options stay valid: the parameter defaults to an empty object.
+  expect(() => new TextResources(undefined)).not.toThrow()
 })
 
 test('validates configuration and disposes its texture exactly once', () => {

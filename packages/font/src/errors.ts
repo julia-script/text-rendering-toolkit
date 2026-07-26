@@ -45,9 +45,15 @@ export class InvalidFontError extends Error {
   /**
    * @param message - Description of the defect.
    *   @defaultValue `'Input is not a usable single-face TTF or OTF font'`
+   * @param options - Standard error options; carries `cause` when the defect was
+   *   detected by an underlying parse or allocation failure rather than by this
+   *   package's own checks.
    */
-  constructor(message = 'Input is not a usable single-face TTF or OTF font') {
-    super(message)
+  constructor(
+    message = 'Input is not a usable single-face TTF or OTF font',
+    options?: ErrorOptions,
+  ) {
+    super(message, options)
     this.name = 'InvalidFontError'
   }
 }
@@ -64,9 +70,11 @@ export class InvalidFontError extends Error {
 export class InvalidFontInputError extends TypeError {
   /**
    * @param message - Which argument violated which constraint.
+   * @param options - Standard error options; pass `cause` when converting an
+   *   underlying failure so the original is not lost.
    */
-  constructor(message: string) {
-    super(message)
+  constructor(message: string, options?: ErrorOptions) {
+    super(message, options)
     this.name = 'InvalidFontInputError'
   }
 }
@@ -85,9 +93,11 @@ export class InvalidFontInputError extends TypeError {
 export class InvalidShapingInputError extends InvalidFontInputError {
   /**
    * @param message - Which part of the shaping input was rejected.
+   * @param options - Standard error options; carries `cause` when the rejection
+   *   originated inside HarfBuzz rather than in this package's own validation.
    */
-  constructor(message: string) {
-    super(message)
+  constructor(message: string, options?: ErrorOptions) {
+    super(message, options)
     this.name = 'InvalidShapingInputError'
   }
 }
