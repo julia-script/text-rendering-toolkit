@@ -5,6 +5,63 @@
 - Always sync a change's delta specs into the main specs before archiving it.
   Treat this as standing approval; do not ask whether to skip synchronization.
 
+## Before finishing any change
+
+- **Always run `pnpm check` and make it pass.** It is the single gate: Biome
+  lint and format, then `typecheck` and `test` across every package via Turbo.
+  Work is not done until it passes — not "done except for the lint errors."
+
+  ```bash
+  pnpm check
+  ```
+
+  When it reports formatting differences, apply them with `pnpm check:write` and
+  run `pnpm check` again rather than hand-editing whitespace. Never silence a
+  finding with a suppression comment or by loosening the Biome config to make
+  the command pass.
+
+- **Trust the project's typechecker over an editor's.** `pnpm check` runs each
+  package's own `tsconfig.json`. Editor diagnostics may use different
+  `moduleResolution` or `lib` settings and report import and `cause` errors that
+  are not real here — confirm against `pnpm check` before chasing them.
+
+- **Build when the change could affect published output.** Anything touching
+  `packages/*/src`, a `tsconfig`, or a package manifest gets a `pnpm build`.
+  `pnpm check` type-checks but does not emit, so it will not catch a failure
+  that only appears when `tsc` writes `dist/`.
+
+  Verifying runtime behavior against `dist/` requires a fresh `pnpm build`
+  first; a stale `dist/` silently reports the previous code's behavior.
+
+## Changesets
+
+- **Add a changeset whenever a published package's behavior or API changes.**
+  The four `packages/*` are published; `apps/*` and `examples/*` are not. Write
+  the file under `.changeset/` as part of the same change, not as a follow-up.
+
+  Needed for: new or changed public API, a different error type or message a
+  caller could depend on, bug fixes with observable behavior, performance
+  characteristics callers might rely on, and dependency or engine-range changes.
+
+  Not needed for: tests, comments and TSDoc, internal refactors with identical
+  observable behavior, OpenSpec artifacts, and repo tooling.
+
+- **The four packages are a `fixed` group** (see `.changeset/config.json`), so
+  they release with one shared version. List every package the change actually
+  affects and give each the bump its *own* change earns — the group already
+  handles keeping versions aligned, so do not inflate a package's bump just to
+  match a sibling.
+
+- **Pick the bump from the caller's perspective.** `patch` for a fix that keeps
+  the documented contract, `minor` for additive API or a behavior change callers
+  could notice, `major` for a break. When a fix corrects behavior that some
+  callers may have relied on, say so explicitly in the changeset and prefer the
+  larger bump.
+
+- **Write the changeset for a consumer reading a changelog**, not for a
+  reviewer reading the diff: what changed, what they will observe differently,
+  and what to do about it. Call out any genuine break in its own sentence.
+
 ## Error handling
 
 - **Every wrapped error passes the original as `cause`.** When converting a
