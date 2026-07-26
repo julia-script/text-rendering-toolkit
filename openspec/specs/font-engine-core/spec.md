@@ -7,7 +7,7 @@ Define the standalone renderer-neutral font package contract for loading support
 ## Requirements
 
 ### Requirement: Provide a standalone renderer-neutral font package
-The project SHALL expose `@webgpu-text/font` as a strict-TypeScript, ESM-only package whose public entry point can be consumed without `old/`, `experiments/`, DOM APIs, Three.js, layout, SDF, or renderer dependencies.
+The project SHALL expose `@text-rendering-toolkit/font` as a strict-TypeScript, ESM-only package whose public entry point can be consumed without `old/`, `experiments/`, DOM APIs, Three.js, layout, SDF, or renderer dependencies.
 
 #### Scenario: Consume the packed package
 - **WHEN** a clean ESM consumer installs the packed font package and imports its public entry point
@@ -149,7 +149,7 @@ The font package MUST interpret only the SFNT directory, COLR v0 base/layer reco
 - **THEN** its retained owned bytes and color-layer cache are released, repeated disposal is harmless, and later color-layer lookup throws `DisposedFontHandleError`
 
 ### Requirement: Keep color-font support renderer-neutral and attributable
-`@webgpu-text/font` MUST add COLR v0/CPAL support without DOM, canvas, SVG, image-decoder, layout, SDF, Three.js, experiment, or second general-purpose font-parser dependencies and MUST retain the accepted fixture provenance in package evidence.
+`@text-rendering-toolkit/font` MUST add COLR v0/CPAL support without DOM, canvas, SVG, image-decoder, layout, SDF, Three.js, experiment, or second general-purpose font-parser dependencies and MUST retain the accepted fixture provenance in package evidence.
 
 #### Scenario: Consume color layers from the packed font package
 - **WHEN** a clean ESM consumer installs the packed package and loads the accepted COLR v0 fixture through its public entry point

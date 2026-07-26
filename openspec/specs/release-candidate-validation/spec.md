@@ -45,7 +45,7 @@ The validator MUST install and exercise the complete tarball family in a tempora
 
 #### Scenario: Resolve the packed dependency graph
 - **WHEN** the isolated consumer installs all four local tarballs and their declared registry dependencies
-- **THEN** its `@webgpu-text` runtime packages resolve from the installed tarballs
+- **THEN** its `@text-rendering-toolkit` runtime packages resolve from the installed tarballs
 - **AND** Three.js resolves according to the renderer package's peer dependency contract
 
 #### Scenario: Exercise public package handoffs
@@ -54,7 +54,7 @@ The validator MUST install and exercise the complete tarball family in a tempora
 - **AND** it can load supplied font bytes through the packed HarfBuzz WASM asset
 - **AND** it can prepare multilingual raw text through the renderer-neutral API
 - **AND** it can generate an SDF through the public CPU API
-- **AND** it can import or construct the public Three.js integration without requiring a GPU
+- **AND** it can import or construct the public Three.js WebGPU integration without requiring a GPU
 
 #### Scenario: Reject hidden workspace coupling
 - **WHEN** any required package code, declaration, or runtime asset can only be resolved from the monorepo workspace

@@ -9,7 +9,7 @@ geometry.
 ## Requirements
 
 ### Requirement: Expose a pure resolved-run layout API
-`@webgpu-text/layout` SHALL expose a synchronous `layoutResolvedText()` operation that accepts text, layout policy, scaled font metadata, an explicit font-unit-to-layout-unit scale, explicitly resolved shaped runs, and optional explicit UTF-16 soft-break opportunities and returns a renderer-neutral `LayoutResult` without fetching, shaping, mutating, or disposing fonts.
+`@text-rendering-toolkit/layout` SHALL expose a synchronous `layoutResolvedText()` operation that accepts text, layout policy, scaled font metadata, an explicit font-unit-to-layout-unit scale, explicitly resolved shaped runs, and optional explicit UTF-16 soft-break opportunities and returns a renderer-neutral `LayoutResult` without fetching, shaping, mutating, or disposing fonts.
 
 #### Scenario: Lay out valid resolved text
 - **WHEN** a caller supplies valid multilingual resolved input with omitted or explicit soft-break opportunities
@@ -124,7 +124,7 @@ The resolved layout input SHALL accept scaled underline and strikethrough metric
 - **THEN** `layoutResolvedText()` rejects the invalid field before returning a partial result
 
 ### Requirement: Keep decoration derivation post-layout
-`@webgpu-text/layout` SHALL expose decoration derivation as a pure synchronous operation over an existing `LayoutResult` and independent decoration spans, without rerunning preparation, font selection, shaping, line breaking, bidi placement, caret construction, or selection construction.
+`@text-rendering-toolkit/layout` SHALL expose decoration derivation as a pure synchronous operation over an existing `LayoutResult` and independent decoration spans, without rerunning preparation, font selection, shaping, line breaking, bidi placement, caret construction, or selection construction.
 
 #### Scenario: Change appearance only
 - **WHEN** a caller changes only decoration kind, style, color, thickness, offset, skip-ink, or clipping for an existing result
@@ -149,7 +149,7 @@ SDF code, Three.js, DOM APIs, or renderer data.
 - **THEN** production results match their accepted semantic expectations after any explicitly documented contract-unit migration
 
 #### Scenario: Exercise public-font data
-- **WHEN** explicit runs are shaped through the public `@webgpu-text/font` API and translated into resolved layout input
+- **WHEN** explicit runs are shaped through the public `@text-rendering-toolkit/font` API and translated into resolved layout input
 - **THEN** the layout core accepts their glyph IDs, UTF-16 clusters, advances, offsets, flags, variations, stable font keys, and valid explicit opportunities without importing font internals
 
 #### Scenario: Run in a clean workspace

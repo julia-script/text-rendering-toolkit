@@ -9,7 +9,7 @@ resources, instanced TSL rendering, validation evidence, and disposal.
 ## Requirements
 
 ### Requirement: Expose a layout-result Three text mesh
-`@webgpu-text/three` SHALL expose a `Text` scene object that accepts a completed
+`@text-rendering-toolkit/three-webgpu` SHALL expose a `Text` scene object that accepts a completed
 renderer-neutral `LayoutResult`, a caller-owned font registry keyed by the
 result's font identities, and baseline appearance options without fetching font
 bytes, executing text layout, deriving interaction geometry, or performing
@@ -34,7 +34,7 @@ automatic itemization or fallback selection.
   or line-breaking operations
 
 ### Requirement: Expose reusable text renderer resources
-`@webgpu-text/three` SHALL expose an explicit `TextResources` owner that can be supplied to multiple `Text` objects while keeping its cache, atlas representation, Three texture, and renderer bindings opaque.
+`@text-rendering-toolkit/three-webgpu` SHALL expose an explicit `TextResources` owner that can be supplied to multiple `Text` objects while keeping its cache, atlas representation, Three texture, and renderer bindings opaque.
 
 #### Scenario: Share resources across text objects
 - **WHEN** a caller constructs one `TextResources` and supplies it to two or more text objects
@@ -178,7 +178,7 @@ coverage, opacity, and optional local rectangular clipping.
   the application-owned renderer or canvas
 
 ### Requirement: Choose planar lighting at construction
-`@webgpu-text/three` SHALL let a caller choose the existing unlit material or one
+`@text-rendering-toolkit/three-webgpu` SHALL let a caller choose the existing unlit material or one
 dedicated planar standard material when constructing `Text`, and SHALL keep that
 choice fixed for the object's lifetime.
 
@@ -216,7 +216,7 @@ using only public Three.js WebGPU and TSL surfaces.
 - **THEN** its ordinary standard-material SDF rendering remains valid without requiring another geometry, atlas, or material path
 
 ### Requirement: Compose optional COLR v0 layers after layout
-`@webgpu-text/three` SHALL optionally consume the font boundary's lazy ordered color layers for each final positioned glyph, render each drawable layer at the base glyph's unchanged position and scale, and preserve the supplied `LayoutResult` as the committed renderer-neutral identity.
+`@text-rendering-toolkit/three-webgpu` SHALL optionally consume the font boundary's lazy ordered color layers for each final positioned glyph, render each drawable layer at the base glyph's unchanged position and scale, and preserve the supplied `LayoutResult` as the committed renderer-neutral identity.
 
 #### Scenario: Render a layered color glyph
 - **WHEN** a positioned glyph's structural font exposes valid ordered COLR v0 layers
@@ -361,7 +361,7 @@ Each `TextResources` MUST reserve a finite positive, construction-fixed SDF padd
 - **THEN** construction or synchronization rejects with a public renderer error before committing resource or text state
 
 ### Requirement: Expose ordinary-glyph outline and one drop shadow
-`@webgpu-text/three` SHALL expose optional mutable appearance for one outer glyph outline and one offset, softened visual drop shadow, with independent color and opacity, while keeping both effects disabled by default and committed only through `Text.sync()`.
+`@text-rendering-toolkit/three-webgpu` SHALL expose optional mutable appearance for one outer glyph outline and one offset, softened visual drop shadow, with independent color and opacity, while keeping both effects disabled by default and committed only through `Text.sync()`.
 
 #### Scenario: Preserve existing defaults
 - **WHEN** a caller constructs and synchronizes text without outline or shadow appearance

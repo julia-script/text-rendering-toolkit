@@ -8,7 +8,7 @@ numeric outlines into deterministic one-channel signed-distance-field pixels.
 ## Requirements
 
 ### Requirement: Expose a pure numeric-outline SDF API
-`@webgpu-text/sdf` SHALL expose a synchronous `generateSdf()` operation that accepts numeric path commands and explicit rasterization options and returns a renderer-neutral `SdfBitmap` without parsing SVG, accessing a font, or mutating caller-owned input.
+`@text-rendering-toolkit/sdf` SHALL expose a synchronous `generateSdf()` operation that accepts numeric path commands and explicit rasterization options and returns a renderer-neutral `SdfBitmap` without parsing SVG, accessing a font, or mutating caller-owned input.
 
 #### Scenario: Generate a bitmap
 - **WHEN** a caller supplies a valid outline, view box, bitmap size, maximum distance, and exponent
@@ -19,7 +19,7 @@ numeric outlines into deterministic one-channel signed-distance-field pixels.
 - **THEN** every returned pixel and metadata value is identical and the input arrays remain unchanged
 
 ### Requirement: Use a small structurally compatible outline contract
-The SDF package SHALL accept move, line, quadratic, cubic, and close commands through numeric command and coordinate arrays whose structure is directly assignable from a public `@webgpu-text/font` `GlyphOutline`, without importing the font package at runtime.
+The SDF package SHALL accept move, line, quadratic, cubic, and close commands through numeric command and coordinate arrays whose structure is directly assignable from a public `@text-rendering-toolkit/font` `GlyphOutline`, without importing the font package at runtime.
 
 #### Scenario: Consume a public font outline
 - **WHEN** a caller passes the numeric command and coordinate arrays returned by `FontHandle.getOutline()` with an explicit SDF view box
@@ -70,7 +70,7 @@ The production implementation MUST use committed synthetic golden fixtures as it
 - **THEN** the complete bitmap bytes and metadata match their reviewed expectations exactly
 
 #### Scenario: Exercise real font outlines
-- **WHEN** representative public `@webgpu-text/font` outlines are passed through the structural seam
+- **WHEN** representative public `@text-rendering-toolkit/font` outlines are passed through the structural seam
 - **THEN** generation succeeds deterministically with valid dimensions and byte ranges without treating font-revision-specific pixels as normative policy
 
 ### Requirement: Remain independent and attributed

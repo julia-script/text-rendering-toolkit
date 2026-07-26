@@ -96,7 +96,7 @@ The fixture corpus SHALL define block, line, and visible glyph bounds from layou
 - **THEN** the accepted overall bounds remain unchanged because chunk boundaries are not part of the layout contract
 
 ### Requirement: Prove compatibility with the public font package
-The validation SHALL include a bounded pinned-font matrix that shapes explicit resolved runs only through the public `@webgpu-text/font` entry point and translates the returned data into the draft resolved-run contract.
+The validation SHALL include a bounded pinned-font matrix that shapes explicit resolved runs only through the public `@text-rendering-toolkit/font` entry point and translates the returned data into the draft resolved-run contract.
 
 #### Scenario: Translate representative real runs
 - **WHEN** pinned Latin, Arabic, Devanagari, Khmer, combining-mark, supplementary-plane, and explicit mixed-direction runs are shaped

@@ -16,7 +16,7 @@ The repository SHALL provide a TypeScript-first Next.js and Fumadocs application
 
 #### Scenario: Develop documentation locally
 - **WHEN** a developer runs the documented docs development command
-- **THEN** the documentation application starts with the four local `@webgpu-text` packages available through their workspace contracts
+- **THEN** the documentation application starts with the four local `@text-rendering-toolkit` packages available through their workspace contracts
 
 ### Requirement: Structured learning content
 The documentation application SHALL provide navigable authored pages covering installation and first use, the renderer-neutral text pipeline, the responsibility of each public package, and the included interactive examples.
@@ -35,7 +35,7 @@ Interactive examples MUST acquire font bytes in the documentation application an
 #### Scenario: Load a demonstration font
 - **WHEN** an example initializes successfully in a browser
 - **THEN** the application fetches a tracked demonstration font asset
-- **AND** passes its bytes to `@webgpu-text/font`
+- **AND** passes its bytes to `@text-rendering-toolkit/font`
 
 #### Scenario: Font acquisition fails
 - **WHEN** the browser cannot fetch or initialize a demonstration font
@@ -69,7 +69,7 @@ The documentation application SHALL provide an interactive example that obtains 
 - **THEN** SDF generation and the two-dimensional preview remain available
 
 ### Requirement: Three.js WebGPU text example
-The documentation application SHALL provide a browser-only Three.js example that renders text through `@webgpu-text/three`, detects WebGPU availability, and isolates GPU-specific behavior from the documentation page and renderer-neutral examples.
+The documentation application SHALL provide a browser-only Three.js example that renders text through `@text-rendering-toolkit/three-webgpu`, detects WebGPU availability, and isolates GPU-specific behavior from the documentation page and renderer-neutral examples.
 
 #### Scenario: Render text with WebGPU
 - **WHEN** a reader opens the Three.js example in a compatible browser
