@@ -27,6 +27,8 @@ consumer whose explicit `sdfPadding: 0.2` is too small for its requested paint.
 - Reuse the existing release-candidate validator as the release technical gate.
 - Add the smallest repeatable CI and Changesets release-PR workflow.
 - Create and push the canonical public GitHub repository.
+- Retire private pre-production experiment workspaces after their accepted
+  behavior has moved into production package and release-candidate tests.
 - Restore a clean quality gate and passing isolated consumer.
 - Preserve the SDF padding contract for now while recording its ergonomics for
   later design work.
@@ -79,8 +81,8 @@ migration burden for an identity that has no public consumers.
 Add only `@changesets/cli` and the standard Changesets Action. Configure the
 four public packages as one fixed group, public access, `main` as the base
 branch, patch internal dependency updates, and the default changelog generator.
-The first version is `0.1.0`. Apps, examples, experiments, and the root remain
-private and are not members of the group.
+The first version is `0.1.0`. Apps, examples, and the root remain private and
+are not members of the group.
 
 This trades extra package publishes for a much simpler initial compatibility
 story: one version identifies one tested family. Independent versioning can be
@@ -120,6 +122,22 @@ public state from being a knowingly broken intermediate rename.
 The initial homepage may be the repository README. Documentation hosting is
 deferred until it provides value beyond the existing buildable docs app.
 
+### Retire superseded private experiment workspaces
+
+Delete the five `experiments/` workspaces and their experiment-only validation
+reports. Their accepted behavior has been promoted into public packages and is
+covered by retained package unit/integration tests, packed-consumer tests, and
+the complete release-candidate validator. Keep reusable font fixtures and
+archived OpenSpec changes, but retire the six current validation capabilities
+whose requirements exist only to maintain those private harnesses.
+
+This also removes Playwright/Chromium setup from canonical CI. Browser and GPU
+software are no longer repository release dependencies; the public Three.js
+adapter remains covered by deterministic package tests and clean packed
+consumer execution. Alternative: keep a subset of completed experiments.
+Rejected because it retains dependency, workspace, and documentation upkeep
+without a release responsibility.
+
 ### Treat the current SDF failure as a fixture correction
 
 The isolated consumer intentionally exercises outline and shadow together. Its
@@ -150,6 +168,9 @@ docs maintenance if they cause an actual cascade problem.
 - **A publish workflow can make an irreversible external release** → Trigger it
   only by manual dispatch, rerun release-candidate validation in the job, and
   require explicit trusted-publisher setup before use.
+- **Removing experiments loses direct reproduction harnesses** → Preserve
+  reusable fixtures and archived OpenSpec history, and require retained
+  production/package/release-candidate checks to pass after deletion.
 - **The npm CLI is currently unauthenticated** → Treat login and registry trust
   configuration as owner-controlled publication gates, not reasons to weaken
   CI or commit credentials.
@@ -172,11 +193,12 @@ docs maintenance if they cause an actual cascade problem.
 4. Correct the two bounded quality/release fixtures and record the padding
    follow-up.
 5. Add CI and release-PR workflows and document the publication boundary.
-6. Run formatting/linting, typechecks, tests, build, package pack tests, and the
+6. Remove superseded private experiments and experiment-only reports.
+7. Run formatting/linting, typechecks, tests, build, package pack tests, and the
    complete release-candidate validator from a clean active tree.
-7. Create the public GitHub repository, add `origin`, push `main`, and confirm
+8. Create the public GitHub repository, add `origin`, push `main`, and confirm
    CI observes the pushed commit.
-8. Leave npm publication and trusted-publisher activation for a separately
+9. Leave npm publication and trusted-publisher activation for a separately
    authorized release action.
 
 Before the GitHub repository is created, rollback is an ordinary Git revert.

@@ -38,7 +38,6 @@ test('keeps Three and browser/rendering concerns inside the renderer boundary', 
     'document.',
     'window.',
     'fetch(',
-    'experiments/webgpu-rendering-seam',
     'old/',
   ]) {
     expect(rendererSource).not.toContain(forbidden)

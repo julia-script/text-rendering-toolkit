@@ -473,10 +473,10 @@ Workers are execution adapters, not a fifth domain package:
 
 Each package gets tests at its own contract:
 
-- `font`: binary fixtures, metrics, coverage, Latin/Arabic/Indic/Khmer shaping clusters, advances, offsets, variation behavior, and numeric outlines; the spike also records WASM startup and repeated-shaping memory behavior.
+- `font`: binary fixtures, metrics, coverage, Latin/Arabic/Indic/Khmer shaping clusters, advances, offsets, variation behavior, numeric outlines, and lifecycle behavior.
 - `text-layout`: deterministic multilingual glyph placement, wrapping, bidi, bounds, carets, and selection fixtures.
 - `sdf`: golden pixel fixtures and encoding invariants, with no GPU required.
-- `three-webgpu`: atlas packing/growth invariants, browser-rendered visual fixtures, texture lifecycle tests, synchronization races, and disposal.
+- `three-webgpu`: atlas packing/growth invariants, deterministic material and renderer state, texture lifecycle tests, synchronization races, packed-consumer coverage, and disposal.
 
 Cross-package integration fixtures cover only the contracts between packages. This prevents renderer failures from being mistaken for parser failures and allows each lower layer to be validated without a GPU.
 
@@ -484,10 +484,9 @@ The accepted layout corpus and implementation handoff are documented in
 [`docs/validation/layout-policy.md`](docs/validation/layout-policy.md). Its
 synthetic fixtures are production conformance inputs; its real-font records are
 boundary observations. Automatic itemization and caller-font fallback are
-production conformance paths backed by
-[`docs/validation/text-preparation-boundary.md`](docs/validation/text-preparation-boundary.md),
-including their Unicode versions and deliberate limits. Worker and provider
-support remain unproven.
+production conformance paths covered by the layout package's preparation and
+integration tests, including their Unicode versions and deliberate limits.
+Worker and provider support remain unproven.
 
 ## Architectural rules for future changes
 
@@ -570,9 +569,10 @@ This keeps ordinary measurement, caret, and hit-testing use cases from paying ou
 
 `sdf` ends at `SdfBitmap`. `three-webgpu` owns allocation, channel packing, growth, dirty tracking, eviction, `DataTexture` upload, and disposal. This keeps the reusable SDF package small and lets renderer-specific performance work evolve without changing the SDF contract.
 
-### Use the proven TSL/WebGPU rendering kernel
+### Use the TSL/WebGPU rendering kernel
 
-The private `prove-webgpu-rendering-seam` experiment validated Three.js 0.185.1 on an actual Apple Metal-backed WebGPU adapter. The viable production kernel is deliberately smaller than Troika's renderer layer:
+The production Three.js 0.185.1 adapter uses a deliberately small rendering
+kernel rather than reproducing Troika's renderer layer:
 
 ```mermaid
 flowchart LR
@@ -590,32 +590,32 @@ flowchart LR
 
 The flat atlas slot is the renderer-neutral geometry value: `cell = floor(slot / 4)` and `channel = slot % 4`. The renderer derives cell UVs from atlas dimensions/cell size and selects the packed RGBA channel in TSL. `sdf` remains unaware of cells, channels, textures, and Three.js.
 
-Production ownership differs from the self-contained experiment harness. A
-text object owns its instanced geometry and node material. With default private
+Production ownership is explicit. A text object owns its instanced geometry and
+node material. With default private
 resources it also disposes its resource owner; with injected resources it only
 borrows them. Public `TextResources` owns packing, cache state, texture updates,
 and texture disposal, and applications dispose shared resources after every
 borrower. The application separately owns the shared `WebGPURenderer` and DOM
 canvas; creating a renderer per text object is prohibited.
 
-The original experiment proved one-cell/four-channel rendering, semantic SDF
+Retained production tests cover one-cell/four-channel rendering, semantic SDF
 coverage, opacity, clipping, orientation, cylindrical placement, in-place
-texture/attribute updates, and create-render-update-dispose reuse. The shipped
-renderer follow-up then proved real-font SDFs and multi-cell atlas growth, and
-the planar integration proved production lighting and shadows with the same
-atlas and lifecycle. The shared-resource follow-up proved same-handle glyph/SDF
-reuse plus borrower-triggered atlas growth without resynchronizing or visually
-changing an existing text. Atlas eviction, partial texture upload, configurable or
-curved materials, and batching remain separate work.
+texture/attribute updates, create-render-update-dispose reuse, real-font SDFs,
+multi-cell atlas growth, planar lighting and shadows, and shared-resource
+growth. Atlas eviction, partial texture upload, configurable or curved
+materials, and batching remain separate work.
 
-Three's renderer-backend identity and TSL surface remain revision-specific boundaries. The private validation may inspect `renderer.backend.isWebGPUBackend` for pinned actual-WebGPU evidence, but that diagnostic must not spread through the public API. The TSL implementation should remain behind a narrow local adapter: Three's complete fluent TSL declarations caused pathological TypeScript 7.0.2 memory growth during the spike. Every Three revision change must rerun the browser validation before the supported range changes.
+Three's renderer-backend identity and TSL surface remain revision-specific
+boundaries, and backend diagnostics must not spread through the public API. The
+TSL implementation stays behind a narrow local adapter because Three's complete
+fluent TSL declarations caused pathological TypeScript memory growth during
+validation. Every Three revision change must rerun the retained adapter,
+package, and release-candidate checks before the supported range changes.
 
-See [the complete validation report](docs/validation/webgpu-rendering-seam.md) for the recorded environment, evidence, limitations, and promotion contract.
+### Use the bounded planar lighting and shadow seam
 
-### Use the validated planar lighting and shadow seam
-
-The private `prove-lit-text-shadow-seam` experiment validates one deliberately
-narrow path on the same Three.js 0.185.1 and Apple Metal WebGPU environment:
+The production adapter supports one deliberately narrow planar path on Three.js
+0.185.1:
 
 ```mermaid
 flowchart LR
@@ -642,18 +642,16 @@ data, not a custom lighting node.
 One revision-specific behavior is essential: Three normally flips a material's
 side in its shadow override. A zero-thickness front-facing text plane therefore
 casts nothing unless its public `shadowSide` is explicitly set to the visible
-side. With that setting, the experiment measured distinct rectangle and circle
-silhouettes, transparent cutouts, and an external shadow darkening only visible
-glyph coverage. `castShadowNode`, transmitted shadows, duplicate shadow meshes,
-private renderer APIs, and shader strings were not needed.
+side. Retained material tests verify the corresponding shadow configuration,
+transparent cutout mask, and glyph-only coverage. `castShadowNode`, transmitted
+shadows, duplicate shadow meshes, private renderer APIs, and shader strings are
+not needed.
 
 Production now exposes that bounded variant through construction-only
 `TextOptions.lit`. It reuses the same atlas, position, color, opacity, clipping,
 update, and disposal path and has been revalidated with real Latin/Arabic glyphs
 through the production lifecycle. It does not validate curved, double-sided,
-extruded, configurable physical, or normal-mapped text. See the
-[lit/shadow seam report](docs/validation/lit-text-shadow-seam.md) and the
-[production renderer report](docs/validation/three-webgpu-text-core.md).
+extruded, configurable physical, or normal-mapped text.
 
 ### Extend the glyph payload lazily for COLR v0
 
@@ -682,12 +680,11 @@ The selected bounded table reader is preferred to the measured universal
 HarfBuzz color bridge: the bridge works in Node and browser ESM and correctly
 reports layer/palette presence, but enabling layer, paint, bitmap, and SVG
 operations adds 31,884 bytes to the current WASM. COLR v1, sbix, and SVG remain
-deliberately unsupported until their separate complexity is justified. See the
-[color-glyph boundary report](docs/validation/color-glyph-boundary.md).
+deliberately unsupported until their separate complexity is justified.
 
 ### Separate line decorations from glyph paint
 
-The browser-text decoration experiment validates two independent boundaries:
+The production design keeps two independent boundaries:
 
 ```mermaid
 flowchart LR
@@ -729,13 +726,10 @@ does not participate in the lit material's scene-shadow mask.
 Renderer-neutral decorations can cross COLR v0 glyphs unchanged. Outline and
 shadow over the composed silhouette of a layered color glyph are explicitly
 deferred because independently painting each layer can expose internal seams.
-The accepted contracts, actual Apple Metal WebGPU evidence, limits, and two
-production scopes are recorded in the
-[browser-text decoration report](docs/validation/browser-text-decoration-boundary.md).
 Production font/layout conformance is recorded in the
 [renderer-neutral decoration report](docs/validation/renderer-neutral-text-decorations.md),
-and the shipped Three paint path is recorded in the
-[production renderer report](docs/validation/three-webgpu-text-core.md).
+while the shipped Three paint path is covered by its package and
+release-candidate tests.
 
 ### Reuse MIT sources with explicit provenance
 
@@ -743,4 +737,5 @@ The CPU SDF implementation is derived from `webgl-sdf-generator@1.1.1`, whose [p
 
 ## Decisions still open
 
-- Whether to adopt the recommended `Text Rendering Toolkit` / `@text-rendering-toolkit/{font,layout,sdf,three}` naming scheme or choose one of the alternative scopes.
+No release-blocking architecture decisions remain. Deferred capabilities and
+their evidence thresholds are tracked in the roadmap.

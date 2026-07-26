@@ -24,6 +24,9 @@ path to an intentional first public release.
 - Add Changesets with the four public packages in one fixed-version group,
   default changelogs, and a small GitHub Actions workflow for CI and release
   pull requests.
+- Remove the five private pre-production experiment workspaces and their
+  experiment-only validation reports now that production package tests and the
+  packed release-candidate validator cover the promoted behavior.
 - Create the public `julia-script/text-rendering-toolkit` GitHub repository with
   `gh`, attach it as `origin`, and push `main`.
 - Fix the two discovered release gates: make the documentation pipeline diagram
@@ -54,7 +57,17 @@ path to an intentional first public release.
 - `layout-policy-validation`: Update real-font validation to the renamed public
   font entry point.
 - `webgpu-rendering-seam-validation`: Update the public-package boundary to the
-  new npm scope.
+  new npm scope, then retire the superseded private validation capability.
+- `browser-text-decoration-boundary-validation`: Retire the superseded private
+  validation capability.
+- `color-glyph-boundary-validation`: Retire the superseded private validation
+  capability.
+- `font-engine-validation`: Retire the superseded private validation
+  capability.
+- `lit-text-shadow-seam-validation`: Retire the superseded private validation
+  capability.
+- `text-preparation-validation`: Retire the superseded private validation
+  capability.
 - `release-candidate-validation`: Validate the renamed tarballs and resolve the
   now-selected package identity while retaining explicit owner-controlled
   publication gates.
@@ -62,10 +75,11 @@ path to an intentional first public release.
 ## Impact
 
 The change touches all active workspace manifests and imports, package READMEs
-and notices, the documentation application, examples and experiments, release
-candidate tooling, the lockfile, current specifications, and repository
-metadata. It adds Changesets and GitHub Actions as development/release tooling,
-creates one public GitHub repository, and prepares four public npm packages
-without publishing them. The renderer API remains behaviorally unchanged apart
-from its package import path; the temporary consumer padding adjustment only
-makes the existing release fixture satisfy the documented paint contract.
+and notices, the documentation application, examples, release-candidate
+tooling, the lockfile, current specifications, and repository metadata. It
+removes five superseded private experiment workspaces, adds Changesets and
+GitHub Actions as development/release tooling, creates one public GitHub
+repository, and prepares four public npm packages without publishing them. The
+renderer API remains behaviorally unchanged apart from its package import path;
+the temporary consumer padding adjustment only makes the existing release
+fixture satisfy the documented paint contract.

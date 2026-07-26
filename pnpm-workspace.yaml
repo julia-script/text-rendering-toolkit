@@ -2,10 +2,6 @@ packages:
   - apps/*
   - packages/*
   - examples/*
-  - experiments/webgpu-rendering-seam
-  - experiments/text-preparation
-  - experiments/color-glyph-boundary
-  - experiments/browser-text-decoration-boundary
 allowBuilds:
   esbuild: true
   sharp: true

@@ -283,7 +283,9 @@ archive. The next proposal should select one bounded remaining item.
 - Revisit SDF paint-capacity and padding ergonomics — why it matters: callers currently choose `sdfPadding` in em units and must reason about outline and shadow capacity themselves; explore a capacity query, explicit appearance budget, or clearer diagnostics in a separate API change.
 - Extend font-container coverage — why it matters: WOFF/WOFF2 decoding requires additional contracts; variable TrueType axes are already validated. Revisit decoder costs after the ordinary TTF/OTF path is stable.
 - Publish optional framework integrations — why it matters: easier adoption in React Three Fiber or other ecosystems; revisit after the core API is stable.
-- Authorize a public release — why it matters: package identity, licensing, version, canonical metadata, npm access, and provenance are already bounded, but intentionally paused while the project is consumed locally.
+- Complete the first public release — why it matters: package identity,
+  licensing, version, canonical metadata, npm access, and provenance are
+  bounded and owner authorization has been granted.
 
 ## Not doing
 
@@ -297,10 +299,8 @@ archive. The next proposal should select one bounded remaining item.
 
 ## Open questions
 
-- Should we adopt the recommended project name **Text Rendering Toolkit**, repository `text-rendering-toolkit`, and packages `@text-rendering-toolkit/font`, `@text-rendering-toolkit/layout`, `@text-rendering-toolkit/sdf`, and `@text-rendering-toolkit/three-webgpu`? The exact package names are currently unused, but npm scope ownership still needs confirmation.
-- Which license and initial coordinated version should cover the new project's original code and first public package family?
-- Which canonical repository metadata, npm access policy, and provenance workflow should the first release use?
-- Which CI environment can reproduce the validated Chrome for Testing 149 WebGPU launch currently proven on macOS/Apple Metal?
+There are no remaining release-blocking product questions. The deferred API and
+performance questions are tracked under **Later** above.
 
 ## Decisions made
 
@@ -316,7 +316,16 @@ archive. The next proposal should select one bounded remaining item.
 - **SDF provenance:** the CPU implementation adapts `webgl-sdf-generator@1.1.1`, retains its copyright and full MIT notice, records exact npm provenance and local changes, and excludes SVG parsing, WebGL, canvas, framebuffer, and worker paths.
 - **Atlas ownership:** `@text-rendering-toolkit/sdf` returns only `SdfBitmap`; `@text-rendering-toolkit/three-webgpu` owns the complete atlas implementation and GPU lifecycle.
 - **Renderer kernel:** promote one instanced unit quad, typed bounds/flat-slot/color attributes, renderer-owned RGBA `DataTexture`, and an unlit TSL material for cell/channel addressing, SDF coverage, opacity, clipping, orientation, and curvature. Do not port shader rewriting.
-- **Renderer validation:** pin Three.js 0.185.1 for the first implementation and rerun the private actual-WebGPU experiment before widening or changing the revision. WebGL fallback is never passing evidence.
+- **Renderer validation:** pin Three.js 0.185.1 for the first implementation
+  and rerun the retained adapter, package, and release-candidate checks before
+  widening or changing the revision. WebGL fallback is not supported.
+- **Release identity:** use **Text Rendering Toolkit**, repository
+  `text-rendering-toolkit`, and packages `@text-rendering-toolkit/font`,
+  `@text-rendering-toolkit/layout`, `@text-rendering-toolkit/sdf`, and
+  `@text-rendering-toolkit/three-webgpu`.
+- **Release policy:** license original project code under MIT, coordinate the
+  first package family at version `0.1.0`, publish publicly from the canonical
+  GitHub repository, and use npm trusted publishing for later releases.
 - **Renderer ownership:** production text objects own their geometry and material. `TextResources` owns texture/cache state; a text disposes default private resources but only borrows injected resources. Applications dispose a shared resource after all borrowers, and separately own the shared Three renderer and canvas.
 - **Renderer-neutral handoff:** `LayoutResult` is the complete input to any renderer and carries `fontUnitScale` on each positioned glyph. Three accepts that result plus structural caller-owned lazy-outline handles and performs no layout or interaction policy.
 - **Raw-text preparation:** promote the validated synchronous two-stage layout contract: immutable serializable bidi/script/style preparation first, then explicit grapheme-safe fallback and HarfBuzz shaping over caller-owned font handles. Keep `layoutResolvedText()` as the expert API and offer a one-call convenience composition; font fetching must never be required by this path.

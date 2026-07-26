@@ -253,7 +253,6 @@ skipped cases among more than 7,600 conformance fixtures; see the third-party
 notice and validation record for the accepted evidence boundary.
 
 The normative layout and preparation evidence is documented in
-[`docs/validation/layout-policy.md`](../../docs/validation/layout-policy.md) and
-[`docs/validation/text-preparation-boundary.md`](../../docs/validation/text-preparation-boundary.md),
+[`docs/validation/layout-policy.md`](../../docs/validation/layout-policy.md),
 with Unicode opportunity and exact-composition evidence in
 [`docs/validation/unicode-line-breaking.md`](../../docs/validation/unicode-line-breaking.md).

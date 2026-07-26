@@ -2,7 +2,7 @@
 
 Renderer-neutral font loading, HarfBuzz shaping, font facts, coverage, and lazy numeric glyph outlines.
 
-The package is strict TypeScript and ESM-only. It does not fetch URLs, perform paragraph layout or fallback, generate SDFs, import Three.js, require browser globals, or depend on the repository's `old/` and `experiments/` directories.
+The package is strict TypeScript and ESM-only. It does not fetch URLs, perform paragraph layout or fallback, generate SDFs, import Three.js, require browser globals, or depend on private validation code.
 
 ## Usage
 

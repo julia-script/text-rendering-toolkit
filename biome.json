@@ -8,10 +8,6 @@
       "release-candidate/**",
       "!packages/font/src/internal/vendor",
       "examples/**",
-      "experiments/webgpu-rendering-seam/**",
-      "experiments/text-preparation/**",
-      "experiments/color-glyph-boundary/**",
-      "experiments/browser-text-decoration-boundary/**",
       "*.json"
     ]
   },
@@ -42,16 +38,5 @@
       "quoteStyle": "single",
       "semicolons": "asNeeded"
     }
-  },
-  "overrides": [
-    {
-      "includes": [
-        "experiments/webgpu-rendering-seam/artifacts/lit-text-shadow-seam.json",
-        "experiments/webgpu-rendering-seam/artifacts/three-webgpu-text-core.json"
-      ],
-      "formatter": {
-        "enabled": false
-      }
-    }
-  ]
+  }
 }

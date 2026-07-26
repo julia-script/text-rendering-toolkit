@@ -376,10 +376,10 @@ function installConsumer(packages: readonly PackedPackage[], consumer: string): 
 function publicationGates(): readonly PublicationGate[] {
   return [
     {
-      id: 'first-publication-authorization',
+      id: 'first-publication-bootstrap',
       status: 'blocked',
       reason:
-        'The owner has not separately authorized publication of the coordinated @text-rendering-toolkit 0.1.0 package family.',
+        'The package names do not exist on npm yet, so an authenticated owner must bootstrap the coordinated 0.1.0 package family before trusted publishing can take over.',
     },
     {
       id: 'trusted-publisher-activation',

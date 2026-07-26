@@ -182,9 +182,10 @@ UMD, or Troika API compatibility.
 
 ```sh
 pnpm --filter @text-rendering-toolkit/three-webgpu test
-pnpm --dir experiments/webgpu-rendering-seam test:browser -- production-text.browser.test.ts
+pnpm release:candidate
 ```
 
-The browser command requires an actual WebGPU adapter and rejects Three's WebGL
-fallback. See
-[`docs/validation/three-webgpu-text-core.md`](../../docs/validation/three-webgpu-text-core.md).
+The package suite covers deterministic rendering state, resource sharing,
+appearance updates, color layers, lifecycle, and packed consumption. The
+release candidate exercises the complete public package family outside the
+workspace.

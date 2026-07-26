@@ -36,6 +36,8 @@
 - [x] 5.3 Add a separately manual-dispatched publish workflow with `id-token: write` that reruns release validation before the authorized Changesets publish command.
 - [x] 5.4 Document npm login recovery, first-publication bootstrapping, package publication order, trusted-publisher configuration for all four packages, provenance, and post-publication verification.
 - [x] 5.5 Verify no npm token, credential, automatic publish-on-push path, docs deployment, release matrix, or custom changelog/publishing implementation was added.
+- [x] 5.6 Remove all five private experiment workspaces and experiment-only validation reports, prune their workspace, dependency, browser, documentation, and CI references, and retain reusable fixtures plus production/package/release-candidate tests.
+- [x] 5.7 Record removal of the six superseded private validation capabilities in delta specs so mandatory sync does not leave false current requirements.
 
 ## 6. Prove Local Release Readiness
 
@@ -44,6 +46,8 @@
 - [x] 6.3 Run the root build and complete packed release-candidate validator and confirm assembly, tarball audit, isolated install, consumer typecheck, consumer runtime, and source-manifest preservation all pass.
 - [x] 6.4 Inspect the generated report and tarballs for aligned `0.1.0` versions, canonical package names, public metadata, hashes, sizes, required assets, licenses, notices, and absence of workspace protocols.
 - [x] 6.5 Verify the working tree contains only the intended release-preparation changes and that delta specs cover every current-spec package-name change for mandatory sync before archive.
+- [x] 6.6 Regenerate the lockfile after experiment removal and rerun formatting, typechecking, retained tests, build, and the complete packed release-candidate validator.
+- [x] 6.7 Reinspect the final generated report and tarballs after pruning for canonical names, aligned `0.1.0` versions, public metadata, required assets, and no workspace protocols.
 
 ## 7. Publish the Repository, Not the npm Packages
 
@@ -51,4 +55,5 @@
 - [x] 7.2 Commit the verified release-preparation changes so the public default branch will contain the complete rename and workflow setup.
 - [x] 7.3 Verify the public `julia-script/text-rendering-toolkit` repository with GitHub CLI and push `main` through its canonical `origin`.
 - [ ] 7.4 Verify repository visibility, canonical remote, default branch, README rendering, and the first GitHub Actions results.
-- [ ] 7.5 Confirm no `@text-rendering-toolkit` package was published to npm and leave trusted-publisher activation and first publication for a separate explicit owner authorization.
+- [x] 7.5 Confirm no `@text-rendering-toolkit` package was published during release preparation; separate owner authorization has now been granted for the subsequent first-publication bootstrap and trusted-publisher activation.
+- [ ] 7.6 Commit and push the experiment cleanup, then verify canonical CI and Release PR workflows succeed on the final `main`.

@@ -37,7 +37,7 @@ license.
 
 #### Scenario: Keep non-public workspaces private
 - **WHEN** Changesets and package assembly inspect the workspace
-- **THEN** the root, documentation app, examples, and experiments remain private and cannot be published accidentally
+- **THEN** the root, documentation app, and examples remain private and cannot be published accidentally
 
 ### Requirement: Coordinate package-family versions
 The repository SHALL use Changesets with the four public packages in one fixed
