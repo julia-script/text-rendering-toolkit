@@ -30,10 +30,10 @@ The OIDC token exchange cannot be rehearsed. `getIdToken()` returns `undefined` 
 local `--dry-run` exercises it. The first real publish is the first true test — which is
 why the two guards exist. These tasks cover everything that *can* be checked first.
 
-- [ ] 4.1 Push the change to a branch and confirm CI passes, so the release run's `pnpm check` and `pnpm release:candidate` gates are known-good before they guard a publish.
-- [ ] 4.2 Confirm the workflow file parses and its steps resolve as expected on GitHub (no invalid `if:` expressions, and `changesets/action` accepts both the `version` and `publish` inputs).
+- [x] 4.1 Push the change to a branch and confirm CI passes, so the release run's `pnpm check` and `pnpm release:candidate` gates are known-good before they guard a publish.
+- [x] 4.2 Confirm the workflow file parses and its steps resolve as expected on GitHub (no invalid `if:` expressions, and `changesets/action` accepts both the `version` and `publish` inputs).
 - [x] 4.3 Confirm `pnpm release:publish:ci` forwards publish stdout unchanged, since `changesets/action` parses it to produce the `published` and `publishedPackages` outputs that drive the trust verification and the tags. Covered by the guard's own tests in `pnpm check`.
-- [ ] 4.4 Re-read the `Skipped OIDC` failure path before merging: on a mismatch the wrapper fails the release, and with no `NPM_TOKEN` anywhere the publish cannot silently fall back to a token.
+- [x] 4.4 Re-read the `Skipped OIDC` failure path before merging: on a mismatch the wrapper fails the release, and with no `NPM_TOKEN` anywhere the publish cannot silently fall back to a token.
 
 ## 5. Release 0.2.0 through the new flow
 
