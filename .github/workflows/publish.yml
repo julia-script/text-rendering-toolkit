@@ -1,14 +1,35 @@
-name: Publish npm packages
+name: Release
+
+# Maintains the Changesets version pull request and publishes the package family
+# when that pull request merges. Merging the version pull request is the owner's
+# authorization to publish; no other event publishes.
+#
+# Publication authenticates with a short-lived GitHub Actions OIDC credential.
+# `changeset publish` resolves the publishing tool from the root `packageManager`
+# field and therefore runs `pnpm publish`, which both performs the npm OIDC token
+# exchange and rewrites `workspace:` ranges into registry-safe semver. Both
+# behaviors are required — see docs/RELEASING.md.
+#
+# DO NOT RENAME THIS FILE. Each package's npm trusted publisher names it exactly
+# ("publish.yml"); npm matches that against the OIDC token's job_workflow_ref
+# claim. A rename does not fail loudly — the exchange is refused, pnpm warns
+# `Skipped OIDC`, and the release falls back to an untrusted publish. Renaming
+# means editing the trusted publisher on all four packages first.
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - main
 
 permissions:
-  contents: read
+  contents: write
+  pull-requests: write
   id-token: write
 
+concurrency: release-${{ github.ref }}
+
 jobs:
-  publish:
+  version:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -18,10 +39,29 @@ jobs:
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
-          package-manager-cache: false
-      - run: npm install --global npm@^11.5.1
+          cache: pnpm
       - run: pnpm install --frozen-lockfile
+
+      # Gate every run, so a release can never proceed from an unvalidated tree.
+      - run: pnpm check
       - run: pnpm release:candidate
-      - run: pnpm release:publish
+
+      - id: changesets
+        uses: changesets/action@v1
+        with:
+          version: pnpm release:version
+          # Wrapped rather than calling `pnpm release:publish` directly: pnpm
+          # downgrades a failed OIDC exchange to a `Skipped OIDC` warning on stdout
+          # and publishes anyway, so the warning has to be caught where it is
+          # emitted. A step output cannot carry it.
+          publish: pnpm release:publish:ci
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: "true"
+
+      # Independent of the log check: confirms on the registry that what was
+      # actually published carries trusted-publisher evidence and provenance.
+      - if: steps.changesets.outputs.published == 'true'
+        run: node .github/scripts/verify-release-trust.mjs
+        env:
+          PUBLISHED_PACKAGES: ${{ steps.changesets.outputs.publishedPackages }}

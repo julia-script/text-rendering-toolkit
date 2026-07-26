@@ -324,8 +324,11 @@ performance questions are tracked under **Later** above.
   `@text-rendering-toolkit/layout`, `@text-rendering-toolkit/sdf`, and
   `@text-rendering-toolkit/three-webgpu`.
 - **Release policy:** license original project code under MIT, keep the public
-  `0.1.x` package family version-aligned, publish from the canonical GitHub
-  repository, and use npm trusted publishing for later releases.
+  package family version-aligned, and publish from the canonical GitHub
+  repository. Merging the Changesets version pull request authorizes publication;
+  the release workflow then publishes with npm trusted publishing and provenance,
+  using no long-lived token, and fails the release if that trust evidence is
+  absent.
 - **Renderer ownership:** production text objects own their geometry and material. `TextResources` owns texture/cache state; a text disposes default private resources but only borrows injected resources. Applications dispose a shared resource after all borrowers, and separately own the shared Three renderer and canvas.
 - **Renderer-neutral handoff:** `LayoutResult` is the complete input to any renderer and carries `fontUnitScale` on each positioned glyph. Three accepts that result plus structural caller-owned lazy-outline handles and performs no layout or interaction policy.
 - **Raw-text preparation:** promote the validated synchronous two-stage layout contract: immutable serializable bidi/script/style preparation first, then explicit grapheme-safe fallback and HarfBuzz shaping over caller-owned font handles. Keep `layoutResolvedText()` as the expert API and offer a one-call convenience composition; font fetching must never be required by this path.
