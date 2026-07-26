@@ -37,13 +37,13 @@ why the two guards exist. These tasks cover everything that *can* be checked fir
 
 ## 5. Release 0.2.0 through the new flow
 
-- [ ] 5.1 Confirm the Changesets version PR contains the expected `0.2.0` bump for all four packages and the release notes from both pending changesets.
-- [ ] 5.2 Merge the version PR and confirm the release workflow publishes rather than reopening a version PR.
-- [ ] 5.3 Confirm publication happened in dependency order, with `font` and `sdf` before `layout` and `layout` before `three-webgpu`.
-- [ ] 5.4 Confirm the version commit and one git tag per released package were pushed to the canonical repository.
-- [ ] 5.5 Verify on the registry that all four packages expose `0.2.0`, public access, canonical repository metadata, and provenance attestations.
-- [ ] 5.6 Install the four packages from the registry in a clean directory outside the repository and confirm the public consumer type-check and runtime handoffs pass.
-- [ ] 5.7 Confirm no trust-downgrade warning occurs on install, since `0.1.x` carried no trust evidence and `0.2.0` adds attestation.
+- [x] 5.1 Confirm the Changesets version PR contains the expected `0.2.0` bump for all four packages and the release notes from both pending changesets.
+- [x] 5.2 Merge the version PR and confirm the release workflow publishes rather than reopening a version PR.
+- [x] 5.3 Confirm publication happened in dependency order, with `font` and `sdf` before `layout` and `layout` before `three-webgpu`.
+- [x] 5.4 Confirm the version commit and one git tag per released package were pushed to the canonical repository.
+- [x] 5.5 Verify on the registry that all four packages expose `0.2.0`, public access, canonical repository metadata, and provenance attestations.
+- [x] 5.6 Install the four packages from the registry in a clean directory outside the repository and confirm the public consumer type-check and runtime handoffs pass.
+- [x] 5.7 Confirm no trust-downgrade warning occurs on install, since `0.1.x` carried no trust evidence and `0.2.0` adds attestation.
 
 ## 6. Reconcile the documentation
 
@@ -60,4 +60,4 @@ why the two guards exist. These tasks cover everything that *can* be checked fir
 - [x] 7.1 Run `pnpm check` and make it pass.
 - [x] 7.2 Run `openspec validate --changes automate-trusted-publishing --strict` and resolve any findings.
 - [x] 7.3 Confirm no package source, public API, or consumer-visible behavior changed in this change.
-- [ ] 7.4 Sync the `public-release-workflow` delta into `openspec/specs/` and archive the change.
+- [x] 7.4 Sync the `public-release-workflow` delta into `openspec/specs/` and archive the change.
