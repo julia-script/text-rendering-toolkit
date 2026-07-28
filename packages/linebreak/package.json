@@ -1,6 +1,6 @@
 {
   "name": "@text-rendering-toolkit/linebreak",
-  "version": "0.0.0",
+  "version": "0.2.0",
   "description": "Line breaking for the text rendering toolkit.",
   "license": "MIT",
   "repository": {
