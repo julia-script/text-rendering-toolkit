@@ -15,11 +15,11 @@
 import {
   EastAsianWidth,
   GeneralCategory,
-  LineBreakClass,
   getEastAsianWidth,
   getGeneralCategory,
   getLineBreakClass,
   isExtendedPictographic,
+  LineBreakClass,
 } from './tables.js'
 import type { LineBreakState } from './types.js'
 
@@ -128,10 +128,44 @@ function isHardBreakClass(cls: LineBreakClass): boolean {
  * measured cost.
  */
 const RULES = [
-  lb4, lb5, lb6, lb7, lb8, lb8a, lb11, lb12, lb12a, lb13, lb14,
-  lb15a, lb15b, lb15c, lb15d, lb16, lb17, lb18, lb19, lb19a,
-  lb20, lb20a, lb21, lb21a, lb21b, lb22, lb23, lb23a, lb24, lb25,
-  lb26, lb27, lb28, lb28a, lb29, lb30, lb30a, lb30b,
+  lb4,
+  lb5,
+  lb6,
+  lb7,
+  lb8,
+  lb8a,
+  lb11,
+  lb12,
+  lb12a,
+  lb13,
+  lb14,
+  lb15a,
+  lb15b,
+  lb15c,
+  lb15d,
+  lb16,
+  lb17,
+  lb18,
+  lb19,
+  lb19a,
+  lb20,
+  lb20a,
+  lb21,
+  lb21a,
+  lb21b,
+  lb22,
+  lb23,
+  lb23a,
+  lb24,
+  lb25,
+  lb26,
+  lb27,
+  lb28,
+  lb28a,
+  lb29,
+  lb30,
+  lb30a,
+  lb30b,
 ] as const
 
 /**
@@ -208,11 +242,7 @@ function isPlainLetter(cls: LineBreakClass): boolean {
  * The conformance corpus exercises both paths, so an error here fails 19,338
  * cases rather than passing silently.
  */
-function fastPath(
-  before: Character,
-  after: Character,
-  state: LineBreakState,
-): Decision {
+function fastPath(before: Character, after: Character, state: LineBreakState): Decision {
   // Any pending carried state may change the answer; take the slow path.
   if (
     state.afterZeroWidthSpace ||
@@ -437,7 +467,10 @@ function lb19(before: Character, after: Character): Decision {
 function lb19a(
   before: Character,
   after: Character,
-  state: LineBreakState & { readonly nextClass?: LineBreakClass | null; readonly nextCodePoint?: number | null },
+  state: LineBreakState & {
+    readonly nextClass?: LineBreakClass | null
+    readonly nextCodePoint?: number | null
+  },
 ): Decision {
   if (after.cls === LineBreakClass.QU) {
     // [^$EastAsian] × QU
@@ -548,8 +581,7 @@ function lb23a(before: Character, after: Character): Decision {
 function lb24(before: Character, after: Character): Decision {
   const isPrefixPostfix = (cls: LineBreakClass) =>
     cls === LineBreakClass.PR || cls === LineBreakClass.PO
-  const isAlpha = (cls: LineBreakClass) =>
-    cls === LineBreakClass.AL || cls === LineBreakClass.HL
+  const isAlpha = (cls: LineBreakClass) => cls === LineBreakClass.AL || cls === LineBreakClass.HL
 
   if (isPrefixPostfix(before.cls) && isAlpha(after.cls)) return Decision.Prohibited
   if (isAlpha(before.cls) && isPrefixPostfix(after.cls)) return Decision.Prohibited
@@ -580,8 +612,7 @@ function lb25(
     readonly afterNextClass?: LineBreakClass | null
   },
 ): Decision {
-  const afterIsPrefixPostfix =
-    after.cls === LineBreakClass.PO || after.cls === LineBreakClass.PR
+  const afterIsPrefixPostfix = after.cls === LineBreakClass.PO || after.cls === LineBreakClass.PR
 
   // NU ( SY | IS )* [CL | CP] × (PO | PR), and NU ( SY | IS )* × (PO | PR | NU)
   if (state.inNumericSequence) {
@@ -600,8 +631,7 @@ function lb25(
   }
 
   // (PO | PR) × NU, and (PO | PR) × OP [IS] NU
-  const beforeIsPrefixPostfix =
-    before.cls === LineBreakClass.PO || before.cls === LineBreakClass.PR
+  const beforeIsPrefixPostfix = before.cls === LineBreakClass.PO || before.cls === LineBreakClass.PR
   if (beforeIsPrefixPostfix) {
     if (after.cls === LineBreakClass.NU) return Decision.Prohibited
     if (after.cls === LineBreakClass.OP) {
@@ -669,8 +699,7 @@ function lb27(before: Character, after: Character): Decision {
 
 /** LB28: `(AL | HL) × (AL | HL)` — do not break between alphabetics. */
 function lb28(before: Character, after: Character): Decision {
-  const isAlpha = (cls: LineBreakClass) =>
-    cls === LineBreakClass.AL || cls === LineBreakClass.HL
+  const isAlpha = (cls: LineBreakClass) => cls === LineBreakClass.AL || cls === LineBreakClass.HL
   return isAlpha(before.cls) && isAlpha(after.cls) ? Decision.Prohibited : Decision.None
 }
 

@@ -9,9 +9,9 @@
  * continue to track the real text.
  */
 
-import { Decision, decide, resolveCharacter } from './rules.js'
 import type { Character } from './rules.js'
-import { GeneralCategory, LineBreakClass, getGeneralCategory } from './tables.js'
+import { Decision, decide, resolveCharacter } from './rules.js'
+import { GeneralCategory, getGeneralCategory, LineBreakClass } from './tables.js'
 import type { LineBreakOpportunity } from './types.js'
 import { createState, enterCarriedState, exitCarriedState } from './types.js'
 
@@ -90,7 +90,12 @@ function foldCombiningMarks(text: string): FoldedPosition[] {
         end = next.end
         index += 1
       }
-      folded.push({ character: position.character, start: position.start, end, endsWithZeroWidthJoiner })
+      folded.push({
+        character: position.character,
+        start: position.start,
+        end,
+        endsWithZeroWidthJoiner,
+      })
       continue
     }
 
@@ -109,11 +114,15 @@ function foldCombiningMarks(text: string): FoldedPosition[] {
       continue
     }
 
-    folded.push({ character: position.character, start: position.start, end, endsWithZeroWidthJoiner })
+    folded.push({
+      character: position.character,
+      start: position.start,
+      end,
+      endsWithZeroWidthJoiner,
+    })
   }
   return folded
 }
-
 
 /** `[\p{Pi}&QU]` membership, for the LB15a state flag. */
 function isInitialPunctuationCodePoint(codePoint: number): boolean {

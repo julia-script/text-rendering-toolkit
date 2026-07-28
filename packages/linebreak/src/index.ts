@@ -28,6 +28,6 @@
  */
 
 export { analyzeLineBreaks as findLineBreakOpportunities } from './analyze.js'
-export type { LineBreakOpportunity } from './types.js'
 export { LineBreakStream } from './stream.js'
 export { UNICODE_VERSION } from './tables.js'
+export type { LineBreakOpportunity } from './types.js'

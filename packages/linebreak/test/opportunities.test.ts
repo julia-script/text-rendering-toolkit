@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { UNICODE_VERSION, findLineBreakOpportunities } from '../src/index.js'
+import { findLineBreakOpportunities, UNICODE_VERSION } from '../src/index.js'
 
 const positions = (text: string): number[] =>
   findLineBreakOpportunities(text).map((opportunity) => opportunity.position)

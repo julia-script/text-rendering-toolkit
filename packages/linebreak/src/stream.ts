@@ -17,11 +17,10 @@
  *   total input.
  */
 
-import { Decision, decide, resolveCharacter } from './rules.js'
 import type { Character } from './rules.js'
-import { LineBreakClass } from './tables.js'
+import { Decision, decide, resolveCharacter } from './rules.js'
+import { GeneralCategory, getGeneralCategory, LineBreakClass } from './tables.js'
 import type { LineBreakOpportunity, LineBreakState } from './types.js'
-import { GeneralCategory, getGeneralCategory } from './tables.js'
 import { createState, enterCarriedState, exitCarriedState } from './types.js'
 
 /**
@@ -100,10 +99,7 @@ export class LineBreakStream {
    * makes the stream usable for text too large to hold at once.
    */
   get retainedLength(): number {
-    return this.#pending.reduce(
-      (total, position) => total + (position.end - position.start),
-      0,
-    )
+    return this.#pending.reduce((total, position) => total + (position.end - position.start), 0)
   }
 
   /**

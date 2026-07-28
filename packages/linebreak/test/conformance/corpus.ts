@@ -19,14 +19,7 @@ import { fileURLToPath } from 'node:url'
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
 
-const CORPUS_PATH = join(
-  packageRoot,
-  'data',
-  '17.0.0',
-  'ucd',
-  'auxiliary',
-  'LineBreakTest.txt',
-)
+const CORPUS_PATH = join(packageRoot, 'data', '17.0.0', 'ucd', 'auxiliary', 'LineBreakTest.txt')
 
 export interface ConformanceCase {
   /** 1-based line number in the corpus file, for attributing failures. */
@@ -92,12 +85,7 @@ function splitComment(raw: string): [string, string] {
   return [raw.slice(0, hash).trim(), raw.slice(hash + 1)]
 }
 
-function parseCase(
-  body: string,
-  comment: string,
-  line: number,
-  raw: string,
-): ConformanceCase {
+function parseCase(body: string, comment: string, line: number, raw: string): ConformanceCase {
   const tokens = body.split(/\s+/).filter((token) => token.length > 0)
 
   const codePoints: number[] = []

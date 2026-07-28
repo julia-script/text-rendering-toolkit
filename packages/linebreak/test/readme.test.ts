@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { LineBreakStream, UNICODE_VERSION, findLineBreakOpportunities } from '../src/index.js'
+import { findLineBreakOpportunities, LineBreakStream, UNICODE_VERSION } from '../src/index.js'
 
 /**
  * Every code example in README.md, executed.

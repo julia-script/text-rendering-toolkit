@@ -90,11 +90,9 @@ describe('withholding and retention', () => {
 
   it('reports absolute offsets across the whole stream', () => {
     const stream = new LineBreakStream()
-    const positions = [
-      ...stream.append('hello '),
-      ...stream.append('world'),
-      ...stream.end(),
-    ].map((opportunity) => opportunity.position)
+    const positions = [...stream.append('hello '), ...stream.append('world'), ...stream.end()].map(
+      (opportunity) => opportunity.position,
+    )
 
     expect(positions).toEqual(batchPositions('hello world'))
   })

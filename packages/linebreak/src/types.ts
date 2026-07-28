@@ -110,8 +110,7 @@ export function enterCarriedState(
   }
 
   // LB8a applies to the pair directly after a joiner, folded or standalone.
-  state.afterZeroWidthJoiner =
-    endsWithZeroWidthJoiner || originalClass === classes.ZWJ
+  state.afterZeroWidthJoiner = endsWithZeroWidthJoiner || originalClass === classes.ZWJ
 
   // LB25: `NU (SY | IS)*`, optionally closed by one bracket.
   if (cls === classes.NU) {

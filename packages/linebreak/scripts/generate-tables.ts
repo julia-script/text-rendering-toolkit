@@ -9,6 +9,7 @@
  * data-directory change plus a conformance run.
  */
 
+import { execFileSync } from 'node:child_process'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -23,11 +24,55 @@ const ucd = join(packageRoot, 'data', unicodeVersion, 'ucd')
  * added since Unicode 16.0.0.
  */
 const LINE_BREAK_CLASSES = [
-  'AI', 'AK', 'AL', 'AP', 'AS', 'B2', 'BA', 'BB', 'BK', 'CB',
-  'CJ', 'CL', 'CM', 'CP', 'CR', 'EB', 'EM', 'EX', 'GL', 'H2',
-  'H3', 'HH', 'HL', 'HY', 'ID', 'IN', 'IS', 'JL', 'JT', 'JV',
-  'LF', 'NL', 'NS', 'NU', 'OP', 'PO', 'PR', 'QU', 'RI', 'SA',
-  'SG', 'SP', 'SY', 'VF', 'VI', 'WJ', 'XX', 'ZW', 'ZWJ',
+  'AI',
+  'AK',
+  'AL',
+  'AP',
+  'AS',
+  'B2',
+  'BA',
+  'BB',
+  'BK',
+  'CB',
+  'CJ',
+  'CL',
+  'CM',
+  'CP',
+  'CR',
+  'EB',
+  'EM',
+  'EX',
+  'GL',
+  'H2',
+  'H3',
+  'HH',
+  'HL',
+  'HY',
+  'ID',
+  'IN',
+  'IS',
+  'JL',
+  'JT',
+  'JV',
+  'LF',
+  'NL',
+  'NS',
+  'NU',
+  'OP',
+  'PO',
+  'PR',
+  'QU',
+  'RI',
+  'SA',
+  'SG',
+  'SP',
+  'SY',
+  'VF',
+  'VI',
+  'WJ',
+  'XX',
+  'ZW',
+  'ZWJ',
 ] as const
 
 /** East_Asian_Width values. Only F, W, and H affect line breaking. */
@@ -232,7 +277,9 @@ const generalCategoryTable = buildLookup(
   GENERAL_CATEGORIES.indexOf('Other'),
 )
 const emojiTable = buildLookup(
-  emojiRanges.filter((range) => EMOJI_PROPERTIES.includes(range.value as (typeof EMOJI_PROPERTIES)[number])),
+  emojiRanges.filter((range) =>
+    EMOJI_PROPERTIES.includes(range.value as (typeof EMOJI_PROPERTIES)[number]),
+  ),
   () => 1,
   0,
 )
@@ -319,6 +366,14 @@ export function isExtendedPictographic(codePoint: number): boolean {
 
 const outputPath = join(packageRoot, 'src', 'tables.ts')
 writeFileSync(outputPath, source)
+
+// Hand the result to the repository formatter. The generated arrays are far too
+// long to lay out by hand in a way that survives `biome check`, and a mismatch
+// would fail CI after every regeneration.
+execFileSync('pnpm', ['biome', 'format', '--write', outputPath], {
+  cwd: join(packageRoot, '..', '..'),
+  stdio: 'pipe',
+})
 
 process.stdout.write(
   `Generated src/tables.ts from Unicode ${unicodeVersion}\n` +

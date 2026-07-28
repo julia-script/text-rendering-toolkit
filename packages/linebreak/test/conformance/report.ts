@@ -86,9 +86,7 @@ export function formatFailure(failure: CaseFailure): string {
 /** Renders a whole-report summary suitable for a validation record. */
 export function formatReport(report: ConformanceReport, sampleSize = 20): string {
   const percent = (report.rate * 100).toFixed(3)
-  const lines = [
-    `Conformance: ${report.passed}/${report.total} (${percent}%)`,
-  ]
+  const lines = [`Conformance: ${report.passed}/${report.total} (${percent}%)`]
 
   if (report.failed > 0) {
     lines.push('', `Failing rules (case counts):`)
