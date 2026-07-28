@@ -163,12 +163,12 @@ export function decide(
 }
 
 /**
- * Classes that no rule before LB28 can match, given a plain alphabetic
- * neighbour and quiescent carried state.
+ * The two classes the fast path handles: ordinary letters and ideographs.
  *
- * Membership is deliberately narrow: a class appears only if every rule from
- * LB4 through LB27 provably falls through for it. AL and ID cover most ordinary
- * prose, which is where the rule walk is deepest.
+ * Membership is deliberately minimal. AL and ID dominate ordinary prose, which
+ * is where the rule walk is deepest, and neither participates in a rule that
+ * reads context beyond what {@link fastPath} checks. Widening this set is not a
+ * free change — see the note there.
  */
 function isPlainLetter(cls: LineBreakClass): boolean {
   return cls === LineBreakClass.AL || cls === LineBreakClass.ID
@@ -180,14 +180,33 @@ function isPlainLetter(cls: LineBreakClass): boolean {
  * On ordinary prose, LB28 (`AL × AL`) and the LB31 fallthrough together decide
  * about 78% of positions, and both sit at the end of the chain — so those
  * decisions pay for ~33 indirect calls each. This shortcut answers them
- * directly.
+ * directly, cutting measured cost by 1.9× on Latin and 4.6× on CJK.
  *
- * It is guarded, not heuristic. It fires only when the carried state is
- * quiescent, meaning no stateful rule (LB8, LB8a, LB15a, LB21a, LB25, LB30a)
- * could be pending, and only for class pairs where every earlier rule provably
- * falls through. Anything else returns `None` and takes the full chain. The
- * conformance corpus covers both paths, so a mistake here fails 19,338 cases
- * rather than hiding.
+ * **Why this is sound, precisely.** The guard below clears the seven carried
+ * state fields, but that is not the whole story: six rules also read context the
+ * guard does not touch — LB15b and LB15c (`nextClass`), LB19a (`nextCodePoint`,
+ * `previousCodePoint`), LB20a (`previousClass`), LB25 (`numericSequenceClosed`,
+ * `nextClass`, `afterNextClass`), and LB28a (`previousCharacter`, `nextClass`).
+ *
+ * The shortcut is safe because none of those six reads its extra context for an
+ * AL or ID pair: each exits on a class test first. LB20a is the near miss worth
+ * knowing about — it accepts AL as the *following* class, but only after
+ * requiring HY or HH before, so it returns before consulting `previousClass`.
+ *
+ * It is therefore *not* safe merely because the guard is exhaustive, and it
+ * would stop being safe if widened to classes that do reach those rules — QU
+ * reaches LB15b and LB19a, HY and HH reach LB20a, NU, SY, IS, CL, and CP reach
+ * LB25, and AK, AS, VI, VF reach LB28a. Several rules also branch on properties
+ * beyond the class: LB19a and LB30 on East Asian Width, LB15a and LB15b on
+ * Pi/Pf, LB30b on Cn and Extended_Pictographic, LB28a on U+25CC specifically.
+ *
+ * A generated class-pair table covering every quiescent case was built and
+ * measured: correct at 19,338/19,338, but 42% *slower* on Latin, because keying
+ * it soundly costs six property lookups per decision — more than the rule walk
+ * it replaces. The narrow version is the fast one.
+ *
+ * The conformance corpus exercises both paths, so an error here fails 19,338
+ * cases rather than passing silently.
  */
 function fastPath(
   before: Character,
