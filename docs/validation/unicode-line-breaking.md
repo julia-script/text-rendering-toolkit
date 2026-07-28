@@ -1,5 +1,12 @@
 # Unicode line-breaking validation
 
+> **Superseded in part (2026-07-28).** The composition observations below were
+> recorded against `linebreak@1.1.0` (Unicode 13.0.0), which has been replaced by
+> the rule-based `@text-rendering-toolkit/linebreak` (Unicode 17.0.0). The
+> exact-composition and reshaping behavior they characterize is unchanged, but
+> conformance evidence now lives in
+> [`unicode-17-line-breaking.md`](./unicode-17-line-breaking.md).
+
 ## Bounded composition observation
 
 This is a local characterization, not a benchmark or performance guarantee. It exercises the

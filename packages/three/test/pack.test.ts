@@ -31,7 +31,7 @@ function pack(root: string, destination: string): string {
 test('ships public ESM runtime and declarations to a clean consumer', () => {
   const temporary = mkdtempSync(resolve(tmpdir(), 'text-rendering-toolkit-three-pack-'))
   try {
-    const packageNames = ['font', 'layout', 'sdf', 'three'] as const
+    const packageNames = ['font', 'layout', 'linebreak', 'sdf', 'three'] as const
     const archives = packageNames.map((name) =>
       pack(resolve(workspaceRoot, 'packages', name), resolve(temporary, name)),
     )
