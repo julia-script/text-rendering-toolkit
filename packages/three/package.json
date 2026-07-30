@@ -1,6 +1,6 @@
 {
   "name": "@text-rendering-toolkit/three-webgpu",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Three.js WebGPU text rendering for renderer-neutral Text Rendering Toolkit layouts.",
   "license": "MIT",
   "repository": {
