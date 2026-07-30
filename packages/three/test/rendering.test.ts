@@ -1,9 +1,16 @@
-import { Color, MeshBasicNodeMaterial, MeshStandardNodeMaterial, Vector2 } from 'three/webgpu'
+import {
+  Color,
+  LessDepth,
+  MeshBasicNodeMaterial,
+  MeshStandardNodeMaterial,
+  Vector2,
+} from 'three/webgpu'
 import { expect, test, vi } from 'vitest'
 import { RgbaGlyphAtlas } from '../src/atlas.js'
 import {
   createGlyphGeometry,
   createGlyphMaterial,
+  createLayeredGlyphMaterials,
   updateGlyphGeometry,
   updateGlyphMaterial,
 } from '../src/rendering.js'
@@ -105,4 +112,50 @@ test('creates unlit and planar lit materials from shared controls', () => {
   atlas.dispose()
   expect(geometryDisposed).toHaveBeenCalledOnce()
   expect(materialDisposed).toHaveBeenCalledOnce()
+})
+
+test('creates the depth-ink pair as two unlit passes over one shared controls set', () => {
+  const atlas = new RgbaGlyphAtlas(16)
+  const atlasGrid = new Vector2(1, 1)
+  const { coreMaterial, edgeMaterial, controls } = createLayeredGlyphMaterials(
+    atlas.texture,
+    atlasGrid,
+  )
+  expect(coreMaterial).toBeInstanceOf(MeshBasicNodeMaterial)
+  expect(edgeMaterial).toBeInstanceOf(MeshBasicNodeMaterial)
+  expect(coreMaterial.depthWrite).toBe(true)
+  expect(coreMaterial.depthFunc).toBe(LessDepth)
+  expect(coreMaterial.transparent).toBe(true)
+  expect(coreMaterial.alphaTestNode).not.toBeNull()
+  expect(edgeMaterial.depthWrite).toBe(false)
+  expect(edgeMaterial.transparent).toBe(true)
+  expect(edgeMaterial.alphaTestNode).toBeNull()
+  for (const material of [coreMaterial, edgeMaterial]) {
+    expect(material.positionNode).not.toBeNull()
+    expect(material.colorNode).not.toBeNull()
+    expect(material.opacityNode).not.toBeNull()
+  }
+  expect(coreMaterial.opacityNode).not.toBe(edgeMaterial.opacityNode)
+  expect(controls.atlasGrid.value).toBe(atlasGrid)
+  updateGlyphMaterial(
+    controls,
+    0.4,
+    { left: -1, bottom: -2, right: 3, top: 4 },
+    {
+      outlineColor: new Color(0xff0000),
+      outlineOpacity: 0.75,
+      outlineWidth: 0.03,
+      shadowColor: new Color(0x0000ff),
+      shadowOpacity: 0.5,
+      shadowOffsetX: 0.02,
+      shadowOffsetY: -0.01,
+      shadowSoftness: 0.04,
+    },
+  )
+  // one update reaches both passes: the controls object is the single shared set
+  expect(controls.opacity.value).toBe(0.4)
+  expect(controls.clipRect.value.toArray()).toEqual([-1, -2, 3, 4])
+  coreMaterial.dispose()
+  edgeMaterial.dispose()
+  atlas.dispose()
 })

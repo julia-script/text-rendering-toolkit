@@ -1,11 +1,12 @@
 import type { LayoutBounds, LayoutResult, PositionedGlyph } from '@text-rendering-toolkit/layout'
 import type { SdfViewBox } from '@text-rendering-toolkit/sdf'
-import { Color, type ColorRepresentation, Mesh } from 'three/webgpu'
+import { Color, type ColorRepresentation, Mesh, type MeshBasicNodeMaterial } from 'three/webgpu'
 
 import { DisposedTextError, InvalidTextInputError } from './errors.js'
 import {
   createGlyphGeometry,
   createGlyphMaterial,
+  createLayeredGlyphMaterials,
   type GlyphInstanceData,
   type GlyphMaterialControls,
   type GlyphMaterialPaint,
@@ -89,6 +90,7 @@ function snapshotOptions(options: TextOptions): SnapshotOptions {
       resources,
       sdfSize,
       lit,
+      depthInk,
       color,
       styleColors,
       opacity,
@@ -102,6 +104,7 @@ function snapshotOptions(options: TextOptions): SnapshotOptions {
       resources,
       sdfSize,
       lit,
+      depthInk,
       color,
       styleColors,
       opacity,
@@ -372,6 +375,16 @@ export class Text extends Mesh<ReturnType<typeof createGlyphGeometry>, TextMater
   /** Whether this object uses the lit standard material. Fixed at construction. */
   readonly lit: boolean
   /**
+   * Whether this object renders in the two-pass depth-ink mode. Fixed at
+   * construction.
+   *
+   * @remarks
+   * When `true`, this mesh carries the depth-writing core pass and an internal
+   * child mesh carries the blending edge pass over the same instanced
+   * geometry. See {@link TextOptionsBase.depthInk}.
+   */
+  readonly depthInk: boolean
+  /**
    * SDF cell size in texels actually in effect.
    *
    * @remarks
@@ -383,6 +396,7 @@ export class Text extends Mesh<ReturnType<typeof createGlyphGeometry>, TextMater
   readonly #resources: TextResources
   readonly #ownsResources: boolean
   readonly #controls: GlyphMaterialControls
+  readonly #edge: Mesh<ReturnType<typeof createGlyphGeometry>, MeshBasicNodeMaterial> | null
   #revision = 0
   #pending: Promise<void> | null = null
   #latest: SyncSnapshot | null = null
@@ -397,8 +411,9 @@ export class Text extends Mesh<ReturnType<typeof createGlyphGeometry>, TextMater
    *   or an owned `sdfSize`.
    * @throws {@link InvalidTextInputError} if the options are not an object, if
    *   `layout` or `fonts` is missing, if both `resources` and `sdfSize` are
-   *   given, if `resources` is not a {@link TextResources}, if `lit` is not a
-   *   boolean, or if `sdfSize` is outside `16`–`512`. Also thrown when an
+   *   given, if `resources` is not a {@link TextResources}, if `lit` or
+   *   `depthInk` is not a boolean, if `depthInk` is combined with `lit`, or if
+   *   `sdfSize` is outside `16`–`512`. Also thrown when an
    *   option cannot be read at all — a throwing getter or `Proxy` trap — with
    *   the original failure attached as `cause`.
    * @throws {@link DisposedTextResourcesError} if the injected resources have
@@ -414,6 +429,11 @@ export class Text extends Mesh<ReturnType<typeof createGlyphGeometry>, TextMater
     }
     const lit = options.lit ?? false
     if (typeof lit !== 'boolean') throw invalid('lit must be a boolean')
+    const depthInk = options.depthInk ?? false
+    if (typeof depthInk !== 'boolean') throw invalid('depthInk must be a boolean')
+    if (depthInk && lit) {
+      throw invalid('depthInk cannot be combined with lit; the depth-ink mode is unlit-only')
+    }
     const ownsResources = options.resources === undefined
     const resources =
       options.resources ??
@@ -422,8 +442,23 @@ export class Text extends Mesh<ReturnType<typeof createGlyphGeometry>, TextMater
         : new TextResources({ sdfSize: options.sdfSize }))
     const binding = textResourceBinding(resources)
     const geometry = createGlyphGeometry()
-    const rendered = createGlyphMaterial(binding.texture, binding.atlasGrid, lit)
-    super(geometry, rendered.material)
+    if (depthInk) {
+      const layered = createLayeredGlyphMaterials(binding.texture, binding.atlasGrid)
+      super(geometry, layered.coreMaterial)
+      // the edge pass shares the instanced geometry, so every updateGlyphGeometry
+      // commit reaches both passes through one object; parent-before-child
+      // traversal keeps core drawing before edge at their identical depth
+      const edge = new Mesh(geometry, layered.edgeMaterial)
+      edge.frustumCulled = false
+      this.add(edge)
+      this.#edge = edge
+      this.#controls = layered.controls
+    } else {
+      const rendered = createGlyphMaterial(binding.texture, binding.atlasGrid, lit)
+      super(geometry, rendered.material)
+      this.#edge = null
+      this.#controls = rendered.controls
+    }
     this.layout = options.layout
     this.fonts = options.fonts
     this.color = options.color ?? DEFAULT_COLOR
@@ -433,10 +468,10 @@ export class Text extends Mesh<ReturnType<typeof createGlyphGeometry>, TextMater
     this.outline = options.outline ?? null
     this.shadow = options.shadow ?? null
     this.lit = lit
+    this.depthInk = depthInk
     this.sdfSize = resources.sdfSize
     this.#resources = resources
     this.#ownsResources = ownsResources
-    this.#controls = rendered.controls
     this.frustumCulled = false
   }
 
@@ -548,6 +583,7 @@ export class Text extends Mesh<ReturnType<typeof createGlyphGeometry>, TextMater
     this.#layoutResult = null
     this.geometry.dispose()
     this.material.dispose()
+    this.#edge?.material.dispose()
     if (this.#ownsResources) this.#resources.dispose()
   }
 

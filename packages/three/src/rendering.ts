@@ -8,6 +8,7 @@ import {
   DoubleSide,
   InstancedBufferAttribute,
   InstancedBufferGeometry,
+  LessDepth,
   MeshBasicNodeMaterial,
   MeshStandardNodeMaterial,
   type Node,
@@ -189,17 +190,39 @@ export function updateGlyphGeometry(
   geometry.boundingSphere = new Sphere(center, center.distanceTo(maximum))
 }
 
-function createGlyphNodeAssembly(atlas: DataTexture, sharedAtlasGrid = new Vector2(1, 1)) {
-  const opacity = tsl.uniform(1)
-  const clipRect = tsl.uniform(new Vector4(-1e20, -1e20, 1e20, 1e20))
-  const atlasGrid = tsl.uniform(sharedAtlasGrid)
-  const outlineColor = tsl.uniform(new Color(0))
-  const outlineOpacity = tsl.uniform(0)
-  const outlineWidth = tsl.uniform(0)
-  const shadowColor = tsl.uniform(new Color(0))
-  const shadowOpacity = tsl.uniform(0)
-  const shadowOffset = tsl.uniform(new Vector2())
-  const shadowSoftness = tsl.uniform(0)
+export function createGlyphControls(sharedAtlasGrid = new Vector2(1, 1)): GlyphMaterialControls {
+  return {
+    opacity: tsl.uniform(1),
+    clipRect: tsl.uniform(new Vector4(-1e20, -1e20, 1e20, 1e20)),
+    atlasGrid: tsl.uniform(sharedAtlasGrid),
+    outlineColor: tsl.uniform(new Color(0)),
+    outlineOpacity: tsl.uniform(0),
+    outlineWidth: tsl.uniform(0),
+    shadowColor: tsl.uniform(new Color(0)),
+    shadowOpacity: tsl.uniform(0),
+    shadowOffset: tsl.uniform(new Vector2()),
+    shadowSoftness: tsl.uniform(0),
+  }
+}
+
+function createGlyphNodeAssembly(
+  atlas: DataTexture,
+  sharedAtlasGrid = new Vector2(1, 1),
+  sharedControls?: GlyphMaterialControls,
+) {
+  const controls = sharedControls ?? createGlyphControls(sharedAtlasGrid)
+  const {
+    opacity,
+    clipRect,
+    atlasGrid,
+    outlineColor,
+    outlineOpacity,
+    outlineWidth,
+    shadowColor,
+    shadowOpacity,
+    shadowOffset,
+    shadowSoftness,
+  } = controls
   const bounds = tsl.attribute('glyphBounds', 'vec4')
   const slot = tsl.attribute('glyphSlot', 'uint')
   const glyphColor = tsl.attribute('glyphColor', 'vec4')
@@ -293,18 +316,9 @@ function createGlyphNodeAssembly(atlas: DataTexture, sharedAtlasGrid = new Vecto
     0.5,
   ) as unknown as Node<'bool'>
   return {
-    controls: {
-      opacity,
-      clipRect,
-      atlasGrid,
-      outlineColor,
-      outlineOpacity,
-      outlineWidth,
-      shadowColor,
-      shadowOpacity,
-      shadowOffset,
-      shadowSoftness,
-    } satisfies GlyphMaterialControls,
+    controls,
+    fillAlpha,
+    clipCoverage,
     glyphColor: composedColor as unknown as Node<'vec3'>,
     position,
     shadowMask,
@@ -342,6 +356,72 @@ export function createGlyphMaterial(
   material.colorNode = nodes.glyphColor
   material.opacityNode = nodes.visibleOpacity
   return { material, controls: nodes.controls }
+}
+
+/**
+ * The material pair backing a `depthInk` text: a depth-writing core pass that
+ * deduplicates overlapping fill ink, and a blending edge pass for everything
+ * else, both driven by one shared controls set.
+ */
+export interface LayeredGlyphMaterials {
+  readonly coreMaterial: MeshBasicNodeMaterial
+  readonly edgeMaterial: MeshBasicNodeMaterial
+  readonly controls: GlyphMaterialControls
+}
+
+/**
+ * Builds the two-pass material pair for `depthInk` rendering.
+ *
+ * Core membership is decided on fill coverage alone — `fillAlpha`, never
+ * coverage composed with outline or shadow — so effect gradients stay soft.
+ * Core fragments draw at the flat string opacity and write depth under
+ * `LessDepth`; equal-depth core ink from another glyph fails the test, which
+ * is the deduplication. The alpha test discards every non-core fragment
+ * before it can write depth. Edge fragments carry the ordinary composed
+ * `visibleOpacity` and never write depth.
+ *
+ * Both assemblies share one `GlyphMaterialControls`, so a single
+ * `updateGlyphMaterial` call drives both passes.
+ */
+export function createLayeredGlyphMaterials(
+  atlas: DataTexture,
+  sharedAtlasGrid = new Vector2(1, 1),
+): LayeredGlyphMaterials {
+  const controls = createGlyphControls(sharedAtlasGrid)
+  const core = createGlyphNodeAssembly(atlas, sharedAtlasGrid, controls)
+  const edge = createGlyphNodeAssembly(atlas, sharedAtlasGrid, controls)
+  const coreCovered = (assembly: typeof core) =>
+    tsl.greaterThanEqual(tsl.mul(assembly.fillAlpha, assembly.clipCoverage), 0.5)
+
+  const coreMaterial = new MeshBasicNodeMaterial({
+    depthFunc: LessDepth,
+    depthWrite: true,
+    side: DoubleSide,
+    transparent: true,
+  })
+  coreMaterial.positionNode = core.position
+  coreMaterial.colorNode = core.glyphColor
+  coreMaterial.opacityNode = tsl.select(
+    coreCovered(core),
+    controls.opacity,
+    0,
+  ) as unknown as Node<'float'>
+  coreMaterial.alphaTestNode = tsl.float(1 / 255) as unknown as Node<'float'>
+
+  const edgeMaterial = new MeshBasicNodeMaterial({
+    depthWrite: false,
+    side: DoubleSide,
+    transparent: true,
+  })
+  edgeMaterial.positionNode = edge.position
+  edgeMaterial.colorNode = edge.glyphColor
+  edgeMaterial.opacityNode = tsl.select(
+    coreCovered(edge),
+    0,
+    edge.visibleOpacity,
+  ) as unknown as Node<'float'>
+
+  return { coreMaterial, edgeMaterial, controls }
 }
 
 export function updateGlyphMaterial(

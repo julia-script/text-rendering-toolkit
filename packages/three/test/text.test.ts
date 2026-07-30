@@ -625,3 +625,85 @@ describe('public Text lifecycle', () => {
     }
   })
 })
+
+describe('depth-ink text', () => {
+  test('default construction stays single-pass with no child', () => {
+    const text = new Text({
+      layout: resolvedLayout('A'),
+      fonts: new Map([['font', font()]]),
+      sdfSize: 16,
+    })
+    expect(text.depthInk).toBe(false)
+    expect(text.children).toHaveLength(0)
+    expect(text.material.depthWrite).toBe(false)
+    text.dispose()
+  })
+
+  test('depthInk construction carries the core pass and an edge child on shared geometry', () => {
+    const text = new Text({
+      layout: resolvedLayout('A'),
+      fonts: new Map([['font', font()]]),
+      sdfSize: 16,
+      depthInk: true,
+    })
+    expect(text.depthInk).toBe(true)
+    expect(text.material).toBeInstanceOf(MeshBasicNodeMaterial)
+    expect(text.material.depthWrite).toBe(true)
+    expect(text.children).toHaveLength(1)
+    const edge = text.children[0] as Mesh
+    expect(edge).toBeInstanceOf(Mesh)
+    expect(edge.geometry).toBe(text.geometry)
+    expect((edge.material as MeshBasicNodeMaterial).depthWrite).toBe(false)
+    expect(edge.frustumCulled).toBe(false)
+    text.dispose()
+  })
+
+  test('rejects a non-boolean depthInk and the lit combination', () => {
+    const layout = resolvedLayout('A')
+    const fonts = new Map([['font', font()]])
+    expect(() => new Text({ layout, fonts, depthInk: 1 as unknown as boolean })).toThrow(
+      InvalidTextInputError,
+    )
+    expect(() => new Text({ layout, fonts, depthInk: true, lit: true })).toThrow(
+      InvalidTextInputError,
+    )
+    expect(() => new Text({ layout, fonts, depthInk: true, lit: true })).toThrow(/lit/)
+  })
+
+  test('one sync commits both passes; disposal releases both materials once', async () => {
+    const resources = new TextResources({ sdfSize: 16 })
+    const text = new Text({
+      layout: resolvedLayout('AB'),
+      fonts: new Map([['font', font()]]),
+      resources,
+      depthInk: true,
+      opacity: 0.5,
+    })
+    await text.sync()
+    expect(text.geometry.instanceCount).toBe(2)
+    const edge = text.children[0] as Mesh
+    // shared geometry: the committed instance count is both passes' count
+    expect(edge.geometry.instanceCount).toBe(2)
+    const coreDisposed = vi.fn()
+    const edgeDisposed = vi.fn()
+    text.material.addEventListener('dispose', coreDisposed)
+    ;(edge.material as MeshBasicNodeMaterial).addEventListener('dispose', edgeDisposed)
+    text.dispose()
+    text.dispose()
+    expect(coreDisposed).toHaveBeenCalledOnce()
+    expect(edgeDisposed).toHaveBeenCalledOnce()
+    await expect(text.sync()).rejects.toThrow(DisposedTextError)
+
+    // injected resources survive for other borrowers
+    const another = new Text({
+      layout: resolvedLayout('A'),
+      fonts: new Map([['font', font()]]),
+      resources,
+      depthInk: true,
+    })
+    await another.sync()
+    expect(another.geometry.instanceCount).toBe(1)
+    another.dispose()
+    resources.dispose()
+  })
+})

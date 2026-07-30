@@ -104,6 +104,32 @@ construction; layout and appearance updates reuse the same material. Enable
 shadow maps and configure lights at the scene level, then use the ordinary
 Three.js `castShadow` and `receiveShadow` mesh flags as needed.
 
+## Depth-ink two-pass mode
+
+By default a `Text` renders in one transparent pass that never writes depth:
+overlapping glyph ink (connected scripts, tight kerning) blends more than once
+per pixel — visible as darker seams on semi-transparent text — and text cannot
+occlude depth-tested geometry behind it. `depthInk: true` opts into a two-pass
+mode that fixes both:
+
+```ts
+const text = new Text({ layout, fonts, resources, depthInk: true })
+```
+
+Fully-covered fill ink draws in a core pass at the flat string opacity, writing
+depth under a less-than test — overlapping core ink from another glyph fails
+the test, so it blends exactly once, and geometry behind the ink is occluded.
+The antialiasing ring, outline, and shadow draw in a second pass that blends
+without depth writes. Core membership is decided on fill coverage alone, never
+on coverage composed with outline or shadow, so outline ramps and soft shadow
+interiors keep their gradients.
+
+Like `lit`, the choice is fixed at construction — and it is unlit-only:
+combining `depthInk: true` with `lit: true` throws `InvalidTextInputError`.
+Internally the edge pass rides as a child mesh sharing the instanced geometry,
+so `sync()`, appearance updates, and disposal work exactly as in the
+single-pass mode.
+
 ## Updates and interaction
 
 Properties are mutable; call and await `sync()` after changing them:

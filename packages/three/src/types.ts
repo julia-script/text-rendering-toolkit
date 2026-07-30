@@ -204,6 +204,24 @@ export interface TextOptionsBase {
    */
   readonly lit?: boolean
   /**
+   * Whether to render in two depth-aware passes instead of the single
+   * transparent pass.
+   *
+   * @remarks
+   * With `true`, fully-covered fill ink draws in a depth-writing core pass at
+   * the flat string opacity — overlapping glyph ink (connected scripts, tight
+   * kerning) blends exactly once per pixel with no darker seam, and text ink
+   * occludes depth-tested geometry behind it. The antialiasing ring, outline,
+   * and shadow blend in a second pass without depth writes, keeping their
+   * gradients.
+   *
+   * Fixed at construction, like {@link TextOptionsBase.lit} — and currently
+   * unlit-only: combining it with `lit: true` throws.
+   *
+   * @defaultValue `false`
+   */
+  readonly depthInk?: boolean
+  /**
    * Base text color, as any Three.js color representation.
    *
    * @defaultValue `0xffffff`
