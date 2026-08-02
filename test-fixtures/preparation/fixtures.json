@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "unicodeVersion": "17.0.0",
   "bidiRevision": "bidi-js@1.0.3 / Unicode 13.0.0",
-  "lineBreakRevision": "linebreak@1.1.0 / Unicode 13.0.0",
+  "lineBreakRevision": "@text-rendering-toolkit/linebreak / Unicode 17.0.0",
   "fontManifest": {
     "file": "test-fixtures/fonts/harfbuzz-validation/fixtures.json",
     "sha256": "0e1d1e368fdd0454ef4af85ae34a61edda25ba1982b0a35472b77f315d83dddc"

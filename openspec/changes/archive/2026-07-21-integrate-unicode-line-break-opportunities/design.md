@@ -94,3 +94,41 @@ Rollback removes the dependency and explicit-opportunity path and restores schem
 
 - Do the upstream Unicode 13 skipped cases intersect the project's accepted punctuation, CJK, emoji, or break-sensitive fixture set strongly enough to require an attributed local data/algorithm update before production integration?
 - What measured paragraph size makes exact candidate probing too expensive for the synchronous path, and does that evidence justify a later worker or specialized cache rather than changing this change's public API?
+
+## Correction (2026-07-28)
+
+This section is appended after archiving. The body above is left unchanged as the
+record of what was decided on 2026-07-21; this note records what was later found to
+be wrong about the premise.
+
+**The risk framing was wrong about the nature of the limitation.** The risk register
+above treats the dependency's age as a *data* problem — "Unicode 13 tables age poorly
+for new scripts and emoji", mitigated by regenerating tables behind a replaceable
+adapter. That mitigation cannot work, because the ceiling is the mechanism, not the
+tables.
+
+`linebreak@1.1.0` is pair-table based. Its bundled runtime exposes `getPairTableBreak`
+alongside `getSimpleBreak`, plus per-instance `LB8a`, `LB21a`, and `LB30a` flags —
+carried state for the three rules that a class-by-class matrix cannot express (ZWJ
+sequences, Hebrew letter after hyphen, and regional-indicator pairing, which needs an
+even/odd count rather than a stateless lookup). Character classes come from a
+base64-encoded trie of 3,870 decoded bytes, which is orthogonal to this issue.
+
+**UAX #14 deleted the pair-table section outright.** Section 7, formerly "Pair
+Table-Based Implementation", reads "Deleted." in the current Unicode 17.0.0 revision 55
+(2025-09-05). It also already read "Deleted." in Unicode 13.0.0 revision 45
+(2020-02-17) — the exact version this dependency documents conformance to. The removal
+predates rev 45; the precise revision that removed it has not been pinned. The spec now
+defines the algorithm through Section 6's ordered rules with carried context.
+
+**Consequence for the roadmap.** Regenerating tables against newer Unicode data cannot
+bring a pair-table implementation to current conformance, because the rules it cannot
+express are exactly the emoji, regional-indicator, and Hebrew ones that later versions
+keep adding to. Closing this gap requires a rule-based implementation following
+Section 6, not a data refresh. The replaceable adapter at
+`packages/layout/src/internal/line-break.ts` remains the correct swap point, so the
+adapter decision above still holds even though its stated rationale does not.
+
+The first open question above is therefore answered in a stronger form than it was
+asked: the issue is not which upstream cases are skipped, but that the implementation
+strategy was removed from the specification before the targeted version.

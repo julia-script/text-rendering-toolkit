@@ -1,4 +1,4 @@
-import LineBreaker from 'linebreak'
+import { findLineBreakOpportunities } from '@text-rendering-toolkit/linebreak'
 import type { LineBreakOpportunity } from '../types.js'
 import { mandatoryLineBreakBoundaries } from './break-controls.js'
 
@@ -11,24 +11,23 @@ function graphemeBoundaries(text: string): ReadonlySet<number> {
 }
 
 export function lineBreakOpportunities(text: string): readonly LineBreakOpportunity[] {
-  const breaker = new LineBreaker(text)
   const raw: LineBreakOpportunity[] = []
   let previousPosition = -1
 
-  for (let next = breaker.nextBreak(); next; next = breaker.nextBreak()) {
+  for (const next of findLineBreakOpportunities(text)) {
     if (
       !Number.isInteger(next.position) ||
       next.position < 0 ||
       next.position > text.length ||
       typeof next.required !== 'boolean'
     ) {
-      throw new Error('linebreak returned an invalid opportunity')
+      throw new Error('line breaking returned an invalid opportunity')
     }
     if (next.position < previousPosition) {
-      throw new Error('linebreak returned non-progressing opportunities')
+      throw new Error('line breaking returned non-progressing opportunities')
     }
     if (raw.length > text.length + 1) {
-      throw new Error('linebreak returned too many opportunities')
+      throw new Error('line breaking returned too many opportunities')
     }
     previousPosition = next.position
     raw.push({ position: next.position, required: next.required })
@@ -39,9 +38,14 @@ export function lineBreakOpportunities(text: string): readonly LineBreakOpportun
   const normalized = new Map<number, boolean>()
   for (const opportunity of raw) {
     if (!allowed.has(opportunity.position)) continue
+    // UAX #14 rule LB3 reports the end of text as a mandatory break. Layout
+    // treats the terminal boundary as required only when a hard break control
+    // actually precedes it, so `mandatoryLineBreakBoundaries` below is the sole
+    // authority for that position.
+    const isRequired = opportunity.position === text.length ? false : opportunity.required
     normalized.set(
       opportunity.position,
-      (normalized.get(opportunity.position) ?? false) || opportunity.required,
+      (normalized.get(opportunity.position) ?? false) || isRequired,
     )
   }
   for (const position of required) normalized.set(position, true)

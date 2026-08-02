@@ -72,11 +72,11 @@ UTF-16/style boundaries, and invalid serialized values throw
 where applicable. Neither operation fetches, discovers, caches globally,
 mutates, or disposes fonts.
 
-The production policy pins `bidi-js@1.0.3` (Unicode 13.0.0 bidi data),
-`unicode-script@1.2.0` (Unicode 17.0.0 Script/Script_Extensions data), and
-`linebreak@1.1.0` (Unicode 13.0.0 line-break data). The local adapter normalizes
-dependency output into project-owned immutable records. Dependency upgrades
-require rerunning the canonical corpus.
+The production policy pins `bidi-js@1.0.3` (Unicode 13.0.0 bidi data) and
+`unicode-script@1.2.0` (Unicode 17.0.0 Script/Script_Extensions data), and uses
+`@text-rendering-toolkit/linebreak` (Unicode 17.0.0 line-break data) from this
+workspace. The local adapter normalizes their output into project-owned
+immutable records. Dependency upgrades require rerunning the canonical corpus.
 
 ## Expert resolved-run usage
 
@@ -244,15 +244,26 @@ glyph ID, variations, and `fontUnitScale`. Consequently `visibleBounds` may be
 available. Consumers that already own exact glyph bounds can supply them through
 `layoutResolvedText()`.
 
-The Unicode 13 algorithm is not complete browser CSS behavior. Dictionary
+Line breaking follows UAX #14 for Unicode 17.0.0 and passes all 19,338 cases of
+the official `LineBreakTest-17.0.0.txt` conformance corpus, with no case
+excluded. That is still not complete browser CSS behavior: dictionary
 segmentation for complex-context scripts, automatic hyphenation, locale and
-CSS `line-break`/`word-break` tailoring, newer Unicode line-break data, bidi
-caret affinity, incremental editing, worker adapters, font fetching, shared
-caches, and color-font policy remain follow-ups. Upstream documents roughly 50
-skipped cases among more than 7,600 conformance fixtures; see the third-party
-notice and validation record for the accepted evidence boundary.
+CSS `line-break`/`word-break` tailoring, bidi caret affinity, incremental
+editing, worker adapters, font fetching, shared caches, and color-font policy
+remain follow-ups.
+
+The algorithm is rule-based rather than pair-table based, because UAX #14
+deleted its section 7, "Pair Table-Based Implementation", no later than Unicode
+13.0.0 revision 45 (2020-02-17), and it still reads "Deleted." in 17.0.0
+revision 55 (2025-09-05). A class-by-class matrix cannot express rules that need
+carried context — ZWJ sequences (LB8a), Hebrew letter after hyphen (LB21a), and
+regional-indicator pairing (LB30a) among them. See
+[`@text-rendering-toolkit/linebreak`](../linebreak/README.md) for that
+package's own contract.
 
 The normative layout and preparation evidence is documented in
 [`docs/validation/layout-policy.md`](../../docs/validation/layout-policy.md),
-with Unicode opportunity and exact-composition evidence in
-[`docs/validation/unicode-line-breaking.md`](../../docs/validation/unicode-line-breaking.md).
+with exact-composition evidence in
+[`docs/validation/unicode-line-breaking.md`](../../docs/validation/unicode-line-breaking.md)
+and conformance evidence in
+[`docs/validation/unicode-17-line-breaking.md`](../../docs/validation/unicode-17-line-breaking.md).
