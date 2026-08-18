@@ -5,6 +5,8 @@ Unicode text into renderer-ready data:
 
 - [`@text-rendering-toolkit/font`](packages/font) parses caller-owned font bytes, shapes text, and
   returns numeric glyph outlines.
+- [`@text-rendering-toolkit/linebreak`](packages/linebreak) finds Unicode line-break opportunities
+  from UAX #14, with no dependencies and no font or renderer access.
 - [`@text-rendering-toolkit/layout`](packages/layout) prepares multilingual text and produces
   positioned glyphs, lines, carets, selections, bounds, and decorations.
 - [`@text-rendering-toolkit/sdf`](packages/sdf) converts numeric outlines into deterministic
@@ -15,9 +17,9 @@ Unicode text into renderer-ready data:
 Each package is independently useful. The runtime dependency direction is:
 
 ```text
-font → layout ─┐
-               ├→ three-webgpu → three
-sdf ───────────┘
+font ──────→ layout ─┐
+linebreak ─→ layout  ├→ three-webgpu → three
+sdf ─────────────────┘
 ```
 
 The SDF package also accepts font outlines structurally without importing the font package at
@@ -29,6 +31,7 @@ Choose only the boundaries your application needs:
 
 ```sh
 pnpm add @text-rendering-toolkit/font
+pnpm add @text-rendering-toolkit/linebreak
 pnpm add @text-rendering-toolkit/layout
 pnpm add @text-rendering-toolkit/sdf
 pnpm add @text-rendering-toolkit/three-webgpu three

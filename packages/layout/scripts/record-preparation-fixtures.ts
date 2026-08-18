@@ -14,7 +14,7 @@ interface FixtureDocument {
 
 const fixtureUrl = new URL('../../../test-fixtures/preparation/fixtures.json', import.meta.url)
 const document = JSON.parse(await readFile(fixtureUrl, 'utf8')) as FixtureDocument
-document.lineBreakRevision = 'linebreak@1.1.0 / Unicode 13.0.0'
+document.lineBreakRevision = '@text-rendering-toolkit/linebreak / Unicode 17.0.0'
 
 for (const fixture of document.fixtures) {
   if (fixture.expected.error?.code === 'invalid-input') continue

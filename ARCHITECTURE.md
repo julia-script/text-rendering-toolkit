@@ -32,11 +32,11 @@ instanced geometry, and shared TSL nodes bound to either the default unlit or
 construction-fixed planar standard material through an atomic `Text.sync()`
 lifecycle.
 
-Automatic script/direction itemization, default Unicode 13 line-break
+Automatic script/direction itemization, default Unicode 17 line-break
 opportunities, exact line-fragment reshaping, and explicit caller-font fallback
 are now production `@text-rendering-toolkit/layout` operations through `prepareText()`,
 `layoutPreparedText()`, and `layoutText()`. CSS/locale tailoring, dictionary
-segmentation, hyphenation, newer line-break data, bidi caret affinity, workers, atlas eviction,
+segmentation, hyphenation, bidi caret affinity, workers, atlas eviction,
 curved or configurable physical materials, and batching remain separate
 follow-ups. The production standard
 variant now promotes the validated front-facing planar seam with glyph-shaped

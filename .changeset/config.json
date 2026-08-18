@@ -6,6 +6,7 @@
     [
       "@text-rendering-toolkit/font",
       "@text-rendering-toolkit/layout",
+      "@text-rendering-toolkit/linebreak",
       "@text-rendering-toolkit/sdf",
       "@text-rendering-toolkit/three-webgpu"
     ]

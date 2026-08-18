@@ -18,7 +18,7 @@ import { fileURLToPath } from 'node:url'
 import { test } from 'vitest'
 
 type CheckStatus = 'passed' | 'failed'
-type PackageId = 'font' | 'layout' | 'sdf' | 'three'
+type PackageId = 'font' | 'layout' | 'linebreak' | 'sdf' | 'three'
 
 interface TechnicalCheck {
   readonly name: string
@@ -98,10 +98,11 @@ const validationRoot = dirname(fileURLToPath(import.meta.url))
 const workspaceRoot = resolve(validationRoot, '..')
 const candidateRoot = resolve(workspaceRoot, '.release-candidate')
 const archiveRoot = resolve(candidateRoot, 'packages')
-const packageIds: readonly PackageId[] = ['font', 'layout', 'sdf', 'three']
+const packageIds: readonly PackageId[] = ['font', 'layout', 'linebreak', 'sdf', 'three']
 const packageNames: Readonly<Record<PackageId, string>> = {
   font: '@text-rendering-toolkit/font',
   layout: '@text-rendering-toolkit/layout',
+  linebreak: '@text-rendering-toolkit/linebreak',
   sdf: '@text-rendering-toolkit/sdf',
   three: '@text-rendering-toolkit/three-webgpu',
 }
@@ -117,6 +118,7 @@ const expectedFiles: Readonly<Record<PackageId, readonly string[]>> = {
     'THIRD_PARTY_NOTICES.md',
   ],
   layout: ['dist/index.js', 'dist/index.d.ts', 'README.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md'],
+  linebreak: ['dist/index.js', 'dist/index.d.ts', 'README.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md'],
   sdf: [
     'dist/index.js',
     'dist/index.d.ts',

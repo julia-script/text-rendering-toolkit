@@ -162,7 +162,7 @@ describe('canonical production preparation', () => {
     expect(document.schemaVersion).toBe(1)
     expect(document.unicodeVersion).toBe('17.0.0')
     expect(document.bidiRevision).toBe('bidi-js@1.0.3 / Unicode 13.0.0')
-    expect(document.lineBreakRevision).toBe('linebreak@1.1.0 / Unicode 13.0.0')
+    expect(document.lineBreakRevision).toBe('@text-rendering-toolkit/linebreak / Unicode 17.0.0')
     const manifest = await readFile(fontManifestUrl)
     expect(createHash('sha256').update(manifest).digest('hex')).toBe(document.fontManifest.sha256)
     const tags = new Set(document.fixtures.flatMap((item) => item.tags))

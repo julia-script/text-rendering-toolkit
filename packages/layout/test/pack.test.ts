@@ -7,6 +7,7 @@ import { expect, it } from 'vitest'
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const fontRoot = resolve(packageRoot, '../font')
+const linebreakRoot = resolve(packageRoot, '../linebreak')
 const workspaceRoot = resolve(packageRoot, '../..')
 
 function pack(root: string, destination: string): string {
@@ -27,6 +28,7 @@ it('ships ESM runtime and type exports usable with the public font package', () 
   const temporary = mkdtempSync(resolve(tmpdir(), 'text-rendering-toolkit-layout-pack-'))
   try {
     const fontArchive = pack(fontRoot, resolve(temporary, 'font'))
+    const linebreakArchive = pack(linebreakRoot, resolve(temporary, 'linebreak'))
     const layoutArchive = pack(packageRoot, resolve(temporary, 'layout'))
     const consumer = resolve(temporary, 'consumer')
     mkdirSync(consumer)
@@ -38,6 +40,7 @@ it('ships ESM runtime and type exports usable with the public font package', () 
           type: 'module',
           dependencies: {
             '@text-rendering-toolkit/font': `file:${fontArchive}`,
+            '@text-rendering-toolkit/linebreak': `file:${linebreakArchive}`,
             '@text-rendering-toolkit/layout': `file:${layoutArchive}`,
           },
         },
@@ -47,7 +50,7 @@ it('ships ESM runtime and type exports usable with the public font package', () 
     )
     writeFileSync(
       resolve(consumer, 'pnpm-workspace.yaml'),
-      `packages:\n  - .\noverrides:\n  '@text-rendering-toolkit/font': file:${fontArchive}\n`,
+      `packages:\n  - .\noverrides:\n  '@text-rendering-toolkit/font': file:${fontArchive}\n  '@text-rendering-toolkit/linebreak': file:${linebreakArchive}\n`,
     )
     execFileSync('pnpm', ['install', '--ignore-scripts'], {
       cwd: consumer,

@@ -1,12 +1,12 @@
 {
-  "name": "@text-rendering-toolkit/layout",
-  "version": "0.3.0",
-  "description": "Renderer-neutral multilingual text preparation, layout, carets, selections, and decorations.",
+  "name": "@text-rendering-toolkit/linebreak",
+  "version": "0.2.0",
+  "description": "Line breaking for the text rendering toolkit.",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/julia-script/text-rendering-toolkit.git",
-    "directory": "packages/layout"
+    "directory": "packages/linebreak"
   },
   "homepage": "https://github.com/julia-script/text-rendering-toolkit#readme",
   "bugs": {
@@ -15,11 +15,7 @@
   "keywords": [
     "text-rendering",
     "typography",
-    "text-layout",
-    "unicode",
-    "bidi",
-    "line-breaking",
-    "carets"
+    "line-breaking"
   ],
   "publishConfig": {
     "access": "public",
@@ -40,14 +36,10 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "fixtures:record": "pnpm build && node --experimental-strip-types scripts/record-preparation-fixtures.ts",
+    "corpus:fetch": "tsx scripts/fetch-corpus.ts",
+    "pretest": "tsx scripts/fetch-corpus.ts",
+    "tables:generate": "tsx scripts/generate-tables.ts",
     "test": "vitest run --passWithNoTests",
     "typecheck": "tsc -p tsconfig.json --noEmit"
-  },
-  "dependencies": {
-    "@text-rendering-toolkit/font": "workspace:^",
-    "@text-rendering-toolkit/linebreak": "workspace:^",
-    "bidi-js": "1.0.3",
-    "unicode-script": "1.2.0"
   }
 }
